@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的Scratch作品集</title>
+  <style>
+    :root {
+      --scratch-blue: #4D97FF;
+      --scratch-orange: #FFAB19;
+      --scratch-light: #E5F0FF;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--scratch-light);
+    }
+    header {
+      background: linear-gradient(135deg, var(--scratch-orange), var(--scratch-blue));
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+    .project-card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+    .project-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .project-preview {
+      height: 250px;
+      background: #f0f0f0;
+      position: relative;
+    }
+    .project-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .project-info {
+      padding: 1.5rem;
+    }
+    .project-title {
+      margin: 0 0 0.5rem;
+      color: var(--scratch-blue);
+    }
+    .project-desc {
+      margin: 0 0 1rem;
+      color: #555;
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background: var(--scratch-blue);
+      color: white;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>我的Scratch作品集</h1>
+    <p>本地嵌入式展示 - 无需网络连接</p>
+  </header>
+
+  <div class="container">
+    <div class="project-grid">
+      <!-- 项目1 -->
+      <div class="project-card">
+        <div class="project-preview">
+          <iframe src="codyduoren.html"></iframe>
+        </div>
+        <div class="project-info">
+          <h3 class="project-title">联机迷宫</h3>
+          <p class="project-desc">使用鼠标控制角色穿越迷宫</p>
+        </div>
+      </div>
+
+      <!-- 项目2 -->
+      <div class="project-card">
+        <div class="project-preview">
+          <iframe src="projects/math_quiz/index.html"></iframe>
+        </div>
+        <div class="project-info">
+          <h3 class="project-title">数学挑战</h3>
+          <p class="project-desc">测试你的计算速度和准确性</p>
+        </div>
+      </div>
+
+      <!-- 项目3 -->
+      <div class="project-card">
+        <div class="project-preview">
+          <iframe src="projects/space_adventure/index.html"></iframe>
+        </div>
+        <div class="project-info">
+          <h3 class="project-title">太空冒险</h3>
+          <p class="project-desc">交互式动画故事</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2024 我的Scratch作品集 | 纯本地文件系统</p>
+  </footer>
+</body>
+</html>

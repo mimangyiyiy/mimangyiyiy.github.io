@@ -26,9 +26,16 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .container {
-      max-width: 80px;
+      max-width: 1200px;
       margin: 2rem auto;
       padding: 0 1rem;
+    }
+    .section-title {
+      font-size: 1.8rem;
+      color: var(--scratch-dark);
+      border-left: 5px solid var(--scratch-orange);
+      padding-left: 10px;
+      margin-bottom: 1.5rem;
     }
     .project-list {
       display: grid;
@@ -90,6 +97,8 @@
   </header>
 
   <div class="container">
+    <!-- Scratch 作品区 -->
+    <h2 class="section-title">Scratch 作品</h2>
     <div class="project-list">
       <!-- 作品1 -->
       <div class="project-card">
@@ -100,39 +109,54 @@
         <p>使用鼠标键控制角色穿越迷宫，这次主要更新了文字聊天室，还有玩家上线提醒</p>
         <a href="cody\duoren1.html" class="project-btn">开始体验</a>
       </div>
-  
-  <div class="container">
-    <div class="project-list">
       <!-- 作品2 -->
       <div class="project-card">
         <div class="project-image">
           <img src="image\Plattformer_v9.0_Online.jpg" alt="Plattformer v9.0 Online(多人闯关)">
         </div>
-        <h3>多人跑酷Plattformer_v9.0_Online</h3>
-        <p>使用键盘控制角色穿越迷宫(仅电脑版)</p>
+        <h3>多人跑酷 Plattformer v9.0 Online</h3>
+        <p>使用键盘控制角色穿越迷宫（仅电脑版）</p>
         <a href="cody/Plattformer_v9.0_Online.html" class="project-btn">开始体验</a>
       </div>
-
-
-   <div class="container">
-    <div class="project-list">
       <!-- 作品3 -->
       <div class="project-card">
         <div class="project-image">
           <img src="image\luoyan3d.jpg" alt="裸眼3d">
         </div>
-        <h3>裸眼3d</h3>
+        <h3>裸眼3D</h3>
         <p>使用摄像头跟踪眼球（用微信打开的话会很卡，建议使用Edge浏览器打开,因为其他浏览器无法全屏，体验感不好）</p>
         <a href="cody\luoyan3d.html" class="project-btn">开始体验</a>
       </div>
+    </div>
+  </div>
 
-
-
+  <div class="container">
+    <!-- HTML 小游戏区 -->
+    <h2 class="section-title">HTML 小游戏</h2>
+    <div class="project-list">
+      <!-- 小游戏1 -->
+      <div class="project-card">
+        <div class="project-image">
+          <img src="image\game1.png" alt="小游戏1">
+        </div>
+        <h3>弹球消砖块</h3>
+        <p>经典打砖块玩法，支持双人对战模式，键盘控制挡板</p>
+        <a href="cody\breakout.html" class="project-btn">开始体验</a>
+      </div>
+      <!-- 小游戏2 -->
+      <div class="project-card">
+        <div class="project-image">
+          <img src="image\game2.png" alt="小游戏2">
+        </div>
+        <h3>贪吃蛇大作战</h3>
+        <p>使用方向键控制蛇吃食物，越吃越长，挑战最高分</p>
+        <a href="cody\snake.html" class="project-btn">开始体验</a>
+      </div>
     </div>
   </div>
 
   <footer>
-    <p>© 2025 我的Scratch作品集 | 使用HTML+CSS实现</p>
+    <p>© 2026 我的Scratch作品集 | 使用HTML+CSS实现</p>
   </footer>
 </body>
 </html>

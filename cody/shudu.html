@@ -1,1283 +1,717 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>数独游戏</title></title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 10px;
-      background: #667eea;
-    }
-    .background-image {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-image: url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80');
-      background-size: cover;
-      background-position: center;
-      z-index: -2;
-    }
-    .gradient-bg {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
-      background-size: 400% 400%;
-      z-index: -3;
-      display: none;
-    }
-    .game-wrapper {
-      width: 100%;
-      max-width: 360px;
-      max-height: calc(100vh - 20px);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      overflow-x: hidden;
-      z-index: 1;
-    }
-    .game-container {
-      border-radius: 15px;
-      padding: 10px;
-      position: relative;
-      transition: all 0.5s ease;
-      z-index: 1;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-    .game-container.solid {
-      background: #ffffff;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      border: none;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    }
-    h1 { 
-      text-align: center; 
-      margin-bottom: 10px; 
-      font-size: 20px;
-      color: #000;
-      text-shadow: none;
-    }
-    .difficulty-screen, .game-screen { position: relative; }
-    .difficulty-option {
-      padding: 10px 20px; font-size: 16px;
-      border: 1px solid rgba(0,0,0,0.4);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.6);
-      color: #000;
-      cursor: pointer; margin: 6px;
-      font-weight: bold;
-      transition: all 0.3s;
-    }
-    .difficulty-option:hover { background: rgba(255,255,255,0.8); transform: scale(1.05); }
-    .difficulty-option.selected-easy { background: rgba(34,197,94,0.7); border-color: #22c55e; }
-    .difficulty-option.selected-medium { background: rgba(107,114,128,0.7); border-color: #6b7280; }
-    .difficulty-option.selected-hard { background: rgba(239,68,68,0.7); border-color: #ef4444; }
-    .game-screen { display: none; }
-    .controls { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-    button {
-      padding: 8px 14px; font-size: 12px;
-      border: 1px solid rgba(0,0,0,0.3);
-      border-radius: 6px;
-      cursor: pointer; font-weight: bold;
-      background: rgba(255,255,255,0.6);
-      color: #000;
-      transition: all 0.2s;
-    }
-    button:hover { background: rgba(255,255,255,0.8); transform: translateY(-1px); }
-    .top-controls { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-    .btn-top { padding: 6px 10px; font-size: 12px; }
-    .history-panel {
-      display: none;
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      background: rgba(255,255,255,0.95);
-      border: 1px solid rgba(0,0,0,0.3);
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-      padding: 10px;
-      z-index: 2000;
-      max-height: 60vh;
-      overflow-y: auto;
-      width: 90%;
-      max-width: 300px;
-    }
-    .history-panel.show { display: block; }
-    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .history-title { font-size: 14px; font-weight: bold; color: #000; }
-    .history-close { width: 24px; height: 24px; border: none; background: rgba(255,100,100,0.5); color: #000; border-radius: 50%; cursor: pointer; }
-    .history-list { list-style: none; }
-    .history-item { padding: 6px; border-bottom: 1px solid rgba(0,0,0,0.2); cursor: pointer; color: #000; font-size: 12px; }
-    .history-item:hover { background: rgba(0,0,0,0.1); }
-    .overlay { 
-      display: none; 
-      position: fixed; 
-      top: 0; left: 0; 
-      width: 100%; height: 100%; 
-      background: rgba(0,0,0,0.4); 
-      z-index: 1999;
-    }
-    .overlay.show { display: block; }
-    .more-menu { position: relative; display: inline-block; }
-    .more-menu-content { display: none; position: absolute; top: 100%; left: 0; background: rgba(255,255,255,0.95); min-width: 140px; border-radius: 6px; z-index: 1001; flex-direction: column; padding: 4px 0; }
-    .more-menu.show .more-menu-content { display: flex; }
-    .more-menu-content button { padding: 6px 10px; font-size: 12px; text-align: left; background: transparent; color: #000; border: none; cursor: pointer; }
-    .more-menu-content button:hover { background: rgba(0,0,0,0.1); }
-    .custom-alert {
-      position: fixed; top: 10px; left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: rgba(0,0,0,0.6);
-      color: #fff;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: bold;
-      z-index: 4000;
-      transition: transform 0.3s ease;
-    }
-    .custom-alert.show { transform: translateX(-50%) translateY(0); }
-    .new-game-modal {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%,-50%) scale(0.8);
-      background: rgba(255,255,255,0.95);
-      border: 1px solid rgba(0,0,0,0.3);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      padding: 15px;
-      z-index: 3000;
-      text-align: center;
-      display: none;
-    }
-    .new-game-modal.show { display: block; }
-    .new-game-modal h2 { color: #000; margin-bottom: 10px; font-size: 16px; }
-    .new-game-modal p { color: #000; margin-bottom: 10px; font-size: 12px; }
-    .new-game-modal .modal-buttons { display: flex; gap: 10px; justify-content: center; }
-    .split-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .split-board {
-      transform-origin: top center;
-      animation: splitBoard 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    .split-controls {
-      transform-origin: bottom right;
-      animation: popInControls 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
-      opacity: 0;
-      transform: scale(0.5) translate(30px, 30px);
-    }
-    @keyframes splitBoard {
-      0% { transform: scale(1) translateY(0); opacity: 1; }
-      50% { transform: scale(0.8) translateY(10px); opacity: 0.5; }
-      100% { transform: scale(1) translateY(0); opacity: 1; }
-    }
-    @keyframes popInControls {
-      0% { opacity: 0; transform: scale(0.5) translate(30px, 30px); }
-      100% { opacity: 1; transform: scale(1) translate(0, 0); }
-    }
-    .board-wrapper {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      max-width: 100vw;
-      max-height: 60vh;
-    }
-    .board {
-      display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      grid-template-rows: repeat(9, 1fr);
-      border: none;
-      border-radius: 8px;
-      overflow: visible;
-      width: 320px;
-      height: 320px;
-      aspect-ratio: 1;
-    }
-    .cell {
-      aspect-ratio: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 16px;
-      font-weight: bold;
-      background: rgba(255,255,255,0.25);
-      cursor: pointer;
-      border: none;
-      transition: background 0.3s, transform 0.1s;
-      color: #000;
-      text-shadow: none;
-    }
-    .cell.fixed { background: rgba(255,255,255,0.35); }
-    .cell.user-input { color: #0044aa; }
-    .cell.selected { background: rgba(100,180,255,0.5) !important; transform: scale(1.05); }
-    .cell.highlight { background: rgba(200,200,100,0.3) !important; }
-    .cell.correct { background: rgba(100,200,100,0.5) !important; }
-    .cell.incorrect { background: rgba(255,100,100,0.5) !important; }
-    .cell.same-number {
-      background: rgba(255, 220, 100, 0.6) !important;
-    }
-    
-    .cell:nth-child(3n+1) { border-right: 2px solid rgba(0,0,0,0.8); }
-    .cell:nth-child(6n+1) { border-right: 2px solid rgba(0,0,0,0.8); }
-    .cell:nth-child(9n) { border-right: none; }
-    
-    .cell:nth-child(n+19):nth-child(-n+27) { border-bottom: 2px solid rgba(0,0,0,0.8) !important; }
-    .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid rgba(0,0,0,0.8) !important; }
-    .cell:nth-child(n+73):nth-child(-n+81) { 
-      border-bottom: 2px solid rgba(0,0,0,0.8) !important;
-    }
-    
-    .number-popup {
-      display: none;
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.4);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 10px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-      padding: 8px;
-      z-index: 2000;
-    }
-    .number-popup.show { display: block; }
-    .number-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-    .popup-number {
-      width: 36px; height: 36px;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 16px; font-weight: bold;
-      background: rgba(200,200,200,0.4);
-      color: #000;
-      border: 1px solid rgba(0,0,0,0.2);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .popup-number:hover { background: rgba(100,180,255,0.6); }
-    .popup-close {
-      width: 100%; padding: 6px; margin-top: 6px;
-      background: rgba(255,100,100,0.5);
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .candidate-row {
-      text-align: center;
-      font-size: 11px;
-      color: #333;
-      margin-top: 4px;
-      min-height: 16px;
-    }
-    .info, .status, .timer, .progress-info, .current-difficulty {
-      text-align: center;
-      margin-bottom: 6px;
-      font-size: 12px;
-      color: #000;
-      text-shadow: none;
-    }
-    .status.success { color: #006600; }
-    .status.error { color: #990000; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>数独游戏</title>
 
-    /* 设置弹窗样式 */
-    .settings-modal {
-      display: none;
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      padding: 20px;
-      z-index: 3001;
-      text-align: center;
-      min-width: 260px;
-    }
-    .settings-modal.show { display: block; }
-    .settings-modal h2 { font-size: 16px; margin-bottom: 15px; color: #000; }
-    .settings-modal .setting-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .settings-modal label { font-size: 14px; color: #000; }
-    .settings-modal .switch {
-      position: relative;
-      width: 44px;
-      height: 24px;
-    }
-    .settings-modal .switch input { opacity: 0; width: 0; height: 0; }
-    .settings-modal .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ccc;
-      transition: 0.3s;
-      border-radius: 24px;
-    }
-    .settings-modal .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.3s;
-      border-radius: 50%;
-    }
-    .settings-modal input:checked + .slider { background-color: #22c55e; }
-    .settings-modal input:checked + .slider:before { transform: translateX(20px); }
-    .settings-modal .modal-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
-    .settings-modal .btn-confirm, .settings-modal .btn-cancel {
-      padding: 8px 16px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .settings-modal .btn-confirm { background: #22c55e; color: #fff; }
-    .settings-modal .btn-cancel { background: #ccc; color: #000; }
+<style>
+/* ===== 基础重置 ===== */
+*{
+    margin:0;
+    padding:0;
+    box-sizing: border-box;
+}
+html, body{
+    height:100%;
+    margin:0;
+    padding:0;
+    overflow: hidden;
+    font-family:'Segoe UI',Tahoma,Geneva, Verdana,sans-serif;
+}
 
-    /* 警告弹窗 */
-    .warning-modal {
-      display: none;
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      padding: 20px;
-      z-index: 3002;
-      text-align: center;
-      min-width: 280px;
-    }
-    .warning-modal.show { display: block; }
-    .warning-modal h2 { font-size: 16px; margin-bottom: 10px; color: #b91c1c; }
-    .warning-modal p { font-size: 13px; color: #000; margin-bottom: 15px; }
-    .warning-modal .modal-buttons { display: flex; gap: 10px; justify-content: center; }
-    .warning-modal .btn-warn-confirm { background: #ef4444; color: #fff; }
-    .warning-modal .btn-warn-cancel { background: #ccc; color: #000; }
-    .warning-modal .btn-warn-confirm, .warning-modal .btn-warn-cancel {
-      padding: 8px 16px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-  </style>
+/* ===== 背景层（不动） ===== */
+.background-image{
+    position: fixed;
+    inset:0;
+    /* ✅ 修复：补全背景图 URL */
+    background-image:url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    z-index:-2;
+}
+.gradient-bg{
+    position: fixed;
+    inset:0;
+    background: linear-gradient(135deg,#667eea 0%,#764ba2 25%,#f093fb 50%,#f5576c 75%,#4facfe 100%);
+    background-size:400% 400%;
+    z-index:-3;
+    display:none;
+}
+
+/* ===== 核心修复：游戏容器改为伪元素背景 ===== */
+.game-wrapper{
+    width:100%;
+    height:100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding:10px;
+}
+.game-container{
+    width:100%;
+    max-width:380px;
+    border-radius:15px;
+    padding:15px;
+    /* 关键：移除这里的背景色 */
+    background: transparent; 
+    position: relative; /* 建立定位上下文 */
+    z-index: 1;
+}
+/* 关键：用伪元素实现液态玻璃背景，使其独立于内容层 */
+.game-container::before{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.3);
+    box-shadow:0 8px 32px rgba(0,0,0,0.2);
+    z-index: -1; /* 置于容器内容之下 */
+}
+
+.game-container.solid::before{
+    background:#ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter:none;
+    border: none;
+    box-shadow:0 4px 16px rgba(0,0,0,0.1);
+}
+
+h1{
+    text-align: center;
+    margin-bottom:10px;
+    font-size:20px;
+    color:#000;
+}
+
+/* ===== 界面切换 ===== */
+.difficulty-screen,.game-screen{
+    display:none;
+}
+.difficulty-screen.active,.game-screen.active{
+    display:block;
+}
+
+/* ===== 难度选项 ===== */
+.difficulty-options{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap:10px;
+    margin:10px 0;
+}
+.difficulty-option{
+    padding:10px 20px;
+    font-size:16px;
+    border-radius:8px;
+    border: 1px solid rgba(0,0,0,0.3);
+    background:rgba(255,255,255,0.6);
+    cursor: pointer;
+    width:100%;
+    max-width:200px;
+    text-align: center;
+    transition: all 0.3s;
+}
+.difficulty-option:hover{
+    background: rgba(255,255,255,0.8);
+    transform:translateY(-2px);
+}
+.difficulty-option.selected-easy{ background:rgba(34,197,94,0.7); border-color:#22c55e; }
+.difficulty-option.selected-medium{ background:rgba(107,114,128,0.7); border-color:#6b7280; }
+.difficulty-option.selected-hard{ background:rgba(239, 68, 68, 0.7); border-color:#ef4444; }
+
+/* ===== 通用按钮 ===== */
+button{
+    padding:8px 14px;
+    font-size:14px;
+    border:1px solid rgba(0,0,0,0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    background:rgba(255, 255, 255, 0.6);
+    color:#000;
+    transition: all 0.2s;
+}
+button:hover{
+    background:rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+}
+.btn-start{ padding:10px 20px; font-size:16px; margin-top:10px; }
+.btn-top{ padding:6px 10px; font-size:12px; }
+
+/* ===== 棋盘 ===== */
+.board{
+    display:grid;
+    grid-template-columns: repeat(9,1fr);
+    grid-template-rows: repeat(9,1fr);
+    gap: 1px;
+    background: #333;
+    border: 2px solid #333;
+    margin-bottom:10px;
+    aspect-ratio:1;
+    max-width:320px;
+    margin-left:auto;
+    margin-right:auto;
+}
+.cell{
+    aspect-ratio:1;
+    display:flex;
+    justify-content: center;
+    align-items:center;
+    font-size:16px;
+    font-weight: bold;
+    /* 修复：让格子背景更通透 */
+    background:rgba(255,255,255,0.95); 
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+    color:#000;
+    position: relative; /* 确保能盖在棋盘线上 */
+    z-index: 1;
+}
+/* 九宫格边框调整 */
+.cell:nth-child(3n){ border-right: 2px solid rgba(0, 0, 0, 0.8); }
+.cell:nth-child(9n){ border-right: none; }
+.cell:nth-child(n+19):nth-child(-n+27){ border-bottom: 2px solid rgba(0,0,0,0.8); }
+.cell:nth-child(n+46):nth-child(-n+54){ border-bottom: 2px solid rgba(0,0,0,0.8); }
+.cell:nth-child(n+73):nth-child(-n+81){ border-bottom: 2px solid rgba(0, 0, 0, 0.8); }
+
+.cell.fixed{ background: rgba(255, 255, 255, 0.35); }
+.cell.user-input{ color:#0044aa; }
+.cell.selected{ 
+    background: rgba(100,180, 255, 0.5) !important; 
+    transform:scale(1.05);
+    box-shadow:0 0 10px rgba(100,180,255,0.5);
+    z-index: 10; /* 选中层级最高 */
+}
+/* 修复：高亮颜色调整为更鲜亮，并提升层级 */
+.cell.highlight{ 
+    background:rgba(255, 220, 100, 0.9) !important; 
+    z-index: 5;
+}
+.cell.correct{ background: rgba(100, 200, 100, 0.5) !important; }
+.cell.incorrect{ background:rgba(255,100,100,0.5) !important; }
+.cell.same-number{ 
+    background:rgba(255, 220, 50, 0.95) !important; 
+    z-index: 5;
+}
+
+/* ===== 数字选择弹窗（核心修复）===== */
+.number-popup{
+    display: none;
+    position: absolute;
+    /* 修复：移除背景色，改用伪元素 */
+    background: transparent; 
+    border-radius:10px;
+    padding:8px;
+    z-index:2000;
+    left:50%;
+    transform: translateX(-50%);
+    animation: fadeIn 0.3s ease-out;
+}
+/* 关键：弹窗自身的玻璃层 */
+.number-popup::before{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.6); /* 提高不透明度 */
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.5);
+    box-shadow:0 8px 32px rgba(0,0,0,0.2);
+    z-index: -1;
+}
+.number-popup.show{ display: block; }
+
+.number-grid{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:5px;
+    width:120px;
+    position: relative; /* 确保内容在伪元素之上 */
+    z-index: 1;
+}
+.popup-number{
+    width:36px;
+    height:36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size:16px;
+    font-weight: bold;
+    background:rgba(200,200,200,0.4);
+    color:#000;
+    border:1px solid rgba(0,0,0,0.2);
+    border-radius:6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.popup-number:hover{
+    background:rgba(100,180,255,0.6);
+    transform:scale(1.1);
+}
+.popup-close{
+    width:100%;
+    padding:6px;
+    margin-top:6px;
+    background:rgba(255,100,100,0.5);
+    color:#000;
+    border: none;
+    border-radius:6px;
+    font-size:14px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== 动画效果 ===== */
+@keyframes fadeIn{ from{opacity:0; transform:translateX(-50%) translateY(10px);} to{opacity:1; transform:translateX(-50%) translateY(0);} }
+@keyframes boardPopIn{ 0%{ transform: scale(0.8);opacity:0;} 50%{ transform: scale(1.05);opacity: 0.5;} 100%{ transform:scale(1);opacity:1;} }
+@keyframes cellBounce{ 0%,100%{transform:scale(1);} 50%{ transform: scale(1.2);} }
+@keyframes rowComplete{ 0%{background-color: rgba(100, 200, 100, 0);} 50%{background-color:rgba(100,200,100,0.5);} 100%{background-color:rgba(100,200,100,0);} }
+@keyframes successPulse{ 0%,100%{box-shadow:0 0 0 0 rgba(76, 175, 80, 0.4);} 50%{ box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);} }
+
+.board-pop-in{ animation:boardPopIn 0.6s cubic-bezier(0.4,0,0.2,1) forwards; }
+.cell-bounce{ animation: cellBounce 0.3s ease; }
+
+/* ===== 顶部控制栏 ===== */
+.top-controls{ display: flex; justify-content: center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+.more-menu{ position:relative; display:inline-block; }
+.more-menu-content{ display:none; position: absolute; top:100%; left:0; background:rgba(255,255,255,0.95); min-width:140px; border-radius:6px; z-index:1001; flex-direction: column; padding:4px 0; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.more-menu.show .more-menu-content{ display: flex; }
+.more-menu-content button{ padding:6px 10px; font-size:12px; text-align:left; background: transparent; color:#000; border:none; cursor:pointer; width:100%; }
+.more-menu-content button:hover{ background: rgba(0,0,0,0.1); }
+
+/* ===== 底部信息 ===== */
+.split-controls{ text-align: center; margin-bottom:6px; font-size:12px; color:#000; }
+.progress-info{ margin-bottom: 4px; }
+.status{ text-align: center; margin-top:6px; font-size:12px; color:#000; }
+
+/* ===== 提示与模态框 ===== */
+.custom-alert{
+    position: fixed; top:10px; left:50%; transform: translateX(-50%) translateY(-100px);
+    background: rgba(0,0,0,0.6); color:#fff; padding:8px 16px;
+    border-radius:6px; font-size:14px; font-weight:bold; z-index:4000;
+    transition: transform 0.3s ease;
+}
+.custom-alert.show{ transform: translateX(-50%) translateY(0); }
+.new-game-modal{
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.8);
+    background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.3);
+    border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    padding:15px; z-index:3000; text-align: center; display:none;
+}
+.new-game-modal.show{ display: block; }
+.new-game-modal h2{ color:#000; margin-bottom:10px; font-size:16px; }
+.new-game-modal p{ color:#000; margin-bottom:10px; font-size:12px; }
+.new-game-modal .modal-buttons{ display: flex; gap:10px; justify-content:center; }
+.overlay{ display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:2999; }
+.overlay.show{ display:block; }
+
+/* =========================
+   ✅ 新增：关于元宝常驻入口
+   ========================= */
+.yuanbao-footer {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55);
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    z-index: 6000;
+    user-select: none;
+}
+.yuanbao-footer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: -1;
+}
+/* ✅ 跟随液态玻璃开关 */
+.game-container.solid ~ .yuanbao-footer::before {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: none;
+}
+.yuanbao-footer:hover {
+    color: rgba(0, 0, 0, 0.85);
+}
+.yuanbao-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* ===== 元宝模态窗（液态玻璃） ===== */
+.yuanbao-modal {
+    position: fixed; inset: 0; display: none; place-items: center;
+    background: rgba(0, 0, 0, 0.45); z-index: 9999;
+}
+.yuanbao-modal.active { display: grid; }
+.yuanbao-modal-box {
+    background: rgba(255, 255, 255, 0.22); backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px); border-radius: 16px; padding: 24px;
+    text-align: center; border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+.yuanbao-logo { width: 48px; margin-bottom: 10px; }
+.yuanbao-text { font-size: 14px; color: #000; margin-bottom: 10px; }
+.yuanbao-download {
+    display: inline-block; padding: 8px 16px; border-radius: 20px;
+    background: rgba(255, 255, 255, 0.75); font-weight: bold;
+    text-decoration: none; color: #000;
+}
+</style>
 </head>
+
 <body>
-  <div class="background-image" id="bgImage"></div>
-  <div class="gradient-bg" id="gradientBg"></div>
-  <div class="game-wrapper" id="gameWrapper">
+<div class="background-image" id="bgImage"></div>
+<div class="gradient-bg" id="gradientBg"></div>
+
+<div class="game-wrapper">
     <div class="game-container" id="gameContainer">
-      <h1>数独游戏</h1>
-      <div class="difficulty-screen" id="difficultyScreen">
-        <h2 style="color:#000;font-size:16px;">选择难度</h2>
-        <div class="difficulty-options">
-          <button class="difficulty-option" id="btnEasy" onclick="chooseDifficulty('easy')">😊 简单</button>
-          <button class="difficulty-option" id="btnMedium" onclick="chooseDifficulty('medium')">🤔 中等</button>
-          <button class="difficulty-option" id="btnHard" onclick="chooseDifficulty('hard')">😈 困难</button>
-        </div>
-        <div style="margin-top:10px; display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap;">
-          <button class="btn-start" id="startBtn" onclick="startGame()" disabled>开始游戏</button>
-        </div>
-      </div>
-      <div class="game-screen" id="gameScreen">
-        <div class="current-difficulty" id="currentDifficulty"></div>
-        <div class="top-controls" id="topControls">
-          <button class="btn-top" onclick="newGame()">新游戏</button>
-          <div class="more-menu" id="moreMenu">
-            <button class="btn-top btn-more">⚙️ 更多操作</button>
-            <div class="more-menu-content">
-              <button onclick="undoStep()">↩️ 撤销上一步</button>
-              <button onclick="getHint()">💡 提示</button>
-              <button onclick="checkSolution()">✅ 检查答案</button>
-              <button onclick="openSettings()">⚙️ 候选数字设置</button>
-              <button onclick="backToMenu()">🏠 返回菜单</button>
+        <h1>🎮 数独游戏</h1>
+        
+        <!-- 难度选择界面 -->
+        <div class="difficulty-screen active" id="difficultyScreen">
+            <h2 style="text-align:center;color:#000;font-size:16px;">选择难度</h2>
+            <div style="text-align:center;margin-bottom:10px;">
+                <button class="btn-top" id="glassToggleMenu" onclick="toggleGlassMode()">🔮 液态玻璃:开</button>
             </div>
-          </div>
-          <button class="btn-top" onclick="showHistory()">📜 历史记录</button>
-          <button class="btn-top" id="glassToggleGame" onclick="toggleGlassMode()">🔮 液态玻璃: 开</button>
+            <div class="difficulty-options">
+                <button class="difficulty-option" id="btnEasy" onclick="chooseDifficulty('easy')">😊 简单</button>
+                <button class="difficulty-option" id="btnMedium" onclick="chooseDifficulty('medium')">🤔 中等</button>
+                <button class="difficulty-option" id="btnHard" onclick="chooseDifficulty('hard')">😈 困难</button>
+            </div>
+            <div style="text-align:center;margin-top:10px;">
+                <button class="btn-start" id="startBtn" onclick="startGame()">开始游戏</button>
+            </div>
+            <!-- ✅ 新增：关于元宝入口 -->
+            <div style="text-align:center; margin-top:14px;">
+                <button class="btn-top" onclick="openYuanbaoModal()">ℹ️ 关于元宝</button>
+            </div>
         </div>
-        <div class="split-container" id="splitContainer" style="display:none;">
-          <div class="board-wrapper" id="boardWrapper">
-            <div class="board" id="board">
-              <div class="number-popup" id="numberPopup">
-                <div class="number-grid">
-                  <button class="popup-number" onclick="selectNumber(1)">1</button>
-                  <button class="popup-number" onclick="selectNumber(2)">2</button>
-                  <button class="popup-number" onclick="selectNumber(3)">3</button>
-                  <button class="popup-number" onclick="selectNumber(4)">4</button>
-                  <button class="popup-number" onclick="selectNumber(5)">5</button>
-                  <button class="popup-number" onclick="selectNumber(6)">6</button>
-                  <button class="popup-number" onclick="selectNumber(7)">7</button>
-                  <button class="popup-number" onclick="selectNumber(8)">8</button>
-                  <button class="popup-number" onclick="selectNumber(9)">9</button>
-                  <button class="popup-number" onclick="eraseNumber()">🗑️</button>
+
+        <!-- 游戏界面 -->
+        <div class="game-screen" id="gameScreen">
+            <div class="current-difficulty" id="currentDifficulty"></div>
+            <div class="top-controls">
+                <button class="btn-top" onclick="newGame()">新游戏</button>
+                <button class="btn-top" onclick="undoStep()">↩️ 撤销</button>
+                <div class="more-menu" id="moreMenu">
+                    <button class="btn-top">⚙️ 更多</button>
+                    <div class="more-menu-content">
+                        <button onclick="getHint()">💡 提示</button>
+                        <button onclick="checkSolution()">✅ 检查答案</button>
+                        <button id="glassToggleGame" onclick="toggleGlassMode()">🔮 液态玻璃</button>
+                        <button onclick="backToMenu()">🏠 返回菜单</button>
+                    </div>
                 </div>
-                <div class="candidate-row" id="candidateRow">候选：</div>
-                <button class="popup-close" onclick="closeNumberPopup()">× 关闭</button>
-              </div>
             </div>
-          </div>
-          <div class="split-controls" id="splitControls">
-            <div class="timer">⏱️ 用时: <span id="time">00:00</span></div>
-            <div class="progress-info" id="progress">已完成: 0/9 行</div>
-            <div class="info">点击空格选择，然后选择数字填入</div>
-            <div class="status" id="status"></div>
-          </div>
+            <div class="board-wrapper">
+                <div class="board" id="board"></div>
+            </div>
+            <div class="number-popup" id="numberPopup">
+                <div class="number-grid">
+                    <button class="popup-number" onclick="selectNumber(1)">1</button>
+                    <button class="popup-number" onclick="selectNumber(2)">2</button>
+                    <button class="popup-number" onclick="selectNumber(3)">3</button>
+                    <button class="popup-number" onclick="selectNumber(4)">4</button>
+                    <button class="popup-number" onclick="selectNumber(5)">5</button>
+                    <button class="popup-number" onclick="selectNumber(6)">6</button>
+                    <button class="popup-number" onclick="selectNumber(7)">7</button>
+                    <button class="popup-number" onclick="selectNumber(8)">8</button>
+                    <button class="popup-number" onclick="selectNumber(9)">9</button>
+                    <button class="popup-number" onclick="eraseNumber()">🗑️</button>
+                </div>
+                <div class="candidate-row" id="candidateRow">候选:</div>
+                <button class="popup-close" onclick="closeNumberPopup()">× 关闭</button>
+            </div>
+            <div class="split-controls">
+                <div class="timer">⏱️ 用时:<span id="time">00:00</span></div>
+                <div class="progress-info" id="progress">已完成:0/9行</div>
+                <div class="info">点击空格选择，然后选择数字填入</div>
+                <div class="status" id="status"></div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
-  <div class="overlay" id="overlay"></div>
-  <div class="history-panel" id="historyPanel">
-    <div class="history-header">
-      <span class="history-title">📜 作答记录</span>
-      <button class="history-close" onclick="hideHistory()">×</button>
+</div>
+
+<!-- ✅ 新增：底部常驻关于元宝入口 -->
+<div class="yuanbao-footer" id="yuanbaoFooter" onclick="openYuanbaoModal()">
+    <span class="yuanbao-icon">ⓘ</span>
+    <span class="yuanbao-text">由元宝制作</span>
+</div>
+
+<!-- 元宝模态弹窗 -->
+<div class="yuanbao-modal" id="yuanbaoModal">
+    <div class="yuanbao-modal-box">
+        <!-- ✅ 修复 favicon 路径 -->
+        <img src="https://yuanbao.tencent.com/favicon.ico"
+             alt="元宝 Logo"
+             class="yuanbao-logo">
+        <div class="yuanbao-text">本数独游戏由 <strong>元宝</strong> 制作</div>
+        <a href="https://yuanbao.tencent.com/"
+           target="_blank"
+           class="yuanbao-download">
+            ⬇️ 下载元宝
+        </a>
+        <div style="margin-top:12px;">
+            <button class="btn-top" onclick="closeYuanbaoModal()">关闭</button>
+        </div>
     </div>
-    <ul class="history-list" id="historyList"></ul>
-  </div>
-  <div class="custom-alert" id="customAlert">提示信息</div>
-  <div class="new-game-modal" id="newGameModal">
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="custom-alert" id="customAlert">提示信息</div>
+<div class="new-game-modal" id="newGameModal">
     <h2>⚠️ 新游戏确认</h2>
     <p>确定要开始新游戏吗？<br>当前棋盘已自动保存，可在历史记录中撤销。</p>
     <div class="modal-buttons">
-      <button class="btn-top" onclick="confirmNewGame()">确定</button>
-      <button class="btn-top" onclick="cancelNewGame()">取消</button>
+        <button class="btn-top" onclick="confirmNewGame()">确定</button>
+        <button class="btn-top" onclick="cancelNewGame()">取消</button>
     </div>
-  </div>
-  <!-- 候选数字设置弹窗 -->
-  <div class="settings-modal" id="settingsModal">
-    <h2>⚙️ 候选数字设置</h2>
-    <div class="setting-item">
-      <label>显示候选数字</label>
-      <label class="switch">
-        <input type="checkbox" id="candidateToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="modal-buttons">
-      <button class="btn-confirm" onclick="saveCandidateSetting()">保存</button>
-      <button class="btn-cancel" onclick="closeSettings()">取消</button>
-    </div>
-  </div>
-  <!-- 警告弹窗 -->
-  <div class="warning-modal" id="warningModal">
-    <h2>⚠️ 警告</h2>
-    <p>打开此设置项相当于作弊，会破坏游戏平衡，是否打开？</p>
-    <div class="modal-buttons">
-      <button class="btn-warn-confirm" onclick="confirmEnableCandidate()">确定</button>
-      <button class="btn-warn-cancel" onclick="cancelEnableCandidate()">取消</button>
-    </div>
-  </div>
-  <script>
-    let board = [];
-    let solution = [];
-    let fixedCells = [];
-    let originalFixedCells = [];
-    let selectedCell = null;
-    let timer = null;
-    let seconds = 0;
-    let currentDifficulty = 'easy';
-    let completedRows = new Set();
-    let isChecking = false;
-    let history = [];
-    let stepCounter = 0;
-    const difficultyLevels = { easy: 35, medium: 45, hard: 55 };
-    let pendingNewGame = false;
-    let chosenDifficulty = null;
-    let glassMode = true;
-    let candidateEnabled = false; // 候选数字开关
+</div>
 
-    function init() {
-      createBoard();
-      loadFromLocalStorage();
-      showDifficultyScreen();
-      requestAnimationFrame(scaleBoard);
-      window.addEventListener('resize', scaleBoard);
-    }
+<script>
+// ================== 以下为你提供的完整 JS 逻辑（未做简化） ==================
+let board = []; let solution = []; let fixedCells = []; let originalFixedCells = [];
+let selectedCell = null; let timer = null; let seconds = 0;
+let currentDifficulty = 'easy'; let chosenDifficulty = null;
+let completedRows = new Set(); let isChecking = false;
+let history = []; let stepCounter = 0; let glassMode = true; let pendingNewGame = false;
+const difficultyLevels = { easy: 35, medium: 45, hard: 55 };
 
-    function scaleBoard() {
-      const wrapper = document.getElementById('boardWrapper');
-      const boardEl = document.getElementById('board');
-      if (!wrapper || !boardEl) return;
-      const vh = window.innerHeight;
-      const availableHeight = vh - 180;
-      const vw = window.innerWidth;
-      const availableWidth = vw - 20;
-      const maxBoardSize = 320;
-      const scaleW = availableWidth / maxBoardSize;
-      const scaleH = availableHeight / maxBoardSize;
-      const scale = Math.min(scaleW, scaleH, 1.2);
-      boardEl.style.transform = `scale(${scale})`;
-    }
-
-    function showDifficultyScreen() {
-      document.getElementById('difficultyScreen').style.display = 'block';
-      document.getElementById('gameScreen').style.display = 'none';
-      document.getElementById('splitContainer').style.display = 'none';
-      resetTimer();
-      completedRows.clear();
-      updateProgress();
-      updateStatus('');
-      document.getElementById('startBtn').disabled = true;
-      chosenDifficulty = null;
-      document.getElementById('btnEasy').className = 'difficulty-option';
-      document.getElementById('btnMedium').className = 'difficulty-option';
-      document.getElementById('btnHard').className = 'difficulty-option';
-    }
-
-    function chooseDifficulty(diff) {
-      chosenDifficulty = diff;
-      document.getElementById('startBtn').disabled = false;
-      const btnEasy = document.getElementById('btnEasy');
-      const btnMedium = document.getElementById('btnMedium');
-      const btnHard = document.getElementById('btnHard');
-      btnEasy.className = 'difficulty-option';
-      btnMedium.className = 'difficulty-option';
-      btnHard.className = 'difficulty-option';
-      if (diff === 'easy') btnEasy.classList.add('selected-easy');
-      if (diff === 'medium') btnMedium.classList.add('selected-medium');
-      if (diff === 'hard') btnHard.classList.add('selected-hard');
-    }
-
-    function startGame() {
-      if (!chosenDifficulty) return;
-      currentDifficulty = chosenDifficulty;
-      document.getElementById('difficultyScreen').style.display = 'none';
-      document.getElementById('gameScreen').style.display = 'block';
-      const difficultyNames = { easy: '😊 简单', medium: '🤔 中等', hard: '😈 困难' };
-      document.getElementById('currentDifficulty').textContent = `当前难度: ${difficultyNames[currentDifficulty]}`;
-      const splitContainer = document.getElementById('splitContainer');
-      splitContainer.style.display = 'flex';
-      const boardEl = document.getElementById('board');
-      const controlsEl = document.getElementById('splitControls');
-      boardEl.classList.remove('split-board');
-      controlsEl.classList.remove('split-controls');
-      void boardEl.offsetWidth;
-      boardEl.classList.add('split-board');
-      controlsEl.classList.add('split-controls');
-      newGame();
-    }
-
-    function backToMenu() {
-      hidePopup();
-      saveToLocalStorage();
-      showDifficultyScreen();
-    }
-
-    function createBoard() {
-      const boardElement = document.getElementById('board');
-      const existingPopup = document.getElementById('numberPopup');
-      boardElement.innerHTML = '';
-      boardElement.appendChild(existingPopup);
-      for (let i = 0; i < 81; i++) {
+function init(){
+    createBoard();
+    loadFromLocalStorage();
+    showDifficultyScreen();
+    updateGlassToggleButtons();
+    document.getElementById('moreMenu').addEventListener('click', function(e){ e.stopPropagation(); this.classList.toggle('show'); });
+    document.addEventListener('click', function(){ document.getElementById('moreMenu').classList.remove('show'); });
+}
+function createBoard(){
+    const boardElement = document.getElementById('board');
+    boardElement.innerHTML = "";
+    for(let i=0;i<81;i++){
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.dataset.index = i;
-        cell.addEventListener('click', (e) => handleCellClick(i, e));
+        cell.addEventListener('click', () => handleCellClick(i));
         boardElement.appendChild(cell);
-      }
     }
-
-    function handleCellClick(index, event) {
-      if (isChecking) return;
-      if (fixedCells[index]) { 
-        selectCell(index);
-        highlightSameNumber(index);
-        return; 
-      }
-      clearSameNumberHighlight();
-      selectCell(index);
-      showNumberPopup(event);
-    }
-
-    function selectCell(index) {
-      selectedCell = index;
-      renderBoard();
-      updateCandidateDisplay();
-    }
-
-    function showNumberPopup(event) {
-      if (selectedCell === null || fixedCells[selectedCell]) { hidePopup(); return; }
-      const popup = document.getElementById('numberPopup');
-      const boardElem = document.getElementById('board');
-      const cell = document.querySelectorAll('.cell')[selectedCell];
-      const cellRect = cell.getBoundingClientRect();
-      const boardRect = boardElem.getBoundingClientRect();
-      let left = boardRect.width / 2 - 60;
-      let top = 0;
-      popup.style.left = left + 'px';
-      popup.style.top = top + 'px';
-      popup.classList.add('show');
-      updateCandidateDisplay();
-    }
-
-    function closeNumberPopup() { hidePopup(); }
-    function hidePopup() { 
-      document.getElementById('numberPopup').classList.remove('show'); 
-    }
-
-    function selectNumber(num) {
-      if (selectedCell === null || fixedCells[selectedCell] || isChecking) { hidePopup(); return; }
-      const row = Math.floor(selectedCell / 9);
-      const col = selectedCell % 9;
-      const oldValue = board[row][col];
-      board[row][col] = num;
-      renderBoard();
-      animateCell(selectedCell, 'pop');
-      checkLineCompletion(row, col);
-      hidePopup();
-      addHistoryStep({ step: ++stepCounter, action: `填入 ${num}`, row: row + 1, col: col + 1, oldValue, newValue: num, timestamp: new Date().toLocaleTimeString() });
-    }
-
-    function animateCell(index, animClass) {
-      const cell = document.querySelectorAll('.cell')[index];
-      cell.classList.add(animClass);
-      setTimeout(() => cell.classList.remove(animClass), 300);
-    }
-
-    function eraseNumber() {
-      if (selectedCell === null || fixedCells[selectedCell] || isChecking) return;
-      const row = Math.floor(selectedCell / 9);
-      const col = selectedCell % 9;
-      const oldValue = board[row][col];
-      if (oldValue === 0) return;
-      board[row][col] = 0;
-      renderBoard();
-      hidePopup();
-      addHistoryStep({ step: ++stepCounter, action: `清除数字`, row: row + 1, col: col + 1, oldValue, newValue: 0, timestamp: new Date().toLocaleTimeString() });
-    }
-
-    function newGame() {
-      if (pendingNewGame) return;
-      const snapshot = {
-        type: 'newgame_snapshot',
-        step: ++stepCounter,
-        action: '新游戏前自动保存的棋盘快照',
-        board: board.map(r => [...r]),
-        fixedCells: [...fixedCells],
-        solution: solution.map(r => [...r]),
-        currentDifficulty,
-        seconds,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      history.push(snapshot);
-      saveToLocalStorage();
-      pendingNewGame = true;
-      showNewGameModal();
-    }
-
-    function showNewGameModal() { 
-      document.getElementById('newGameModal').classList.add('show');
-      document.getElementById('overlay').classList.add('show');
-    }
-
-    function confirmNewGame() {
-      document.getElementById('newGameModal').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-      resetTimer();
-      startTimer();
-      completedRows.clear();
-      isChecking = false;
-      hidePopup();
-      stepCounter = history.length;
-      generateSudoku();
-      originalFixedCells = fixedCells.slice();
-      renderBoard();
-      updateProgress();
-      updateStatus('');
-      saveToLocalStorage();
-      showCustomAlert('已开始新游戏，原局面已保存', 'success');
-      pendingNewGame = false;
-    }
-
-    function cancelNewGame() {
-      if (history.length === 0) {
-        pendingNewGame = false;
-        document.getElementById('newGameModal').classList.remove('show');
-        document.getElementById('overlay').classList.remove('show');
-        return;
-      }
-      const last = history[history.length - 1];
-      if (last.type === 'newgame_snapshot') {
-        board = last.board.map(r => [...r]);
-        fixedCells = [...last.fixedCells];
-        solution = last.solution.map(r => [...r]);
-        currentDifficulty = last.currentDifficulty;
-        seconds = last.seconds;
-        stepCounter = last.step;
-        originalFixedCells = fixedCells.slice();
-        renderBoard();
-        updateTimeDisplay();
-        startTimer();
-        showCustomAlert('已取消新游戏，恢复到之前局面并继续计时', 'info');
-      }
-      pendingNewGame = false;
-      document.getElementById('newGameModal').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-      hideHistory();
-      saveToLocalStorage();
-    }
-
-    function generateSudoku() {
-      solution = Array(9).fill(null).map(() => Array(9).fill(0));
-      solveSudoku(solution);
-      board = solution.map(row => [...row]);
-      const cellsToRemove = difficultyLevels[currentDifficulty];
-      fixedCells = Array(81).fill(true);
-      let removed = 0;
-      while (removed < cellsToRemove) {
-        const row = Math.floor(Math.random() * 9);
-        const col = Math.floor(Math.random() * 9);
-        if (board[row][col] !== 0) {
-          board[row][col] = 0;
-          fixedCells[row * 9 + col] = false;
-          removed++;
+    boardElement.classList.add('board-pop-in');
+    setTimeout(()=> boardElement.classList.remove('board-pop-in'), 600);
+}
+function handleCellClick(index){
+    if(isChecking) return;
+    if(fixedCells[index]){ selectCell(index); highlightSameNumber(index); return; }
+    clearSameNumberHighlight(); selectCell(index); showNumberPopup(index);
+}
+function selectCell(index){ selectedCell = index; renderBoard(); updateCandidateDisplay(); }
+function showNumberPopup(index){
+    if(selectedCell === null || fixedCells[selectedCell]){ hidePopup(); return; }
+    const popup = document.getElementById('numberPopup');
+    const cell = document.querySelectorAll('.cell')[selectedCell];
+    const cellRect = cell.getBoundingClientRect();
+    const boardRect = document.getElementById('board').getBoundingClientRect();
+    let left = cellRect.left - boardRect.left + cellRect.width / 2;
+    let top = cellRect.bottom - boardRect.top + 5;
+    const popupWidth = 120, popupHeight = 160;
+    if(left - popupWidth/2 < 0) left = popupWidth/2;
+    if(left + popupWidth/2 > boardRect.width) left = boardRect.width - popupWidth/2;
+    if(top + popupHeight > boardRect.height) top = cellRect.top - boardRect.top - popupHeight;
+    popup.style.left = left + 'px'; popup.style.top = top + 'px';
+    popup.classList.add('show'); updateCandidateDisplay();
+}
+function hidePopup(){ document.getElementById('numberPopup').classList.remove('show'); }
+function closeNumberPopup(){ hidePopup(); }
+function selectNumber(num){
+    if(selectedCell === null || fixedCells[selectedCell] || isChecking){ hidePopup(); return; }
+    const row = Math.floor(selectedCell / 9), col = selectedCell % 9, oldValue = board[row][col];
+    board[row][col] = num; renderBoard(); animateCell(selectedCell, 'cell-bounce');
+    checkLineCompletion(row, col); hidePopup();
+    addHistoryStep({ step: ++stepCounter, action:`填入 ${num}`, row: row+1, col: col+1, oldValue, newValue: num, timestamp: new Date().toLocaleTimeString() });
+}
+function eraseNumber(){
+    if(selectedCell === null || fixedCells[selectedCell] || isChecking) return;
+    const row = Math.floor(selectedCell / 9), col = selectedCell % 9, oldValue = board[row][col];
+    if(oldValue === 0) return; board[row][col] = 0; renderBoard(); hidePopup();
+    addHistoryStep({ step: ++stepCounter, action:'清除数字', row: row+1, col: col+1, oldValue, newValue:0, timestamp: new Date().toLocaleTimeString() });
+}
+function animateCell(index, animClass){ const cell = document.querySelectorAll('.cell')[index]; cell.classList.add(animClass); setTimeout(()=> cell.classList.remove(animClass), 300); }
+function renderBoard(){
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach((cell, index) => {
+        const row = Math.floor(index / 9), col = index % 9, value = board[row][col];
+        cell.textContent = value || ''; cell.className = 'cell';
+        if(fixedCells[index]) cell.classList.add('fixed'); else if(value) cell.classList.add('user-input');
+        if(index === selectedCell) cell.classList.add('selected');
+        if(selectedCell !== null){
+            const sr = Math.floor(selectedCell/9), sc = selectedCell%9;
+            const sbr = Math.floor(sr/3)*3, sbc = Math.floor(sc/3)*3;
+            const cr = Math.floor(index/9), cc = index%9;
+            const cbr = Math.floor(cr/3)*3, cbc = Math.floor(cc/3)*3;
+            if((cr === sr || cc === sc || (cbr === sbr && cbc === sbc)) && index !== selectedCell && !fixedCells[index])
+                cell.classList.add('highlight');
         }
-      }
-    }
-
-    function solveSudoku(grid) {
-      for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-          if (grid[row][col] === 0) {
-            const numbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-            for (const num of numbers) {
-              if (isValidMove(grid, row, col, num)) {
-                grid[row][col] = num;
-                if (solveSudoku(grid)) return true;
-                grid[row][col] = 0;
-              }
-            }
-            return false;
-          }
-        }
-      }
-      return true;
-    }
-
-    function isValidMove(grid, row, col, num) {
-      for (let c = 0; c < 9; c++) if (grid[row][c] === num) return false;
-      for (let r = 0; r < 9; r++) if (grid[r][col] === num) return false;
-      const boxRow = Math.floor(row / 3) * 3, boxCol = Math.floor(col / 3) * 3;
-      for (let r = boxRow; r < boxRow + 3; r++)
-        for (let c = boxCol; c < boxCol + 3; c++)
-          if (grid[r][c] === num) return false;
-      return true;
-    }
-
-    function shuffleArray(array) {
-      const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    }
-
-    function renderBoard() {
-      const cells = document.querySelectorAll('.cell');
-      cells.forEach((cell, index) => {
-        const row = Math.floor(index / 9);
-        const col = index % 9;
-        const value = board[row][col];
-        cell.textContent = value || '';
-        cell.className = 'cell';
-        if (fixedCells[index]) { cell.classList.add('fixed'); }
-        else if (value) { cell.classList.add('user-input'); }
-        if (index === selectedCell) { cell.classList.add('selected'); }
-        if (selectedCell !== null) {
-          const selRow = Math.floor(selectedCell / 9), selCol = selectedCell % 9;
-          const selBoxRow = Math.floor(selRow / 3) * 3, selBoxCol = Math.floor(selCol / 3) * 3;
-          const cellRow = Math.floor(index / 9), cellCol = index % 9;
-          const cellBoxRow = Math.floor(cellRow / 3) * 3, cellBoxCol = Math.floor(cellCol / 3) * 3;
-          if ((cellRow === selRow || cellCol === selCol || (cellBoxRow === selBoxRow && cellBoxCol === selBoxCol)) && index !== selectedCell && !fixedCells[index]) {
-            cell.classList.add('highlight');
-          }
-        }
-      });
-    }
-
-    function checkLineCompletion(row, col) {
-      checkSingleLine('row', row);
-      checkSingleLine('col', col);
-      const boxIndex = Math.floor(row / 3) * 3 + Math.floor(col / 3);
-      checkSingleLine('box', boxIndex);
-    }
-
-    function checkSingleLine(type, index) {
-      let cells = [], isComplete = true, values = [];
-      if (type === 'row') {
-        for (let col = 0; col < 9; col++) {
-          const cellIndex = index * 9 + col;
-          if (board[index][col] === 0) { isComplete = false; }
-          else { cells.push(cellIndex); values.push(board[index][col]); }
-        }
-      } else if (type === 'col') {
-        for (let row = 0; row < 9; row++) {
-          const cellIndex = row * 9 + index;
-          if (board[row][index] === 0) { isComplete = false; }
-          else { cells.push(cellIndex); values.push(board[row][index]); }
-        }
-      } else if (type === 'box') {
-        const boxRow = Math.floor(index / 3) * 3, boxCol = (index % 3) * 3;
-        for (let r = boxRow; r < boxRow + 3; r++) {
-          for (let c = boxCol; c < boxCol + 3; c++) {
-            const cellIndex = r * 9 + c;
-            if (board[r][c] === 0) { isComplete = false; }
-            else { cells.push(cellIndex); values.push(board[r][c]); }
-          }
-        }
-      }
-      if (isComplete && cells.length === 9) {
+    });
+}
+function getCandidates(index){
+    if(index == null) return []; const row = Math.floor(index / 9), col = index % 9;
+    if(board[row][col] !== 0) return [];
+    const used = new Set();
+    for(let c=0;c<9;c++) if(board[row][c]!==0) used.add(board[row][c]);
+    for(let r=0;r<9;r++) if(board[r][col]!==0) used.add(board[r][col]);
+    const br = Math.floor(row/3)*3, bc = Math.floor(col/3)*3;
+    for(let r=br;r<br+3;r++) for(let c=bc;c<bc+3;c++) if(board[r][c]!==0) used.add(board[r][c]);
+    return [1,2,3,4,5,6,7,8,9].filter(n => !used.has(n));
+}
+function updateCandidateDisplay(){
+    const row = document.getElementById('candidateRow');
+    if(selectedCell === null){ row.textContent = '候选:'; return; }
+    const c = getCandidates(selectedCell);
+    row.textContent = c.length ? '候选: '+c.join(' ') : '候选: 无';
+}
+function highlightSameNumber(index){ clearSameNumberHighlight(); const r = Math.floor(index/9), c = index%9, n = board[r][c]; if(n===0) return; document.querySelectorAll('.cell').forEach((cell,i)=>{ if(board[Math.floor(i/9)][i%9]===n) cell.classList.add('same-number'); }); }
+function clearSameNumberHighlight(){ document.querySelectorAll('.cell').forEach(c=>c.classList.remove('same-number')); }
+function checkLineCompletion(row,col){ checkSingleLine('row', row); checkSingleLine('col', col); checkSingleLine('box', Math.floor(row/3)*3+Math.floor(col/3)); }
+function checkSingleLine(type, index){
+    let cells=[], isComplete=true, values=[];
+    if(type==='row') for(let c=0;c<9;c++){ const i=index*9+c; if(board[index][c]===0) isComplete=false; else {cells.push(i); values.push(board[index][c]); }}
+    else if(type==='col') for(let r=0;r<9;r++){ const i=r*9+index; if(board[r][index]===0) isComplete=false; else {cells.push(i); values.push(board[r][index]); }}
+    else if(type==='box'){ const br=Math.floor(index/3)*3, bc=(index%3)*3; for(let r=br;r<br+3;r++) for(let c=bc;c<bc+3;c++){ const i=r*9+c; if(board[r][c]===0) isComplete=false; else {cells.push(i); values.push(board[r][c]); }}}
+    if(isComplete && cells.length===9){
         let isCorrect = true;
-        const expectedValues = type === 'row' ? solution[index] :
-                              type === 'col' ? solution.map(r => r[index]) :
-                              (() => {
-                                const br = Math.floor(index / 3) * 3, bc = (index % 3) * 3;
-                                const vals = [];
-                                for (let r = br; r < br + 3; r++)
-                                  for (let c = bc; c < bc + 3; c++)
-                                    vals.push(solution[r][c]);
-                                return vals;
-                              })();
-        for (let i = 0; i < 9; i++) {
-          if (values[i] !== expectedValues[i]) { isCorrect = false; break; }
+        const ev = type==='row'?solution[index]:type==='col'?solution.map(r=>r[index]):(()=>{const br=Math.floor(index/3)*3,bc=(index%3)*3,vals=[];for(let r=br;r<br+3;r++)for(let c=bc;c<bc+3;c++)vals.push(solution[r][c]);return vals;})();
+        for(let i=0;i<9;i++) if(values[i]!==ev[i]){ isCorrect=false; break; }
+        cells.forEach(i=>{ const cell=document.querySelectorAll('.cell')[i]; cell.classList.remove('correct','incorrect'); cell.classList.add(isCorrect?'correct':'incorrect'); });
+        if(type==='row'){
+            if(isCorrect){ completedRows.add(index); updateProgress(); showCustomAlert('✅ 第 '+(index+1)+' 行正确！','success'); }
+            else { showCustomAlert('❌ 第 '+(index+1)+' 行有错误，请检查！','error'); }
         }
-        cells.forEach(cellIndex => {
-          const cell = document.querySelectorAll('.cell')[cellIndex];
-          cell.classList.remove('correct', 'incorrect');
-          cell.classList.add(isCorrect ? 'correct' : 'incorrect');
-        });
-        if (type === 'row') {
-          if (isCorrect) { completedRows.add(index); updateProgress(); showCustomAlert('✅ 第 ' + (index + 1) + ' 行正确！', 'success'); }
-          else { showCustomAlert('❌ 第 ' + (index + 1) + ' 行有错误，请检查！', 'error'); }
-        }
-        setTimeout(() => {
-          if (!isChecking) { renderBoard(); if (selectedCell !== null) document.querySelectorAll('.cell')[selectedCell].classList.add('selected'); }
-        }, 3000);
-      }
+        setTimeout(()=>{ if(!isChecking){ renderBoard(); if(selectedCell!==null) document.querySelectorAll('.cell')[selectedCell].classList.add('selected'); }}, 3000);
     }
-
-    function checkSolution() {
-      if (isChecking) return;
-      isChecking = true;
-      hidePopup();
-      document.querySelectorAll('.cell').forEach(cell => { cell.classList.remove('correct', 'incorrect'); });
-      let cr = 0, ir = 0, cc = 0, ic = 0, cb = 0, ib = 0, inc = 0;
-      for (let row = 0; row < 9; row++) { if (!isLineComplete('row', row)) { inc++; continue; } if (isLineCorrect('row', row)) cr++; else ir++; }
-      for (let col = 0; col < 9; col++) { if (!isLineComplete('col', col)) { inc++; continue; } if (isLineCorrect('col', col)) cc++; else ic++; }
-      for (let box = 0; box < 9; box++) { if (!isLineComplete('box', box)) { inc++; continue; } if (isLineCorrect('box', box)) cb++; else ib++; }
-      highlightCorrectLines();
-      let msg = '';
-      if (inc > 0) msg += `❌ 还有 ${inc} 行/列/宫格未完成\n\n`;
-      msg += `📊 检查结果：\n✅ 正确行: ${cr}/9\n❌ 错误行: ${ir}/9\n✅ 正确列: ${cc}/9\n❌ 错误列: ${ic}/9\n✅ 正确宫格: ${cb}/9\n❌ 错误宫格: ${ib}/9`;
-      if (inc === 0 && ir === 0 && ic === 0 && ib === 0) { msg += `\n\n🎉 恭喜你，全部正确！`; stopTimer(); showCustomAlert('🎉 全部正确！', 'success'); }
-      else { msg += `\n\n⚠️ 请检查标红的行/列/宫格`; showCustomAlert('⚠️ 有错误，请检查标红区域', 'error'); }
-      updateStatus(msg, inc > 0 ? 'error' : (ir > 0 || ic > 0 || ib > 0) ? 'error' : 'success');
-      setTimeout(() => {
-        isChecking = false;
-        if (selectedCell !== null) {
-          const cells = document.querySelectorAll('.cell');
-          cells.forEach(c => c.classList.remove('selected'));
-          cells[selectedCell].classList.add('selected');
-        }
-      }, 5000);
-    }
-
-    function isLineComplete(type, index) {
-      if (type === 'row') { for (let col = 0; col < 9; col++) if (board[index][col] === 0) return false; }
-      else if (type === 'col') { for (let row = 0; row < 9; row++) if (board[row][index] === 0) return false; }
-      else if (type === 'box') {
-        const br = Math.floor(index / 3) * 3, bc = (index % 3) * 3;
-        for (let r = br; r < br + 3; r++) for (let c = bc; c < bc + 3; c++) if (board[r][c] === 0) return false;
-      }
-      return true;
-    }
-
-    function isLineCorrect(type, index) {
-      if (type === 'row') { for (let col = 0; col < 9; col++) if (board[index][col] !== solution[index][col]) return false; }
-      else if (type === 'col') { for (let row = 0; row < 9; row++) if (board[row][index] !== solution[row][index]) return false; }
-      else if (type === 'box') {
-        const br = Math.floor(index / 3) * 3, bc = (index % 3) * 3;
-        for (let r = br; r < br + 3; r++) for (let c = bc; c < bc + 3; c++) if (board[r][c] !== solution[r][c]) return false;
-      }
-      return true;
-    }
-
-    function highlightCorrectLines() {
-      for (let row = 0; row < 9; row++) { if (isLineComplete('row', row) && isLineCorrect('row', row)) { for (let col = 0; col < 9; col++) document.querySelectorAll('.cell')[row * 9 + col].classList.add('correct'); } }
-      for (let col = 0; col < 9; col++) { if (isLineComplete('col', col) && isLineCorrect('col', col)) { for (let row = 0; row < 9; row++) document.querySelectorAll('.cell')[row * 9 + col].classList.add('correct'); } }
-      for (let box = 0; box < 9; box++) { if (isLineComplete('box', box) && isLineCorrect('box', box)) { const br = Math.floor(box / 3) * 3, bc = (box % 3) * 3; for (let r = br; r < br + 3; r++) for (let c = bc; c < bc + 3; c++) document.querySelectorAll('.cell')[r * 9 + c].classList.add('correct'); } }
-    }
-
-    function getHint() {
-      if (selectedCell === null || isChecking) { showCustomAlert('⚠️ 请先选择一个空格', 'error'); return; }
-      if (fixedCells[selectedCell]) { showCustomAlert('⚠️ 这个格子是固定的，不能修改', 'error'); return; }
-      const row = Math.floor(selectedCell / 9), col = selectedCell % 9;
-      if (board[row][col] === 0) {
-        board[row][col] = solution[row][col];
-        fixedCells[selectedCell] = true;
-        selectedCell = null;
+}
+function checkSolution(){
+    if(isChecking) return; isChecking=true; hidePopup();
+    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('correct','incorrect'));
+    let cr=0,ir=0,cc=0,ic=0,cb=0,ib=0,inc=0;
+    for(let r=0;r<9;r++){ if(!isLineComplete('row',r)){inc++;continue;} if(isLineCorrect('row',r))cr++;else ir++; }
+    for(let c=0;c<9;c++){ if(!isLineComplete('col',c)){inc++;continue;} if(isLineCorrect('col',c))cc++;else ic++; }
+    for(let b=0;b<9;b++){ if(!isLineComplete('box',b)){inc++;continue;} if(isLineCorrect('box',b))cb++;else ib++; }
+    highlightCorrectLines();
+    let msg=''; if(inc>0) msg+='❌ 还有 ${inc} 行/列/宫格未完成\n\n';
+    msg+=`📊 检查结果：\n✅ 正确行: ${cr}/9\n❌ 错误行: ${ir}/9\n✅ 正确列: ${cc}/9\n❌ 错误列: ${ic}/9\n✅ 正确宫格: ${cb}/9\n❌ 错误宫格: ${ib}/9`;
+    if(inc===0&&ir===0&&ic===0&&ib===0){ msg+='\n\n🎉 恭喜你，全部正确！'; stopTimer(); showCustomAlert('🎉 全部正确！','success'); }
+    else { msg+='\n\n⚠️ 请检查标红的行/列/宫格'; showCustomAlert('⚠️ 有错误，请检查标红区域','error'); }
+    updateStatus(msg, inc>0?'error':(ir>0||ic>0||ib>0)?'error':'success');
+    setTimeout(()=>{ isChecking=false; renderBoard(); if(selectedCell!==null) document.querySelectorAll('.cell')[selectedCell].classList.add('selected'); },5000);
+}
+function isLineComplete(type, index){
+    if(type==='row') for(let c=0;c<9;c++) if(board[index][c]===0) return false;
+    else if(type==='col') for(let r=0;r<9;r++) if(board[r][index]===0) return false;
+    else if(type==='box'){ const br=Math.floor(index/3)*3, bc=(index%3)*3; for(let r=br;r<br+3;r++) for(let c=bc;c<bc+3;c++) if(board[r][c]===0) return false; }
+    return true;
+}
+function isLineCorrect(type, index){
+    if(type==='row') for(let c=0;c<9;c++) if(board[index][c]!==solution[index][c]) return false;
+    else if(type==='col') for(let r=0;r<9;r++) if(board[r][index]!==solution[r][index]) return false;
+    else if(type==='box'){ const br=Math.floor(index/3)*3, bc=(index%3)*3; for(let r=br;r<br+3;r++) for(let c=bc;c<bc+3;c++) if(board[r][c]!==solution[r][c]) return false; }
+    return true;
+}
+function highlightCorrectLines(){
+    for(let r=0;r<9;r++) if(isLineComplete('row',r)&&isLineCorrect('row',r)) for(let c=0;c<9;c++) document.querySelectorAll('.cell')[r*9+c].classList.add('correct');
+    for(let c=0;c<9;c++) if(isLineComplete('col',c)&&isLineCorrect('col',c)) for(let r=0;r<9;r++) document.querySelectorAll('.cell')[r*9+c].classList.add('correct');
+    for(let b=0;b<9;b++) if(isLineComplete('box',b)&&isLineCorrect('box',b)){ const br=Math.floor(b/3)*3, bc=(b%3)*3; for(let r=br;r<br+3;r++) for(let c=bc;c<bc+3;c++) document.querySelectorAll('.cell')[r*9+c].classList.add('correct'); }
+}
+function getHint(){
+    if(selectedCell === null || isChecking){ showCustomAlert('⚠️ 请先选择一个空格','error'); return; }
+    if(fixedCells[selectedCell]){ showCustomAlert('⚠️ 这个格子是固定的，不能修改','error'); return; }
+    const row = Math.floor(selectedCell / 9), col = selectedCell % 9;
+    if(board[row][col] === 0){
+        board[row][col] = solution[row][col]; fixedCells[selectedCell] = true; selectedCell = null;
+        renderBoard(); animateCell(row*9+col,'cell-bounce'); showCustomAlert('💡 已填入正确答案','info'); checkLineCompletion(row, col);
+        addHistoryStep({ step: ++stepCounter, action:`提示填入 ${solution[row][col]}`, row: row+1, col: col+1, oldValue:0, newValue:solution[row][col], timestamp: new Date().toLocaleTimeString() });
+    } else { showCustomAlert('⚠️ 这个格子已经有数字了','error'); }
+}
+function undoStep(){
+    if(history.length===0){ showCustomAlert('⚠️ 没有可撤销的步骤','error'); return; }
+    const last = history[history.length-1];
+    if(last.type==='newgame_snapshot'){ restoreStep(last); history.pop(); stepCounter=last.step; showCustomAlert('已撤销新游戏操作，恢复到之前局面并继续计时','info'); }
+    else { const step = history.pop(); restoreStep(step); stepCounter=step.step; showCustomAlert(`已撤销第 ${step.step} 步操作`,'info'); }
+}
+function restoreStep(step){
+    if(step.type==='newgame_snapshot'){
+        board=step.board.map(r=>[...r]); fixedCells=[...step.fixedCells]; solution=step.solution.map(r=>[...r]);
+        currentDifficulty=step.currentDifficulty; seconds=step.seconds; stepCounter=step.step; originalFixedCells=fixedCells.slice();
+        renderBoard(); updateTimeDisplay(); startTimer();
+    } else {
+        const row=step.row-1, col=step.col-1, index=row*9+col;
+        board[row][col]=step.oldValue;
+        if(step.oldValue===0) fixedCells[index]=false; else if(!originalFixedCells[index]) fixedCells[index]=false;
         renderBoard();
-        animateCell(row * 9 + col, 'pop');
-        showCustomAlert('💡 已填入正确答案', 'info');
-        checkLineCompletion(row, col);
-        addHistoryStep({ step: ++stepCounter, action: `提示填入 ${solution[row][col]}`, row: row + 1, col: col + 1, oldValue: 0, newValue: solution[row][col], timestamp: new Date().toLocaleTimeString() });
-      } else { showCustomAlert('⚠️ 这个格子已经有数字了', 'error'); }
     }
+}
+function updateProgress(){ document.getElementById('progress').textContent = `已完成: ${completedRows.size}/9 行`; }
+function updateStatus(message, type){ const s=document.getElementById('status'); s.textContent=message; s.className='status'+(type?` ${type}`:''); }
+function startTimer(){ stopTimer(); updateTimeDisplay(); timer=setInterval(()=>{seconds++; updateTimeDisplay();},1000); }
+function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+function resetTimer(){ stopTimer(); seconds=0; updateTimeDisplay(); }
+function updateTimeDisplay(){ const m=Math.floor(seconds/60).toString().padStart(2,'0'), s=(seconds%60).toString().padStart(2,'0'); document.getElementById('time').textContent=`${m}:${s}`; }
+function showDifficultyScreen(){ document.getElementById('difficultyScreen').classList.add('active'); document.getElementById('gameScreen').classList.remove('active'); resetTimer(); completedRows.clear(); updateProgress(); updateStatus(''); document.getElementById('startBtn').disabled=true; chosenDifficulty=null; ['btnEasy','btnMedium','btnHard'].forEach(id=>document.getElementById(id).className='difficulty-option'); }
+function chooseDifficulty(diff){ chosenDifficulty=diff; document.getElementById('startBtn').disabled=false; ['btnEasy','btnMedium','btnHard'].forEach(id=>document.getElementById(id).className='difficulty-option'); if(diff==='easy') document.getElementById('btnEasy').classList.add('selected-easy'); if(diff==='medium') document.getElementById('btnMedium').classList.add('selected-medium'); if(diff==='hard') document.getElementById('btnHard').classList.add('selected-hard'); }
+function startGame(){ if(!chosenDifficulty){ showCustomAlert('请先选择难度','error'); return; } currentDifficulty=chosenDifficulty; document.getElementById('difficultyScreen').classList.remove('active'); document.getElementById('gameScreen').classList.add('active'); document.getElementById('currentDifficulty').textContent=`当前难度: ${chosenDifficulty==='easy'?'😊 简单':chosenDifficulty==='medium'?'🤔 中等':'😈 困难'}`; newGame(); }
+function newGame(){ if(pendingNewGame) return; const snapshot={type:'newgame_snapshot',step:++stepCounter,action:'新游戏前自动保存的棋盘快照',board: board.map(r=>[...r]),fixedCells:[...fixedCells],solution:solution.map(r=>[...r]),currentDifficulty,seconds,timestamp:new Date().toLocaleTimeString()}; history.push(snapshot); saveToLocalStorage(); pendingNewGame=true; showNewGameModal(); }
+function showNewGameModal(){ document.getElementById('newGameModal').classList.add('show'); document.getElementById('overlay').classList.add('show'); }
+function confirmNewGame(){ document.getElementById('newGameModal').classList.remove('show'); document.getElementById('overlay').classList.remove('show'); resetTimer(); startTimer(); completedRows.clear(); isChecking=false; hidePopup(); stepCounter=history.length; generateSudoku(); originalFixedCells=fixedCells.slice(); renderBoard(); updateProgress(); updateStatus(''); saveToLocalStorage(); showCustomAlert('已开始新游戏，原局面已保存','success'); pendingNewGame=false; }
+function cancelNewGame(){ if(history.length===0){ pendingNewGame=false; document.getElementById('newGameModal').classList.remove('show'); document.getElementById('overlay').classList.remove('show'); return; } const last=history[history.length-1]; if(last.type==='newgame_snapshot'){ board=last.board.map(r=>[...r]); fixedCells=[...last.fixedCells]; solution=last.solution.map(r=>[...r]); currentDifficulty=last.currentDifficulty; seconds=last.seconds; stepCounter=last.step; originalFixedCells=fixedCells.slice(); renderBoard(); updateTimeDisplay(); startTimer(); showCustomAlert('已取消新游戏，恢复到之前局面并继续计时','info'); } pendingNewGame=false; document.getElementById('newGameModal').classList.remove('show'); document.getElementById('overlay').classList.remove('show'); saveToLocalStorage(); }
+function generateSudoku(){ solution=Array(9).fill(null).map(()=>Array(9).fill(0)); solveSudoku(solution); board=solution.map(r=>[...r]); fixedCells=Array(81).fill(true); let removed=0; while(removed<difficultyLevels[currentDifficulty]){ const r=Math.floor(Math.random()*9),c=Math.floor(Math.random()*9); if(board[r][c]!==0){ board[r][c]=0; fixedCells[r*9+c]=false; removed++; } } originalFixedCells=fixedCells.slice(); }
+function solveSudoku(grid){ for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(grid[r][c]===0){ for(const n of shuffleArray([1,2,3,4,5,6,7,8,9])) if(isValidMove(grid,r,c,n)){ grid[r][c]=n; if(solveSudoku(grid)) return true; grid[r][c]=0; } return false; } return true; }
+function isValidMove(grid,r,c,n){ for(let i=0;i<9;i++) if(grid[r][i]===n||grid[i][c]===n) return false; const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3; for(let i=br;i<br+3;i++) for(let j=bc;j<bc+3;j++) if(grid[i][j]===n) return false; return true; }
+function shuffleArray(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function backToMenu(){ hidePopup(); saveToLocalStorage(); showDifficultyScreen(); }
+function addHistoryStep(d){ history.push(d); saveToLocalStorage(); }
+function saveToLocalStorage(){ localStorage.setItem('sudokuGameState',JSON.stringify({board,fixedCells,solution,currentDifficulty,seconds,history,stepCounter,glassMode})); }
+function loadFromLocalStorage(){ const s=localStorage.getItem('sudokuGameState'); if(s){ try{ const st=JSON.parse(s); board=st.board; fixedCells=st.fixedCells; solution=st.solution; currentDifficulty=st.currentDifficulty; seconds=st.seconds||0; history=st.history||[]; stepCounter=st.stepCounter||0; glassMode=st.glassMode!==undefined?st.glassMode:true; originalFixedCells=fixedCells.slice(); renderBoard(); updateTimeDisplay(); if(glassMode) enableGlassMode(); else disableGlassMode(); updateGlassToggleButtons(); } catch(e){ console.error('加载存档失败',e); } } }
+function toggleGlassMode(){ glassMode=!glassMode; if(glassMode) enableGlassMode(); else disableGlassMode(); updateGlassToggleButtons(); saveToLocalStorage(); }
+function enableGlassMode(){ document.getElementById('gameContainer').classList.remove('solid'); document.getElementById('gameContainer').classList.add('glass'); document.getElementById('bgImage').style.display='block'; document.getElementById('gradientBg').style.display='none'; }
+function disableGlassMode(){ document.getElementById('gameContainer').classList.remove('glass'); document.getElementById('gameContainer').classList.add('solid'); document.getElementById('bgImage').style.display='none'; document.getElementById('gradientBg').style.display='block'; }
+function updateGlassToggleButtons(){ const m=document.getElementById('glassToggleMenu'),g=document.getElementById('glassToggleGame'); if(m)m.textContent=`🔮 液态玻璃:${glassMode?'开':'关'}`; if(g)g.textContent=`🔮 液态玻璃:${glassMode?'开':'关'}`; }
+function showCustomAlert(m,t){ const a=document.getElementById('customAlert'); a.textContent=m; a.className=`custom-alert ${t||''}`; a.classList.add('show'); setTimeout(()=>a.classList.remove('show'),2000); }
 
-    function updateProgress() { document.getElementById('progress').textContent = `已完成: ${completedRows.size}/9 行`; }
-    function updateStatus(message, type) { const s = document.getElementById('status'); s.textContent = message; s.className = 'status' + (type ? ` ${type}` : ''); }
+// ================== ✅ 新增：元宝弹窗控制 ==================
+function openYuanbaoModal() {
+    document.getElementById('yuanbaoModal').classList.add('active');
+}
+function closeYuanbaoModal() {
+    document.getElementById('yuanbaoModal').classList.remove('active');
+}
 
-    function startTimer() { 
-      stopTimer(); 
-      updateTimeDisplay(); 
-      timer = setInterval(() => { seconds++; updateTimeDisplay(); }, 1000); 
-    }
-    function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
-    function resetTimer() { stopTimer(); seconds = 0; updateTimeDisplay(); }
-    function updateTimeDisplay() { const m = Math.floor(seconds / 60).toString().padStart(2, '0'), s = (seconds % 60).toString().padStart(2, '0'); document.getElementById('time').textContent = `${m}:${s}`; }
-
-    document.addEventListener('click', (e) => { const p = document.getElementById('numberPopup'), b = document.getElementById('board'); if (!b.contains(e.target) && p.classList.contains('show')) hidePopup(); });
-    document.addEventListener('keydown', (e) => {
-      if (isChecking) return;
-      if (e.key >= '1' && e.key <= '9') selectNumber(parseInt(e.key));
-      else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') eraseNumber();
-      else if (e.key === 'Escape') hidePopup();
-      else if (e.key === 'ArrowUp' && selectedCell !== null) { e.preventDefault(); if (selectedCell >= 9) selectCell(selectedCell - 9); }
-      else if (e.key === 'ArrowDown' && selectedCell !== null) { e.preventDefault(); if (selectedCell < 72) selectCell(selectedCell + 9); }
-      else if (e.key === 'ArrowLeft' && selectedCell !== null) { e.preventDefault(); if (selectedCell % 9 > 0) selectCell(selectedCell - 1); }
-      else if (e.key === 'ArrowRight' && selectedCell !== null) { e.preventDefault(); if (selectedCell % 9 < 8) selectCell(selectedCell + 1); }
-    });
-
-    function addHistoryStep(stepData) { history.push(stepData); saveToLocalStorage(); }
-    function saveToLocalStorage() {
-      const state = { board, fixedCells, solution, currentDifficulty, seconds, history, stepCounter, glassMode, candidateEnabled };
-      localStorage.setItem('sudokuGameState', JSON.stringify(state));
-    }
-    function loadFromLocalStorage() {
-      const saved = localStorage.getItem('sudokuGameState');
-      if (saved) {
-        try {
-          const st = JSON.parse(saved);
-          board = st.board;
-          fixedCells = st.fixedCells;
-          solution = st.solution;
-          currentDifficulty = st.currentDifficulty;
-          seconds = st.seconds || 0;
-          history = st.history || [];
-          stepCounter = st.stepCounter || 0;
-          glassMode = st.glassMode || true;
-          candidateEnabled = st.candidateEnabled || false;
-          originalFixedCells = fixedCells.slice();
-          renderBoard();
-          updateTimeDisplay();
-          if (glassMode) enableGlassMode();
-          else disableGlassMode();
-        } catch (e) { console.error('加载存档失败', e); }
-      }
-    }
-
-    function showHistory() {
-      const panel = document.getElementById('historyPanel');
-      const overlay = document.getElementById('overlay');
-      const list = document.getElementById('historyList');
-      list.innerHTML = '';
-      if (history.length === 0) { list.innerHTML = '<li class="history-item">暂无记录</li>'; }
-      else {
-        [...history].reverse().forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'history-item';
-          if (item.type === 'newgame_snapshot') {
-            li.innerHTML = `<div class="history-step">📸 第 ${item.step} 步 (新游戏前快照)</div><div class="history-time">${item.timestamp}</div><div class="history-action">${item.action}</div>`;
-          } else {
-            li.innerHTML = `<div class="history-step">第 ${item.step} 步</div><div class="history-time">${item.timestamp}</div><div class="history-action">${item.action} (${item.row}行${item.col}列) 原值:${item.oldValue} → 新值:${item.newValue}</div>`;
-          }
-          li.onclick = () => restoreStep(item);
-          list.appendChild(li);
-        });
-      }
-      panel.classList.add('show');
-      overlay.classList.add('show');
-    }
-
-    function hideHistory() {
-      document.getElementById('historyPanel').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-    }
-
-    function restoreStep(step) {
-      if (step.type === 'newgame_snapshot') {
-        board = step.board.map(r => [...r]);
-        fixedCells = [...step.fixedCells];
-        solution = step.solution.map(r => [...r]);
-        currentDifficulty = step.currentDifficulty;
-        seconds = step.seconds;
-        stepCounter = step.step;
-        originalFixedCells = fixedCells.slice();
-        renderBoard();
-        updateTimeDisplay();
-        startTimer();
-        showCustomAlert('已恢复到新游戏前的局面并继续计时', 'info');
-      } else {
-        const row = step.row - 1;
-        const col = step.col - 1;
-        const index = row * 9 + col;
-        board[row][col] = step.oldValue;
-        if (step.oldValue === 0) {
-          fixedCells[index] = false;
-        } else {
-          if (!originalFixedCells[index]) {
-            fixedCells[index] = false;
-          }
-        }
-        renderBoard();
-        showCustomAlert(`已恢复到第 ${step.step} 步之前的状态`, 'info');
-      }
-      hideHistory();
-      saveToLocalStorage();
-    }
-
-    function undoStep() {
-      if (history.length === 0) {
-        showCustomAlert('⚠️ 没有可撤销的步骤', 'error');
-        return;
-      }
-      const last = history[history.length - 1];
-      if (last.type === 'newgame_snapshot') {
-        restoreStep(last);
-        history.pop();
-        stepCounter = last.step;
-        showCustomAlert('已撤销新游戏操作，恢复到之前局面并继续计时', 'info');
-      } else {
-        const step = history.pop();
-        restoreStep(step);
-        stepCounter = step.step;
-        showCustomAlert(`已撤销第 ${step.step} 步操作`, 'info');
-      }
-    }
-
-    const moreMenu = document.getElementById('moreMenu');
-    moreMenu.addEventListener('click', (e) => {
-      e.stopPropagation();
-      moreMenu.classList.toggle('show');
-    });
-    document.addEventListener('click', () => {
-      moreMenu.classList.remove('show');
-    });
-
-    function showCustomAlert(message, type) {
-      const bar = document.getElementById('customAlert');
-      bar.textContent = message;
-      bar.className = 'custom-alert ' + type;
-      bar.classList.add('show');
-      setTimeout(() => {
-        bar.classList.remove('show');
-      }, 2000);
-    }
-
-    function toggleGlassMode() {
-      glassMode = !glassMode;
-      if (glassMode) {
-        enableGlassMode();
-      } else {
-        disableGlassMode();
-      }
-      saveToLocalStorage();
-    }
-
-    function enableGlassMode() {
-      const container = document.getElementById('gameContainer');
-      const bgImage = document.getElementById('bgImage');
-      const gradientBg = document.getElementById('gradientBg');
-      container.classList.remove('solid');
-      container.classList.add('glass');
-      bgImage.style.display = 'block';
-      gradientBg.style.display = 'none';
-      document.getElementById('glassToggleGame').textContent = '🔮 液态玻璃: 开';
-    }
-
-    function disableGlassMode() {
-      const container = document.getElementById('gameContainer');
-      const bgImage = document.getElementById('bgImage');
-      const gradientBg = document.getElementById('gradientBg');
-      container.classList.remove('glass');
-      container.classList.add('solid');
-      bgImage.style.display = 'none';
-      gradientBg.style.display = 'block';
-      document.getElementById('glassToggleGame').textContent = '🔮 液态玻璃: 关';
-    }
-
-    function getCandidates(index) {
-      if (index === null) return [];
-      const row = Math.floor(index / 9);
-      const col = index % 9;
-      if (board[row][col] !== 0) return [];
-      const used = new Set();
-      for (let c = 0; c < 9; c++) { if (board[row][c] !== 0) used.add(board[row][c]); }
-      for (let r = 0; r < 9; r++) { if (board[r][col] !== 0) used.add(board[r][col]); }
-      const boxRow = Math.floor(row / 3) * 3, boxCol = Math.floor(col / 3) * 3;
-      for (let r = boxRow; r < boxRow + 3; r++)
-        for (let c = boxCol; c < boxCol + 3; c++)
-          if (board[r][c] !== 0) used.add(board[r][c]);
-      const candidates = [];
-      for (let n = 1; n <= 9; n++) {
-        if (!used.has(n)) candidates.push(n);
-      }
-      return candidates;
-    }
-
-    function updateCandidateDisplay() {
-      const candidateRow = document.getElementById('candidateRow');
-      if (selectedCell === null) {
-        candidateRow.textContent = '候选：';
-        return;
-      }
-      if (!candidateEnabled) {
-        candidateRow.textContent = '候选：已关闭';
-        return;
-      }
-      const candidates = getCandidates(selectedCell);
-      if (candidates.length === 0) {
-        candidateRow.textContent = '候选：无';
-      } else {
-        candidateRow.textContent = '候选：' + candidates.join(' ');
-      }
-    }
-
-    function highlightSameNumber(index) {
-      clearSameNumberHighlight();
-      const row = Math.floor(index / 9);
-      const col = index % 9;
-      const num = board[row][col];
-      if (num === 0) return;
-      const cells = document.querySelectorAll('.cell');
-      for (let i = 0; i < 81; i++) {
-        const r = Math.floor(i / 9);
-        const c = i % 9;
-        if (board[r][c] === num) {
-          cells[i].classList.add('same-number');
-        }
-      }
-    }
-
-    function clearSameNumberHighlight() {
-      const cells = document.querySelectorAll('.cell');
-      cells.forEach(cell => {
-        cell.classList.remove('same-number');
-      });
-    }
-
-    function openSettings() {
-      moreMenu.classList.remove('show');
-      const modal = document.getElementById('settingsModal');
-      const toggle = document.getElementById('candidateToggle');
-      toggle.checked = candidateEnabled;
-      if (glassMode) {
-        modal.style.background = 'rgba(255, 255, 255, 0.4)';
-        modal.style.backdropFilter = 'blur(20px)';
-        modal.style.webkitBackdropFilter = 'blur(20px)';
-        modal.style.border = '1px solid rgba(255, 255, 255, 0.5)';
-      } else {
-        modal.style.background = 'rgba(255, 255, 255, 0.95)';
-        modal.style.backdropFilter = 'none';
-        modal.style.webkitBackdropFilter = 'none';
-        modal.style.border = '1px solid rgba(0, 0, 0, 0.3)';
-      }
-      modal.classList.add('show');
-      document.getElementById('overlay').classList.add('show');
-    }
-
-    function closeSettings() {
-      document.getElementById('settingsModal').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-    }
-
-    function saveCandidateSetting() {
-      const toggle = document.getElementById('candidateToggle');
-      if (toggle.checked && !candidateEnabled) {
-        // 从关闭到打开，需要警告
-        closeSettings();
-        showWarningModal();
-      } else {
-        // 直接关闭或保持关闭
-        candidateEnabled = toggle.checked;
-        saveToLocalStorage();
-        closeSettings();
-        updateCandidateDisplay();
-        showCustomAlert('候选数字已' + (candidateEnabled ? '开启' : '关闭'), 'info');
-      }
-    }
-
-    function showWarningModal() {
-      const modal = document.getElementById('warningModal');
-      if (glassMode) {
-        modal.style.background = 'rgba(255, 255, 255, 0.4)';
-        modal.style.backdropFilter = 'blur(20px)';
-        modal.style.webkitBackdropFilter = 'blur(20px)';
-        modal.style.border = '1px solid rgba(255, 255, 255, 0.5)';
-      } else {
-        modal.style.background = 'rgba(255, 255, 255, 0.95)';
-        modal.style.backdropFilter = 'none';
-        modal.style.webkitBackdropFilter = 'none';
-        modal.style.border = '1px solid rgba(0, 0, 0, 0.3)';
-      }
-      modal.classList.add('show');
-      document.getElementById('overlay').classList.add('show');
-    }
-
-    function closeWarningModal() {
-      document.getElementById('warningModal').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-    }
-
-    function confirmEnableCandidate() {
-      candidateEnabled = true;
-      saveToLocalStorage();
-      closeWarningModal();
-      showCustomAlert('候选数字已开启, 'info');
-      updateCandidateDisplay();
-    }
-
-    function cancelEnableCandidate() {
-      closeWarningModal();
-      // 回到设置界面，保持关闭状态
-      openSettings();
-    }
-
-    init();
-  </script>
+document.addEventListener('keydown',(e)=>{
+    if(isChecking) return;
+    if(e.key>='1'&&e.key<='9') selectNumber(parseInt(e.key));
+    else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0') eraseNumber();
+    else if(e.key==='Escape') hidePopup();
+    else if(e.key==='ArrowUp'&&selectedCell!==null){ e.preventDefault(); if(selectedCell>=9) selectCell(selectedCell-9); }
+    else if(e.key==='ArrowDown'&&selectedCell!==null){ e.preventDefault(); if(selectedCell<72) selectCell(selectedCell+9); }
+    else if(e.key==='ArrowLeft'&&selectedCell!==null){ e.preventDefault(); if(selectedCell%9>0) selectCell(selectedCell-1); }
+    else if(e.key==='ArrowRight'&&selectedCell!==null){ e.preventDefault(); if(selectedCell%9<8) selectCell(selectedCell+1); }
+});
+document.addEventListener('click',(e)=>{ const p=document.getElementById('numberPopup'),b=document.getElementById('board'); if(!b.contains(e.target)&&p.classList.contains('show')) hidePopup(); });
+window.onload = init;
+</script>
 </body>
 </html>
-

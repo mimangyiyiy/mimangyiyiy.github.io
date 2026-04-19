@@ -8,16 +8,19 @@
     :root {
       --scratch-orange: #FFAB19;
       --scratch-blue: #4C97FF;
-      --scratch-light: #E5F0FF;
       --scratch-dark: #2D6BB6;
     }
+
+    /* ===== 核心修改 1：页面背景改为渐变 ===== */
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: var(--scratch-light);
+      background: linear-gradient(135deg, #e5f0ff, #fdeee0); /* 蓝到橙的柔和渐变 */
       color: #333;
+      min-height: 100vh;
     }
+
     header {
       background: linear-gradient(135deg, var(--scratch-orange), var(--scratch-blue));
       color: white;
@@ -25,11 +28,13 @@
       text-align: center;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
+
     .container {
       max-width: 1200px;
       margin: 2rem auto;
       padding: 0 1rem;
     }
+
     .section-title {
       font-size: 1.8rem;
       color: var(--scratch-dark);
@@ -37,23 +42,31 @@
       padding-left: 10px;
       margin-bottom: 1.5rem;
     }
+
     .project-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 1.5rem;
     }
+
+    /* ===== 核心修改 2：卡片改为轻微毛玻璃，配合渐变背景 ===== */
     .project-card {
-      background: white;
+      background: rgba(255, 255, 255, 0.65); /* 半透明白 */
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 10px;
       padding: 1.5rem;
       box-shadow: 0 3px 10px rgba(0,0,0,0.1);
       transition: all 0.3s ease;
       text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.8);
     }
+
     .project-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
+
     .project-image {
       width: 100%;
       height: 150px;
@@ -62,11 +75,13 @@
       border-radius: 8px;
       overflow: hidden;
     }
+
     .project-image img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
+
     .project-btn {
       display: inline-block;
       padding: 0.8rem 1.5rem;
@@ -78,77 +93,199 @@
       margin-top: 1rem;
       transition: all 0.3s;
     }
+
     .project-btn:hover {
       background: var(--scratch-dark);
       transform: scale(1.05);
     }
+
     footer {
       text-align: center;
       padding: 2rem;
       margin-top: 3rem;
       color: #666;
     }
+
+    /* ================= 下载悬浮窗 ================= */
+    .download-float {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 9999;
+    }
+
+    /* ===== 核心修改 3：下载按钮改为毛玻璃效果 ===== */
+    .download-trigger {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 26px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+
+      /* 毛玻璃核心代码 */
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+
+      color: var(--scratch-dark);
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .download-trigger:hover {
+      transform: scale(1.08);
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .download-panel {
+      position: absolute;
+      right: 0;
+      bottom: 70px;
+      width: 260px;
+      padding: 16px;
+      border-radius: 16px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.35),
+        rgba(200,220,255,0.25)
+      );
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .download-panel h4 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--scratch-dark);
+    }
+
+    .download-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.6);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .download-item a {
+      padding: 4px 10px;
+      background: #4C97FF;
+      color: #fff;
+      border-radius: 20px;
+      text-decoration: none;
+      font-size: 12px;
+    }
+
+    .download-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.2);
+      z-index: 9998;
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>我的Scratch作品集</h1>
-    <p>点击下方按钮体验我的创意编程作品</p>
-  </header>
 
-  <div class="container">
-    <!-- Scratch 作品区 -->
-    <h2 class="section-title">Scratch 作品</h2>
-    <div class="project-list">
-      <!-- 作品1 -->
-      <div class="project-card">
-        <div class="project-image">
-          <img src="image\duoren.png" alt="迷宫游戏">
-        </div>
-        <h3>多人迷宫</h3>
-        <p>使用鼠标键控制角色穿越迷宫，这次主要更新了文字聊天室，还有玩家上线提醒</p>
-        <a href="cody\duoren1.html" class="project-btn">开始体验</a>
+<header>
+  <h1>我的Scratch作品集</h1>
+  <p>点击下方按钮体验我的创意编程作品</p>
+</header>
+
+<div class="container">
+  <h2 class="section-title">Scratch 作品</h2>
+  <div class="project-list">
+    <div class="project-card">
+      <div class="project-image">
+        <img src="image\duoren.png" alt="迷宫游戏">
       </div>
-      <!-- 作品2 -->
-      <div class="project-card">
-        <div class="project-image">
-          <img src="image\Plattformer_v9.0_Online.jpg" alt="Plattformer v9.0 Online(多人闯关)">
-        </div>
-        <h3>多人跑酷 Plattformer v9.0 Online</h3>
-        <p>使用键盘控制角色穿越迷宫（仅电脑版）</p>
-        <a href="cody/Plattformer_v9.0_Online.html" class="project-btn">开始体验</a>
+      <h3>多人迷宫</h3>
+      <p>使用鼠标键控制角色穿越迷宫，这次主要更新了文字聊天室，还有玩家上线提醒</p>
+      <a href="cody\duoren1.html" class="project-btn">开始体验</a>
+    </div>
+
+    <div class="project-card">
+      <div class="project-image">
+        <img src="image\Plattformer_v9.0_Online.jpg" alt="Plattformer v9.0 Online(多人闯关)">
       </div>
-      <!-- 作品3 -->
-      <div class="project-card">
-        <div class="project-image">
-          <img src="image\luoyan3d.jpg" alt="裸眼3d">
-        </div>
-        <h3>裸眼3D</h3>
-        <p>使用摄像头跟踪眼球（用微信打开的话会很卡，建议使用Edge浏览器打开,因为其他浏览器无法全屏，体验感不好）</p>
-        <a href="cody\luoyan3d.html" class="project-btn">开始体验</a>
+      <h3>多人跑酷 Plattformer v9.0 Online</h3>
+      <p>使用键盘控制角色穿越迷宫（仅电脑版）</p>
+      <a href="cody/Plattformer_v9.0_Online.html" class="project-btn">开始体验</a>
+    </div>
+
+    <div class="project-card">
+      <div class="project-image">
+        <img src="image\luoyan3d.jpg" alt="裸眼3d">
       </div>
+      <h3>裸眼3D</h3>
+      <p>使用摄像头跟踪眼球（用微信打开的话会很卡，建议使用Edge浏览器打开）</p>
+      <a href="cody\luoyan3d.html" class="project-btn">开始体验</a>
     </div>
   </div>
+</div>
 
-  <div class="container">
-    <!-- HTML 小游戏区 -->
-    <h2 class="section-title">HTML 小游戏</h2>
-    <div class="project-list">
-      <!-- 小游戏1 -->
-      <div class="project-card">
-        <div class="project-image">
-          <img src="image\game1.png" alt="小游戏1">
-        </div>
-        <h3>数独小游戏</h3>
-        <p>经典数独小游戏，由 @元宝 制作需要相对高的配置要求</p>
-        <a href="cody\shudu.html" class="project-btn">开始体验</a>
+<div class="container">
+  <h2 class="section-title">HTML 小游戏</h2>
+  <div class="project-list">
+    <div class="project-card">
+      <div class="project-image">
+        <img src="image\game1.png" alt="小游戏1">
       </div>
-      <!-- 小游戏2 -->
-    </div> 
+      <h3>数独小游戏</h3>
+      <p>经典数独小游戏，由 @元宝 制作需要相对高的配置要求</p>
+      <a href="cody\shudu.html" class="project-btn">开始体验</a>
+    </div>
   </div>
+</div>
 
-  <footer>
-    <p>© 2026 我的Scratch作品集 | 使用HTML+CSS实现</p>
-  </footer>
+<footer>
+  <p>© 2026 我的Scratch作品集 | 使用HTML+CSS实现</p>
+</footer>
+
+<!-- 下载悬浮窗结构 -->
+<div class="download-mask" id="downloadMask"></div>
+<div class="download-float">
+  <button class="download-trigger" id="downloadBtn">↓</button>
+  <div class="download-panel" id="downloadPanel">
+    <h4>📦 资源下载</h4>
+    <div class="download-item">
+      <span>多人迷宫源码</span>
+      <a href="downloads/duoren.zip" download>下载</a>
+    </div>
+    <div class="download-item">
+      <span>跑酷游戏素材</span>
+      <a href="downloads/plattformer.zip" download>下载</a>
+    </div>
+    <div class="download-item">
+      <span>3D 示例模型</span>
+      <a href="downloads/3dmodel.zip" download>下载</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById('downloadBtn');
+  const panel = document.getElementById('downloadPanel');
+  const mask = document.getElementById('downloadMask');
+
+  btn.onclick = () => {
+    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+    mask.style.display = panel.style.display === 'flex' ? 'block' : 'none';
+  };
+
+  mask.onclick = () => {
+    panel.style.display = 'none';
+    mask.style.display = 'none';
+  };
+</script>
+
 </body>
 </html>
+

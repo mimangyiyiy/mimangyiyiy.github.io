@@ -1,260 +1,368 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的Scratch作品集</title>
-  <style>
-    :root {
-      --scratch-orange: #FFAB19;
-      --scratch-blue: #4C97FF;
-      --scratch-dark: #2D6BB6;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的Scratch作品集</title>
 
-    /* ===== 核心修改 1：页面背景改为渐变 ===== */
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #e5f0ff, #fdeee0); /* 蓝到橙的柔和渐变 */
-      color: #333;
-      min-height: 100vh;
-    }
+<style>
+/* ================= 基础变量 ================= */
+:root {
+  --blue: #4C97FF;
+  --orange: #FFAB19;
+}
 
-    header {
-      background: linear-gradient(135deg, var(--scratch-orange), var(--scratch-blue));
-      color: white;
-      padding: 3rem 1rem;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+/* ================= Body ================= */
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  min-height: 100vh;
 
-    .container {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
+  /* ✅ 固定渐变背景 */
+  background: linear-gradient(135deg, #4C97FF, #FFAB19);
+  background-attachment: fixed;
 
-    .section-title {
-      font-size: 1.8rem;
-      color: var(--scratch-dark);
-      border-left: 5px solid var(--scratch-orange);
-      padding-left: 10px;
-      margin-bottom: 1.5rem;
-    }
+  color: white;
+  cursor: none; /* ✅ 隐藏系统光标 */
+}
 
-    .project-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-    }
+body.glass-off {
+  background: linear-gradient(135deg, #e5f0ff, #fdeee0);
+  color: #333;
+}
 
-    /* ===== 核心修改 2：卡片改为轻微毛玻璃，配合渐变背景 ===== */
-    .project-card {
-      background: rgba(255, 255, 255, 0.65); /* 半透明白 */
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: 10px;
-      padding: 1.5rem;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.8);
-    }
+/* ================= 极透毛玻璃（背景卡片） ================= */
+.glass {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: inherit;
+}
 
-    .project-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
+body.glass-off .glass {
+  background: white;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
 
-    .project-image {
-      width: 100%;
-      height: 150px;
-      background: #f0f0f0;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+/* ================= Header ================= */
+header {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: linear-gradient(135deg, var(--orange), var(--blue));
+}
 
-    .project-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+/* ================= 容器 ================= */
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
 
-    .project-btn {
-      display: inline-block;
-      padding: 0.8rem 1.5rem;
-      background: var(--scratch-blue);
-      color: white;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: bold;
-      margin-top: 1rem;
-      transition: all 0.3s;
-    }
+.section-title {
+  font-size: 1.8rem;
+  border-left: 5px solid var(--orange);
+  padding-left: 10px;
+  margin-bottom: 0.4rem;
+}
 
-    .project-btn:hover {
-      background: var(--scratch-dark);
-      transform: scale(1.05);
-    }
+.section-desc {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  margin-bottom: 1.5rem;
+}
 
-    footer {
-      text-align: center;
-      padding: 2rem;
-      margin-top: 3rem;
-      color: #666;
-    }
+/* ================= 卡片区 ================= */
+.project-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
 
-    /* ================= 下载悬浮窗 ================= */
-    .download-float {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      z-index: 9999;
-    }
+.project-card {
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.3s;
+}
 
-    /* ===== 核心修改 3：下载按钮改为毛玻璃效果 ===== */
-    .download-trigger {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      font-size: 26px;
-      cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+.project-card:hover {
+  transform: translateY(-5px);
+}
 
-      /* 毛玻璃核心代码 */
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+.project-image {
+  height: 150px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
 
-      color: var(--scratch-dark);
-      transition: transform 0.3s, background 0.3s;
-    }
+.project-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    .download-trigger:hover {
-      transform: scale(1.08);
-      background: rgba(255, 255, 255, 0.45);
-    }
+/* ================= 按钮 ================= */
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  border-radius: 50px;
+  font-weight: bold;
+  text-decoration: none;
+  background: var(--blue);
+  color: white;
+}
 
-    .download-panel {
-      position: absolute;
-      right: 0;
-      bottom: 70px;
-      width: 260px;
-      padding: 16px;
-      border-radius: 16px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      background: linear-gradient(
-        135deg,
-        rgba(255,255,255,0.35),
-        rgba(200,220,255,0.25)
-      );
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
+/* ================= 毛玻璃切换按钮 ================= */
+.glass-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
 
-    .download-panel h4 {
-      margin: 0;
-      font-size: 16px;
-      color: var(--scratch-dark);
-    }
+.glass-toggle svg {
+  width: 22px;
+  height: 22px;
+  fill: white;
+}
 
-    .download-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255,255,255,0.6);
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-size: 14px;
-    }
+body.glass-off .glass-toggle svg {
+  fill: #333;
+}
 
-    .download-item a {
-      padding: 4px 10px;
-      background: #4C97FF;
-      color: #fff;
-      border-radius: 20px;
-      text-decoration: none;
-      font-size: 12px;
-    }
+/* ================= 下载悬浮窗 ================= */
+.download-float {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9999;
+}
 
-    .download-mask {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.2);
-      z-index: 9998;
-      display: none;
-    }
-  </style>
+.download-trigger {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.download-trigger svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+body.glass-off .download-trigger svg {
+  fill: #333;
+}
+
+.download-panel {
+  position: absolute;
+  right: 0;
+  bottom: 70px;
+  width: 260px;
+  padding: 16px;
+  display: none;
+}
+
+.download-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.download-item a {
+  padding: 4px 10px;
+  background: var(--blue);
+  color: white;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.download-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+  z-index: 9998;
+  display: none;
+}
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  margin-top: 3rem;
+}
+
+/* ================= ✅ 回归：极透毛玻璃光标（尺寸不变） ================= */
+.custom-cursor {
+  position: fixed;
+  /* ✅ 尺寸完全不变 */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10001;
+
+  /* ✅ 核心：极透毛玻璃 */
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.35);
+
+  /* ✅ 真正的毛玻璃感（无折射，不糊字） */
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  /* ✅ 边缘微光（模拟立体感） */
+  box-shadow:
+    inset 0 0 6px rgba(255,255,255,0.25),
+    0 0 8px rgba(255,255,255,0.15);
+
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.08s;
+}
+
+/* ✅ 毛玻璃 OFF：暗色玻璃 */
+body.glass-off .custom-cursor {
+  border-color: rgba(0,0,0,0.35);
+  box-shadow:
+    inset 0 0 6px rgba(0,0,0,0.15),
+    0 0 8px rgba(0,0,0,0.1);
+}
+
+/* ================= 涟漪 ================= */
+.ripple {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%);
+  animation: rippleAnim 1s ease-out forwards;
+}
+
+body.glass-on .ripple {
+  border: 2px solid rgba(255,255,255,0.6);
+}
+
+body.glass-off .ripple {
+  border: 2px solid rgba(0,0,0,0.5);
+}
+
+@keyframes rippleAnim {
+  from {
+    width: 32px;
+    height: 32px;
+    opacity: 1;
+  }
+  to {
+    width: 140px;
+    height: 140px;
+    opacity: 0;
+  }
+}
+</style>
 </head>
-<body>
 
-<header>
+<body class="glass-on">
+
+<!-- ✅ 毛玻璃开关 -->
+<div class="glass-toggle" id="glassToggle">
+  <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h11v2zm0-4H6V7h11v2z"/></svg>
+</div>
+
+<header class="glass">
   <h1>我的Scratch作品集</h1>
   <p>点击下方按钮体验我的创意编程作品</p>
 </header>
 
 <div class="container">
   <h2 class="section-title">Scratch 作品</h2>
+  <p class="section-desc">以下是我使用 Scratch 创作的多人互动与创意作品。</p>
+
   <div class="project-list">
-    <div class="project-card">
-      <div class="project-image">
-        <img src="image\duoren.png" alt="迷宫游戏">
-      </div>
+    <div class="project-card glass">
+      <div class="project-image"><img src="image\duoren.png"></div>
       <h3>多人迷宫</h3>
-      <p>使用鼠标键控制角色穿越迷宫，这次主要更新了文字聊天室，还有玩家上线提醒</p>
-      <a href="cody\duoren1.html" class="project-btn">开始体验</a>
+      <p>鼠标控制角色穿越迷宫</p>
+      <a href="cody\duoren1.html" class="btn">开始体验</a>
     </div>
 
-    <div class="project-card">
-      <div class="project-image">
-        <img src="image\Plattformer_v9.0_Online.jpg" alt="Plattformer v9.0 Online(多人闯关)">
-      </div>
-      <h3>多人跑酷 Plattformer v9.0 Online</h3>
-      <p>使用键盘控制角色穿越迷宫（仅电脑版）</p>
-      <a href="cody/Plattformer_v9.0_Online.html" class="project-btn">开始体验</a>
+    <div class="project-card glass">
+      <div class="project-image"><img src="image\Plattformer_v9.0_Online.jpg"></div>
+      <h3>多人跑酷</h3>
+      <p>键盘操作（仅电脑版）</p>
+      <a href="cody/Plattformer_v9.0_Online.html" class="btn">开始体验</a>
     </div>
 
-    <div class="project-card">
-      <div class="project-image">
-        <img src="image\luoyan3d.jpg" alt="裸眼3d">
-      </div>
+    <div class="project-card glass">
+      <div class="project-image"><img src="image\luoyan3d.jpg"></div>
       <h3>裸眼3D</h3>
-      <p>使用摄像头跟踪眼球（用微信打开的话会很卡，建议使用Edge浏览器打开）</p>
-      <a href="cody\luoyan3d.html" class="project-btn">开始体验</a>
+      <p>摄像头眼球追踪</p>
+      <a href="cody\luoyan3d.html" class="btn">开始体验</a>
     </div>
   </div>
 </div>
 
 <div class="container">
   <h2 class="section-title">HTML 小游戏</h2>
+  <p class="section-desc">使用 HTML + JavaScript 编写，可直接在浏览器运行。</p>
+
   <div class="project-list">
-    <div class="project-card">
-      <div class="project-image">
-        <img src="image\game1.png" alt="小游戏1">
-      </div>
+    <div class="project-card glass">
+      <div class="project-image"><img src="image\game1.png"></div>
       <h3>数独小游戏</h3>
-      <p>经典数独小游戏，由 @元宝 制作需要相对高的配置要求</p>
-      <a href="cody\shudu.html" class="project-btn">开始体验</a>
+      <p>经典数独，由 @元宝 制作</p>
+      <a href="cody\shudu.html" class="btn">开始体验</a>
     </div>
   </div>
 </div>
 
-<footer>
-  <p>© 2026 我的Scratch作品集 | 使用HTML+CSS实现</p>
+<footer class="glass">
+  © 2026 我的Scratch作品集
 </footer>
 
-<!-- 下载悬浮窗结构 -->
-<div class="download-mask" id="downloadMask"></div>
+<!-- ================= 下载悬浮窗 ================= -->
+<div class="download-mask" id="mask"></div>
 <div class="download-float">
-  <button class="download-trigger" id="downloadBtn">↓</button>
-  <div class="download-panel" id="downloadPanel">
+  <button class="download-trigger glass" id="downloadBtn">
+    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+  </button>
+
+  <div class="download-panel glass" id="panel">
     <h4>📦 资源下载</h4>
+    
+    <div class="download-item">
+      <span>Astrum Climber</span>
+      <a href="https://www.astrumstudio.top" target="_blank" rel="noopener noreferrer">进入官网</a>
+    </div>
+
+    <div class="download-item" style="flex-direction:column; align-items:flex-start;">
+      <div style="display:flex; justify-content:space-between; width:100%;">
+        <span>Astrum Climber</span>
+        <a href="https://astrum.lanzoue.com/b0w9mfvmh" target="_blank" rel="noopener noreferrer">蓝奏云直达</a>
+      </div>
+      <small style="opacity:0.8; margin-top:6px;">提取码：5vft</small>
+    </div>
+
     <div class="download-item">
       <span>Astrum Climber Together</span>
       <a href="cody/Astrum Climber Together 1.3.0正式版本密码123456.zip" download>下载</a>
@@ -262,20 +370,86 @@
   </div>
 </div>
 
+<!-- ✅ 自定义毛玻璃光标 -->
+<div class="custom-cursor" id="cursor"></div>
+
 <script>
-  const btn = document.getElementById('downloadBtn');
-  const panel = document.getElementById('downloadPanel');
-  const mask = document.getElementById('downloadMask');
+/* ================= 毛玻璃开关 ================= */
+const toggleBtn = document.getElementById('glassToggle');
+const cursor = document.getElementById('cursor');
 
-  btn.onclick = () => {
-    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-    mask.style.display = panel.style.display === 'flex' ? 'block' : 'none';
-  };
+toggleBtn.onclick = () => {
+  document.body.classList.toggle('glass-on');
+  document.body.classList.toggle('glass-off');
+};
 
-  mask.onclick = () => {
-    panel.style.display = 'none';
-    mask.style.display = 'none';
-  };
+/* ================= 下载悬浮窗 ================= */
+const btn = document.getElementById('downloadBtn');
+const panel = document.getElementById('panel');
+const mask = document.getElementById('mask');
+
+btn.onclick = () => {
+  const show = panel.style.display === 'block';
+  panel.style.display = show ? 'none' : 'block';
+  mask.style.display = show ? 'none' : 'block';
+};
+
+mask.onclick = () => {
+  panel.style.display = 'none';
+  mask.style.display = 'none';
+};
+
+/* ================= 高灵敏光标 ================= */
+let mouseX = 0, mouseY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+function animateCursor() {
+  cursor.style.left = mouseX + 'px';
+  cursor.style.top = mouseY + 'px';
+  requestAnimationFrame(animateCursor);
+}
+
+animateCursor();
+
+/* ================= 压力感应 ================= */
+let pressStart = 0;
+let lastX = 0, lastY = 0;
+
+document.addEventListener('mousedown', e => {
+  pressStart = Date.now();
+  lastX = e.clientX;
+  lastY = e.clientY;
+
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  ripple.style.left = e.clientX + 'px';
+  ripple.style.top = e.clientY + 'px';
+  document.body.appendChild(ripple);
+
+  setTimeout(() => ripple.remove(), 1000);
+});
+
+document.addEventListener('mousemove', e => {
+  if (pressStart > 0) {
+    const dx = Math.abs(e.clientX - lastX);
+    const dy = Math.abs(e.clientY - lastY);
+    const distance = dx + dy;
+
+    const pressure = Math.max(0.2, Math.min(1, 1 - distance / 200));
+    const scale = 1 + pressure * 0.25;
+
+    cursor.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  pressStart = 0;
+  cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+});
 </script>
 
 </body>

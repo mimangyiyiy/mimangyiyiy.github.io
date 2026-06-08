@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>我的Scratch作品集 · 环形折射鼠标</title>
+<title>我的Scratch作品集 · 环形折射鼠标 · 绝美风景</title>
 
 <style>
 /* ================= 基础变量 ================= */
@@ -18,17 +18,41 @@ body {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   min-height: 100vh;
 
-  /* ✅ 固定渐变背景 */
-  background: linear-gradient(135deg, #4C97FF, #FFAB19);
-  background-attachment: fixed;
+  /* ✅ 使用您提供的新图片链接 (699pic 风景图) */
+  background: url('https://img95.699pic.com/photo/40243/5928.jpg_wh860.jpg') no-repeat center center fixed;
+  background-size: cover;
 
   color: white;
-  cursor: none; /* ✅ 隐藏系统光标，由环形折射透镜接管 */
+  cursor: none; /* 隐藏系统光标，由环形折射透镜接管 */
+  position: relative;
+}
+
+/* 添加柔和遮罩层，让文字更清晰，同时保留风景美感 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 所有主要内容提高层级 */
+header, .container, footer, .download-float, .glass-toggle {
+  position: relative;
+  z-index: 2;
 }
 
 body.glass-off {
   background: linear-gradient(135deg, #e5f0ff, #fdeee0);
   color: #333;
+}
+
+body.glass-off::before {
+  display: none;
 }
 
 /* ================= 极透毛玻璃（背景卡片） ================= */
@@ -52,7 +76,8 @@ body.glass-off .glass {
 header {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, var(--orange), var(--blue));
+  background: linear-gradient(135deg, rgba(255,171,25,0.85), rgba(76,151,255,0.85));
+  backdrop-filter: blur(4px);
 }
 
 /* ================= 容器 ================= */
@@ -67,11 +92,12 @@ header {
   border-left: 5px solid var(--orange);
   padding-left: 10px;
   margin-bottom: 0.4rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .section-desc {
   font-size: 0.95rem;
-  opacity: 0.85;
+  opacity: 0.9;
   margin-bottom: 1.5rem;
 }
 
@@ -114,6 +140,12 @@ header {
   text-decoration: none;
   background: var(--blue);
   color: white;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  transform: scale(1.02);
+  background: #3a7be0;
 }
 
 /* ================= 毛玻璃切换按钮 ================= */
@@ -132,6 +164,7 @@ header {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .glass-toggle svg {
@@ -160,6 +193,8 @@ body.glass-off .glass-toggle svg {
   align-items: center;
   justify-content: center;
   padding: 0;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
 .download-trigger svg {
@@ -179,6 +214,7 @@ body.glass-off .download-trigger svg {
   width: 260px;
   padding: 16px;
   display: none;
+  backdrop-filter: blur(20px);
 }
 
 .download-item {
@@ -225,7 +261,7 @@ footer {
 }
 
 body.glass-on .ripple {
-  border: 2px solid rgba(255,255,255,0.6);
+  border: 2px solid rgba(255,255,255,0.7);
 }
 
 body.glass-off .ripple {
@@ -245,7 +281,7 @@ body.glass-off .ripple {
   }
 }
 
-/* 确保环形折射透镜层级高于一切 */
+/* 环形折射透镜最高层级 */
 .liquid-lens-container {
   z-index: 2147483647 !important;
 }
@@ -261,7 +297,7 @@ body.glass-off .ripple {
 
 <header class="glass">
   <h1>我的Scratch作品集</h1>
-  <p>点击下方按钮体验我的创意编程作品</p>
+  <p>🏔️ 环形液态透镜 | 边缘折射无拉伸 | 沉浸风景 🏔️</p>
 </header>
 
 <div class="container">
@@ -270,35 +306,35 @@ body.glass-off .ripple {
 
   <div class="project-list">
     <div class="project-card glass">
-      <div class="project-image"><img src="image/duoren.png"></div>
+      <div class="project-image"><img src="image/duoren.png" alt="多人迷宫"></div>
       <h3>多人迷宫</h3>
       <p>鼠标控制角色穿越迷宫</p>
       <a href="cody/duoren1.html" class="btn">开始体验</a>
     </div>
 
     <div class="project-card glass">
-      <div class="project-image"><img src="image/Plattformer_v9.0_Online.jpg"></div>
+      <div class="project-image"><img src="image/Plattformer_v9.0_Online.jpg" alt="多人跑酷"></div>
       <h3>多人跑酷</h3>
       <p>键盘操作（仅电脑版）</p>
       <a href="cody/Plattformer_v9.0_Online.html" class="btn">开始体验</a>
     </div>
 
     <div class="project-card glass">
-      <div class="project-image"><img src="image/luoyan3d.jpg"></div>
+      <div class="project-image"><img src="image/luoyan3d.jpg" alt="裸眼3D"></div>
       <h3>裸眼3D</h3>
       <p>摄像头眼球追踪</p>
       <a href="cody/luoyan3d.html" class="btn">开始体验</a>
     </div>
     
     <div class="project-card glass">
-      <div class="project-image"><img src="image/neiqian.jpg"></div>
+      <div class="project-image"><img src="image/neiqian.jpg" alt="内嵌网页"></div>
       <h3>内嵌网页</h3>
       <p>不需要额外打开浏览器就可以使用的（部分浏览器不支持）</p>
       <a href="cody/neiqian.html" class="btn">开始体验</a>
     </div>
     
     <div class="project-card glass">
-      <div class="project-image"><img src="image/liaotian.png"></div>
+      <div class="project-image"><img src="image/liaotian.png" alt="聊天室"></div>
       <h3>聊天室</h3>
       <p>无聊的时候做的，支持语音</p>
       <a href="cody/liaotian.html" class="btn">开始体验</a>
@@ -313,7 +349,7 @@ body.glass-off .ripple {
 
   <div class="project-list">
     <div class="project-card glass">
-      <div class="project-image"><img src="image/shudu.png"></div>
+      <div class="project-image"><img src="image/shudu.png" alt="数独小游戏"></div>
       <h3>数独小游戏</h3>
       <p>经典数独，由 @元宝 制作</p>
       <a href="cody/shudu.html" class="btn">开始体验</a>
@@ -322,7 +358,7 @@ body.glass-off .ripple {
 </div>
 
 <footer class="glass">
-  © 2026 我的Scratch作品集
+  © 2026 我的Scratch作品集 | 环形折射鼠标 · 边缘液态透镜 | 风景背景
 </footer>
 
 <!-- 下载悬浮窗 -->
@@ -356,7 +392,7 @@ body.glass-off .ripple {
 </div>
 
 <script>
-/* ================= 毛玻璃开关（保留原作品集交互） ================= */
+/* ================= 毛玻璃开关 ================= */
 const toggleBtn = document.getElementById('glassToggle');
 
 toggleBtn.onclick = () => {
@@ -364,7 +400,7 @@ toggleBtn.onclick = () => {
   document.body.classList.toggle('glass-off');
 };
 
-/* ================= 下载悬浮窗（保留原功能） ================= */
+/* ================= 下载悬浮窗 ================= */
 const btn = document.getElementById('downloadBtn');
 const panel = document.getElementById('panel');
 const mask = document.getElementById('mask');
@@ -380,7 +416,7 @@ mask.onclick = () => {
   mask.style.display = 'none';
 };
 
-/* ================= 点击涟漪效果（保留原交互） ================= */
+/* ================= 点击涟漪效果 ================= */
 document.addEventListener('mousedown', e => {
   const ripple = document.createElement('div');
   ripple.className = 'ripple';
@@ -390,11 +426,10 @@ document.addEventListener('mousedown', e => {
   setTimeout(() => ripple.remove(), 1000);
 });
 
-/* ================= 核心：环形边缘折射鼠标透镜（无缝移植，无拉伸，中心纯净） ================= */
+/* ================= 核心：环形边缘折射鼠标透镜（无拉伸，中心纯净，完美移植） ================= */
 (function() {
     'use strict';
     
-    // 工具函数
     function length(x, y) {
         return Math.hypot(x, y);
     }
@@ -408,13 +443,12 @@ document.addEventListener('mousedown', e => {
         return 'ring-refract-' + Math.random().toString(36).substr(2, 10);
     }
     
-    // 环形边缘折射鼠标透镜（中心绝对无变形，边缘液态玻璃，无任何拉伸不对称）
     class RingRefractionCursor {
         constructor(options = {}) {
-            this.diameter = options.diameter || 94;     // 直径94px 精巧
+            this.diameter = options.diameter || 94;
             this.width = this.diameter;
             this.height = this.diameter;
-            this.ringWidthPx = options.ringWidthPx || 24;   // 环形折射宽度24px
+            this.ringWidthPx = options.ringWidthPx || 24;
             this.radius = this.diameter / 2;
             this.innerRadius = Math.max(0, this.radius - this.ringWidthPx);
             this.maxRefractStrength = options.maxStrength || 0.26;
@@ -430,11 +464,10 @@ document.addEventListener('mousedown', e => {
             this.setupResizeHandler();
             this.updateDisplacementMap();
             
-            console.log(`✅ 环形折射透镜已集成 | 直径:${this.diameter}px | 边缘宽度:${this.ringWidthPx}px | 中心无变形区`);
+            console.log(`✅ 环形折射透镜已激活 | 风景背景 | 边缘折射无拉伸 | 中心纯净`);
         }
         
         createElement() {
-            // 主容器: 圆形玻璃透镜
             this.container = document.createElement('div');
             this.container.style.cssText = `
                 position: fixed;
@@ -452,7 +485,6 @@ document.addEventListener('mousedown', e => {
                 will-change: left, top;
             `;
             
-            // 装饰内光晕
             const aura = document.createElement('div');
             aura.style.cssText = `
                 position: absolute;
@@ -464,7 +496,6 @@ document.addEventListener('mousedown', e => {
             `;
             this.container.appendChild(aura);
             
-            // SVG 滤镜系统
             this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             this.svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             this.svg.setAttribute('width', '0');
@@ -510,7 +541,6 @@ document.addEventListener('mousedown', e => {
             document.body.appendChild(this.canvas);
         }
         
-        // 核心算法：仅环形区域径向偏移，中心无偏移，无拉伸不对称
         updateDisplacementMap() {
             const w = this.diameter * this.canvasDPI;
             const h = this.diameter * this.canvasDPI;
@@ -655,7 +685,6 @@ document.addEventListener('mousedown', e => {
         }
     }
     
-    // 启动环形折射透镜（替代原有简单毛玻璃光标）
     let activeLens = null;
     
     function initRingLens() {
@@ -664,9 +693,9 @@ document.addEventListener('mousedown', e => {
             activeLens = null;
         }
         activeLens = new RingRefractionCursor({
-            diameter: 94,      // 精致小巧
-            ringWidthPx: 24,   // 边缘折射宽度24px（约2~2.5cm），中心无变形
-            maxStrength: 0.26  // 折射强度适中，无拉伸
+            diameter: 94,
+            ringWidthPx: 24,
+            maxStrength: 0.26
         });
     }
     
@@ -676,7 +705,6 @@ document.addEventListener('mousedown', e => {
         initRingLens();
     }
     
-    // 页面关闭时清理，避免残留
     window.addEventListener('beforeunload', () => {
         if (activeLens) {
             activeLens.destroy();

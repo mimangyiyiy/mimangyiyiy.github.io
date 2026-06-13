@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>我的Scratch作品集</title>
+<title>我的Scratch作品集 | 3D倾转 + 跟随光晕</title>
 
 <style>
 /* ================= 基础变量 ================= */
@@ -17,17 +17,13 @@ body {
   margin: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
   min-height: 100vh;
-
-  /* ✅ 使用您提供的新图片链接 (699pic 风景图) */
   background: url('https://img95.699pic.com/photo/40243/5928.jpg_wh860.jpg') no-repeat center center fixed;
   background-size: cover;
-
   color: white;
-  cursor: none; /* 隐藏系统光标，由环形折射透镜接管 */
+  cursor: none;
   position: relative;
 }
 
-/* 添加柔和遮罩层，让文字更清晰，同时保留风景美感 */
 body::before {
   content: '';
   position: fixed;
@@ -40,8 +36,7 @@ body::before {
   z-index: 0;
 }
 
-/* 所有主要内容提高层级 */
-header, .container, footer, .download-float, .glass-toggle {
+header, .container, .download-float, .glass-toggle {
   position: relative;
   z-index: 2;
 }
@@ -55,7 +50,7 @@ body.glass-off::before {
   display: none;
 }
 
-/* ================= 极透毛玻璃（背景卡片） ================= */
+/* ================= 毛玻璃风格 ================= */
 .glass {
   background: rgba(255,255,255,0.12);
   backdrop-filter: blur(20px);
@@ -72,7 +67,60 @@ body.glass-off .glass {
   box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
-/* ================= Header ================= */
+/* 卡片背景不透明度降低 */
+.project-card.glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.3);
+  overflow: hidden;
+}
+
+body.glass-off .project-card.glass {
+  background: white;
+  backdrop-filter: none;
+  border: none;
+}
+
+/* ===== 跟随鼠标的高亮光晕效果 ===== */
+.project-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.project-card .glow-effect {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+              rgba(255, 255, 200, 0.5) 0%, 
+              rgba(255, 215, 100, 0.25) 40%,
+              transparent 70%);
+  mix-blend-mode: overlay;
+  filter: blur(6px);
+}
+
+body.glass-off .project-card .glow-effect {
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+              rgba(255, 220, 120, 0.45) 0%, 
+              rgba(255, 200, 80, 0.2) 50%,
+              transparent 70%);
+  mix-blend-mode: normal;
+}
+
+.project-card.glow-active .glow-effect {
+  opacity: 1;
+}
+
+.project-card > *:not(.glow-effect) {
+  position: relative;
+  z-index: 2;
+}
+
 header {
   text-align: center;
   padding: 3rem 1rem;
@@ -80,7 +128,6 @@ header {
   backdrop-filter: blur(4px);
 }
 
-/* ================= 容器 ================= */
 .container {
   max-width: 1200px;
   margin: 2rem auto;
@@ -95,43 +142,49 @@ header {
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-.section-desc {
-  font-size: 0.95rem;
-  opacity: 0.9;
-  margin-bottom: 1.5rem;
-}
-
-/* ================= 卡片区 ================= */
 .project-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
+  perspective: 1200px;
 }
 
 .project-card {
   padding: 1.5rem;
   text-align: center;
-  transition: transform 0.3s;
-}
-
-.project-card:hover {
-  transform: translateY(-5px);
+  border-radius: 20px;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: box-shadow 0.3s ease;
+  cursor: pointer;
+  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
 }
 
 .project-image {
   height: 150px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   margin-bottom: 1rem;
+  transform: translateZ(10px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
 }
 
 .project-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
 }
 
-/* ================= 按钮 ================= */
+.project-card:hover .project-image img {
+  transform: scale(1.02);
+}
+
+.project-card h3, .project-card p, .project-card .btn {
+  transform: translateZ(6px);
+}
+
 .btn {
   display: inline-block;
   padding: 0.8rem 1.5rem;
@@ -141,14 +194,22 @@ header {
   background: var(--blue);
   color: white;
   transition: all 0.2s;
+  margin-top: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .btn:hover {
-  transform: scale(1.02);
+  transform: scale(1.02) translateZ(8px);
   background: #3a7be0;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
 }
 
-/* ================= 毛玻璃切换按钮 ================= */
+.project-card:hover {
+  box-shadow: 0 25px 35px -12px rgba(0,0,0,0.4);
+}
+
 .glass-toggle {
   position: fixed;
   top: 16px;
@@ -159,7 +220,6 @@ header {
   border-radius: 50%;
   background: rgba(255,255,255,0.25);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,7 +237,6 @@ body.glass-off .glass-toggle svg {
   fill: #333;
 }
 
-/* ================= 下载悬浮窗 ================= */
 .download-float {
   position: fixed;
   right: 24px;
@@ -201,10 +260,6 @@ body.glass-off .glass-toggle svg {
   width: 24px;
   height: 24px;
   fill: white;
-}
-
-body.glass-off .download-trigger svg {
-  fill: #333;
 }
 
 .download-panel {
@@ -245,12 +300,9 @@ body.glass-off .download-trigger svg {
 }
 
 footer {
-  text-align: center;
-  padding: 2rem;
-  margin-top: 3rem;
+  display: none;
 }
 
-/* ================= 涟漪效果（点击时） ================= */
 .ripple {
   position: fixed;
   border-radius: 50%;
@@ -269,87 +321,69 @@ body.glass-off .ripple {
 }
 
 @keyframes rippleAnim {
-  from {
-    width: 32px;
-    height: 32px;
-    opacity: 1;
-  }
-  to {
-    width: 140px;
-    height: 140px;
-    opacity: 0;
-  }
+  from { width: 32px; height: 32px; opacity: 1; }
+  to { width: 140px; height: 140px; opacity: 0; }
 }
 
-/* 环形折射透镜最高层级 */
-.liquid-lens-container {
-  z-index: 2147483647 !important;
+@media (max-width: 768px) {
+  .project-list { gap: 1.25rem; }
 }
 </style>
 </head>
 
 <body class="glass-on">
 
-<!-- 毛玻璃开关 -->
 <div class="glass-toggle" id="glassToggle">
   <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h11v2zm0-4H6V7h11v2z"/></svg>
 </div>
 
 <header class="glass">
   <h1>我的Scratch作品集</h1>
-  <p></p>
+  <p>✨ 3D倾斜 · 点击冲击 · 跟随鼠标高亮光晕 ✨</p>
 </header>
 
 <div class="container">
   <h2 class="section-title">Scratch 作品</h2>
-  <p class="section-desc">以下是我使用 Scratch 创作的多人互动与创意作品。</p>
-
   <div class="project-list">
-    <div class="project-card glass">
-      <div class="project-image"><img src="image/duoren.png" alt="多人迷宫"></div>
+    <div class="project-card glass" data-tilt>
+      <div class="project-image"><img src="image/duoren.png" alt="多人迷宫" onerror="this.src='https://placehold.co/400x200?text=多人迷宫'"></div>
       <h3>多人迷宫</h3>
       <p>鼠标控制角色穿越迷宫</p>
       <a href="cody/duoren1.html" class="btn">开始体验</a>
     </div>
-
-    <div class="project-card glass">
-      <div class="project-image"><img src="image/Plattformer_v9.0_Online.jpg" alt="多人跑酷"></div>
+    <div class="project-card glass" data-tilt>
+      <div class="project-image"><img src="image/Plattformer_v9.0_Online.jpg" alt="多人跑酷" onerror="this.src='https://placehold.co/400x200?text=多人跑酷'"></div>
       <h3>多人跑酷</h3>
       <p>键盘操作（仅电脑版）</p>
       <a href="cody/Plattformer_v9.0_Online.html" class="btn">开始体验</a>
     </div>
-
-    <div class="project-card glass">
-      <div class="project-image"><img src="image/luoyan3d.jpg" alt="裸眼3D"></div>
+    <div class="project-card glass" data-tilt>
+      <div class="project-image"><img src="image/luoyan3d.jpg" alt="裸眼3D" onerror="this.src='https://placehold.co/400x200?text=裸眼3D'"></div>
       <h3>裸眼3D</h3>
       <p>摄像头眼球追踪</p>
       <a href="cody/luoyan3d.html" class="btn">开始体验</a>
     </div>
-    
-    <div class="project-card glass">
-      <div class="project-image"><img src="image/neiqian.jpg" alt="内嵌网页"></div>
+    <div class="project-card glass" data-tilt>
+      <div class="project-image"><img src="image/neiqian.jpg" alt="内嵌网页" onerror="this.src='https://placehold.co/400x200?text=内嵌网页'"></div>
       <h3>内嵌网页</h3>
       <p>不需要额外打开浏览器就可以使用的（部分浏览器不支持）</p>
       <a href="cody/neiqian.html" class="btn">开始体验</a>
     </div>
-    
-    <div class="project-card glass">
-      <div class="project-image"><img src="image/liaotian.png" alt="聊天室"></div>
+    <div class="project-card glass" data-tilt>
+      <div class="project-image"><img src="image/liaotian.png" alt="聊天室" onerror="this.src='https://placehold.co/400x200?text=聊天室'"></div>
       <h3>聊天室</h3>
       <p>无聊的时候做的，支持语音</p>
       <a href="cody/liaotian.html" class="btn">开始体验</a>
     </div>
-    
   </div>
 </div>
 
 <div class="container">
   <h2 class="section-title">HTML 小游戏</h2>
-  <p class="section-desc">使用 HTML + JavaScript 编写，可直接在浏览器运行。</p>
-
+  <p class="section-desc" style="font-size:0.9rem; opacity:0.8; margin-bottom:1.5rem;">使用 HTML + JavaScript 编写，可直接在浏览器运行。</p>
   <div class="project-list">
-    <div class="project-card glass">
-      <div class="project-image"><img src="image/shudu.png" alt="数独小游戏"></div>
+    <div class="project-card glass" data-tilt>
+      <div class="project-image"><img src="image/shudu.png" alt="数独小游戏" onerror="this.src='https://placehold.co/400x200?text=数独游戏'"></div>
       <h3>数独小游戏</h3>
       <p>经典数独，由 @元宝 制作</p>
       <a href="cody/shudu.html" class="btn">开始体验</a>
@@ -357,44 +391,25 @@ body.glass-off .ripple {
   </div>
 </div>
 
-<footer class="glass">
-  © 2026 我的Scratch作品集 | 环形折射鼠标 · 边缘液态透镜 | 风景背景
-</footer>
-
-<!-- 下载悬浮窗 -->
 <div class="download-mask" id="mask"></div>
 <div class="download-float">
   <button class="download-trigger glass" id="downloadBtn">
     <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
   </button>
-
   <div class="download-panel glass" id="panel">
     <h4>📦 资源下载</h4>
-    
-    <div class="download-item">
-      <span>Astrum Climber</span>
-      <a href="https://www.astrumstudio.top" target="_blank" rel="noopener noreferrer">进入官网</a>
-    </div>
-
+    <div class="download-item"><span>Astrum Climber</span><a href="https://www.astrumstudio.top" target="_blank">进入官网</a></div>
     <div class="download-item" style="flex-direction:column; align-items:flex-start;">
-      <div style="display:flex; justify-content:space-between; width:100%;">
-        <span>Astrum Climber</span>
-        <a href="https://astrum.lanzoue.com/b0w9mfvmh" target="_blank" rel="noopener noreferrer">蓝奏云直达</a>
-      </div>
+      <div style="display:flex; justify-content:space-between; width:100%;"><span>Astrum Climber</span><a href="https://astrum.lanzoue.com/b0w9mfvmh" target="_blank">蓝奏云直达</a></div>
       <small style="opacity:0.8; margin-top:6px;">提取码：5vft</small>
     </div>
-
-    <div class="download-item">
-      <span>Astrum Climber Together</span>
-      <a href="cody/Astrum Climber Together 1.3.0正式版本密码123456.zip" download>下载</a>
-    </div>
+    <div class="download-item"><span>Astrum Climber Together</span><a href="cody/Astrum Climber Together 1.3.0正式版本密码123456.zip" download>下载</a></div>
   </div>
 </div>
 
 <script>
 /* ================= 毛玻璃开关 ================= */
 const toggleBtn = document.getElementById('glassToggle');
-
 toggleBtn.onclick = () => {
   document.body.classList.toggle('glass-on');
   document.body.classList.toggle('glass-off');
@@ -404,19 +419,17 @@ toggleBtn.onclick = () => {
 const btn = document.getElementById('downloadBtn');
 const panel = document.getElementById('panel');
 const mask = document.getElementById('mask');
-
 btn.onclick = () => {
   const show = panel.style.display === 'block';
   panel.style.display = show ? 'none' : 'block';
   mask.style.display = show ? 'none' : 'block';
 };
-
 mask.onclick = () => {
   panel.style.display = 'none';
   mask.style.display = 'none';
 };
 
-/* ================= 点击涟漪效果 ================= */
+/* 点击涟漪效果 */
 document.addEventListener('mousedown', e => {
   const ripple = document.createElement('div');
   ripple.className = 'ripple';
@@ -426,22 +439,293 @@ document.addEventListener('mousedown', e => {
   setTimeout(() => ripple.remove(), 1000);
 });
 
-/* ================= 核心：环形边缘折射鼠标透镜（无拉伸，中心纯净，完美移植） ================= */
+/* ================= 3D卡片跟随鼠标倾斜 + 点击冲击 + 跟随光晕 ================= */
 (function() {
     'use strict';
     
-    function length(x, y) {
-        return Math.hypot(x, y);
+    const CONFIG = {
+        maxRotateX: 14,
+        maxRotateY: 14,
+        boostDuration: 380,
+        boostStrength: 16
+    };
+    
+    const cards = document.querySelectorAll('.project-card[data-tilt]');
+    if (!cards.length) return;
+    
+    // 为每个卡片添加光晕效果元素
+    cards.forEach(card => {
+        const glowDiv = document.createElement('div');
+        glowDiv.className = 'glow-effect';
+        card.appendChild(glowDiv);
+    });
+    
+    const cardStates = new Map();
+    
+    cards.forEach(card => {
+        card.style.transformStyle = 'preserve-3d';
+        cardStates.set(card, {
+            currentRotateX: 0,
+            currentRotateY: 0,
+            targetRotateX: 0,
+            targetRotateY: 0,
+            boostX: 0,
+            boostY: 0,
+            boostAnimId: null,
+            rafActive: false
+        });
+    });
+    
+    // 平滑动画
+    function startSmoothAnimation(card) {
+        const state = cardStates.get(card);
+        if (!state) return;
+        if (state.rafActive) return;
+        state.rafActive = true;
+        
+        function updateTransform() {
+            const s = cardStates.get(card);
+            if (!s) return;
+            
+            let dx = s.targetRotateX - s.currentRotateX;
+            let dy = s.targetRotateY - s.currentRotateY;
+            const factor = 0.22;
+            let newX = s.currentRotateX + dx * factor;
+            let newY = s.currentRotateY + dy * factor;
+            
+            const eps = 0.02;
+            if (Math.abs(dx) < eps && Math.abs(dy) < eps && Math.abs(s.targetRotateX) < 0.01 && Math.abs(s.targetRotateY) < 0.01) {
+                newX = s.targetRotateX;
+                newY = s.targetRotateY;
+                s.currentRotateX = newX;
+                s.currentRotateY = newY;
+                const finalX = s.currentRotateX + s.boostX;
+                const finalY = s.currentRotateY + s.boostY;
+                card.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg) translateZ(0)`;
+                s.rafActive = false;
+                return;
+            }
+            
+            s.currentRotateX = newX;
+            s.currentRotateY = newY;
+            const finalX = s.currentRotateX + s.boostX;
+            const finalY = s.currentRotateY + s.boostY;
+            card.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg) translateZ(0)`;
+            
+            requestAnimationFrame(updateTransform);
+        }
+        
+        requestAnimationFrame(updateTransform);
     }
     
+    function refreshCardTransform(card) {
+        const state = cardStates.get(card);
+        if (!state) return;
+        if (!state.rafActive) {
+            startSmoothAnimation(card);
+        }
+    }
+    
+    // 更新光晕效果
+    function updateGlowEffect(card, mouseX, mouseY, isHover) {
+        const glow = card.querySelector('.glow-effect');
+        if (!glow) return;
+        if (isHover && mouseX && mouseY) {
+            const rect = card.getBoundingClientRect();
+            const relX = mouseX - rect.left;
+            const relY = mouseY - rect.top;
+            glow.style.setProperty('--mouse-x', `${relX}px`);
+            glow.style.setProperty('--mouse-y', `${relY}px`);
+            card.classList.add('glow-active');
+        } else {
+            card.classList.remove('glow-active');
+        }
+    }
+    
+    // 获取点击冲击偏移
+    function getClickBoost(card, clickX, clickY) {
+        const rect = card.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        let relX = (clickX - rect.left) / w;
+        let relY = (clickY - rect.top) / h;
+        relX = Math.min(Math.max(relX, 0), 1);
+        relY = Math.min(Math.max(relY, 0), 1);
+        
+        const normX = (relX - 0.5) * 2;
+        const normY = (relY - 0.5) * 2;
+        const strengthFactor = Math.min(1.0, Math.max(0.35, Math.hypot(normX, normY)));
+        let boostX = -normY * CONFIG.boostStrength * strengthFactor;
+        let boostY = normX * CONFIG.boostStrength * strengthFactor;
+        
+        const maxBoost = CONFIG.boostStrength;
+        boostX = Math.min(Math.max(boostX, -maxBoost), maxBoost);
+        boostY = Math.min(Math.max(boostY, -maxBoost), maxBoost);
+        return { boostX, boostY };
+    }
+    
+    function applyBoostToCard(card, boostX, boostY) {
+        const state = cardStates.get(card);
+        if (!state) return;
+        if (state.boostAnimId) {
+            cancelAnimationFrame(state.boostAnimId);
+            state.boostAnimId = null;
+        }
+        state.boostX = boostX;
+        state.boostY = boostY;
+        refreshCardTransform(card);
+        
+        const startTime = performance.now();
+        const startBoostX = boostX;
+        const startBoostY = boostY;
+        
+        function decayBoost(now) {
+            const elapsed = now - startTime;
+            let t = Math.min(1, elapsed / CONFIG.boostDuration);
+            const easeOut = 1 - Math.pow(1 - t, 3);
+            const currentX = startBoostX * (1 - easeOut);
+            const currentY = startBoostY * (1 - easeOut);
+            state.boostX = currentX;
+            state.boostY = currentY;
+            refreshCardTransform(card);
+            if (t < 1) {
+                state.boostAnimId = requestAnimationFrame(decayBoost);
+            } else {
+                state.boostX = 0;
+                state.boostY = 0;
+                refreshCardTransform(card);
+                state.boostAnimId = null;
+            }
+        }
+        state.boostAnimId = requestAnimationFrame(decayBoost);
+    }
+    
+    // 记录当前悬停的卡片，用于确保鼠标离开body时也能归位
+    let currentHoverCard = null;
+    
+    // 鼠标移动处理
+    document.body.addEventListener('mousemove', (e) => {
+        const targetCard = e.target.closest('.project-card[data-tilt]');
+        
+        // 如果当前悬停的卡片发生了变化
+        if (currentHoverCard !== targetCard) {
+            // 离开之前的卡片
+            if (currentHoverCard) {
+                const oldState = cardStates.get(currentHoverCard);
+                if (oldState) {
+                    oldState.targetRotateX = 0;
+                    oldState.targetRotateY = 0;
+                    startSmoothAnimation(currentHoverCard);
+                }
+                updateGlowEffect(currentHoverCard, null, null, false);
+            }
+            currentHoverCard = targetCard;
+        }
+        
+        if (!targetCard) {
+            // 没有卡片悬停，不需要额外处理（已在上面清除了）
+            return;
+        }
+        
+        // 处理当前卡片的旋转跟随
+        const rect = targetCard.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        let offsetX = (e.clientX - centerX) / (rect.width / 2);
+        let offsetY = (e.clientY - centerY) / (rect.height / 2);
+        offsetX = Math.min(Math.max(offsetX, -1), 1);
+        offsetY = Math.min(Math.max(offsetY, -1), 1);
+        
+        // 让卡片朝向鼠标方向倾斜
+        let targetY = -offsetX * CONFIG.maxRotateY;
+        let targetX = offsetY * CONFIG.maxRotateX;
+        targetX = Math.min(Math.max(targetX, -CONFIG.maxRotateX), CONFIG.maxRotateX);
+        targetY = Math.min(Math.max(targetY, -CONFIG.maxRotateY), CONFIG.maxRotateY);
+        
+        const state = cardStates.get(targetCard);
+        if (state) {
+            state.targetRotateX = targetX;
+            state.targetRotateY = targetY;
+            startSmoothAnimation(targetCard);
+        }
+        
+        // 更新光晕（跟随鼠标位置）
+        updateGlowEffect(targetCard, e.clientX, e.clientY, true);
+    });
+    
+    // 鼠标离开整个窗口时，清除所有卡片的倾斜和光晕
+    document.body.addEventListener('mouseleave', () => {
+        cards.forEach(card => {
+            const state = cardStates.get(card);
+            if (state) {
+                state.targetRotateX = 0;
+                state.targetRotateY = 0;
+                startSmoothAnimation(card);
+            }
+            updateGlowEffect(card, null, null, false);
+        });
+        currentHoverCard = null;
+    });
+    
+    // 卡片单独的 mouseleave 确保精准归位（防止某些边界情况）
+    cards.forEach(card => {
+        card.addEventListener('mouseleave', (e) => {
+            // 检查鼠标是否真的离开了卡片（防止移动到子元素时误触发）
+            const relatedTarget = e.relatedTarget;
+            if (relatedTarget && card.contains(relatedTarget)) {
+                return;
+            }
+            const state = cardStates.get(card);
+            if (state) {
+                state.targetRotateX = 0;
+                state.targetRotateY = 0;
+                startSmoothAnimation(card);
+            }
+            updateGlowEffect(card, null, null, false);
+            if (currentHoverCard === card) {
+                currentHoverCard = null;
+            }
+        });
+        
+        // 点击冲击特效
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const clickX = e.clientX;
+            const clickY = e.clientY;
+            const boost = getClickBoost(card, clickX, clickY);
+            applyBoostToCard(card, boost.boostX, boost.boostY);
+            
+            // 微小脉冲增强反馈
+            const originalTransition = card.style.transition;
+            card.style.transition = 'transform 0.05s ease-out';
+            const currentTransform = card.style.transform;
+            card.style.transform = `${currentTransform} scale(1.01)`;
+            setTimeout(() => {
+                if (card) {
+                    card.style.transition = originalTransition;
+                    const s = cardStates.get(card);
+                    if (s && !s.rafActive) {
+                        const finX = (s.currentRotateX + s.boostX);
+                        const finY = (s.currentRotateY + s.boostY);
+                        card.style.transform = `rotateX(${finX}deg) rotateY(${finY}deg) translateZ(0)`;
+                    }
+                }
+            }, 50);
+        });
+    });
+    
+    console.log('🎴 3D倾斜（鼠标离开即归零） + 点击冲击 + 跟随光晕 已启用');
+})();
+
+/* ================= 环形边缘折射鼠标透镜 ================= */
+(function() {
+    'use strict';
+    function length(x, y) { return Math.hypot(x, y); }
     function smoothStep(edge0, edge1, t) {
         const x = Math.max(0, Math.min(1, (t - edge0) / (edge1 - edge0)));
         return x * x * (3 - 2 * x);
     }
-    
-    function generateId() {
-        return 'ring-refract-' + Math.random().toString(36).substr(2, 10);
-    }
+    function generateId() { return 'ring-refract-' + Math.random().toString(36).substr(2, 10); }
     
     class RingRefractionCursor {
         constructor(options = {}) {
@@ -452,19 +736,15 @@ document.addEventListener('mousedown', e => {
             this.radius = this.diameter / 2;
             this.innerRadius = Math.max(0, this.radius - this.ringWidthPx);
             this.maxRefractStrength = options.maxStrength || 0.26;
-            
             this.id = generateId();
             this.canvasDPI = 1;
             this.mouseUV = { x: 0.5, y: 0.5 };
             this.posX = window.innerWidth / 2 - this.radius;
             this.posY = window.innerHeight / 2 - this.radius;
-            
             this.createElement();
             this.setupMouseTracking();
             this.setupResizeHandler();
             this.updateDisplacementMap();
-            
-            console.log(`✅ 环形折射透镜已激活 | 风景背景 | 边缘折射无拉伸 | 中心纯净`);
         }
         
         createElement() {
@@ -484,24 +764,14 @@ document.addEventListener('mousedown', e => {
                 transition: none;
                 will-change: left, top;
             `;
-            
             const aura = document.createElement('div');
-            aura.style.cssText = `
-                position: absolute;
-                inset: 0;
-                border-radius: 50%;
-                background: radial-gradient(circle at 35% 35%, rgba(255,250,210,0.15) 0%, rgba(255,255,245,0) 70%);
-                pointer-events: none;
-                z-index: 2;
-            `;
+            aura.style.cssText = `position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, rgba(255,250,210,0.15) 0%, rgba(255,255,245,0) 70%); pointer-events: none; z-index: 2;`;
             this.container.appendChild(aura);
-            
             this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             this.svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             this.svg.setAttribute('width', '0');
             this.svg.setAttribute('height', '0');
             this.svg.style.cssText = `position: fixed; top:0; left:0; pointer-events: none; z-index: 2147483646;`;
-            
             const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
             const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
             filter.setAttribute('id', `${this.id}_filter`);
@@ -511,102 +781,71 @@ document.addEventListener('mousedown', e => {
             filter.setAttribute('y', '0');
             filter.setAttribute('width', this.diameter.toString());
             filter.setAttribute('height', this.diameter.toString());
-            
             this.feImage = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
             this.feImage.setAttribute('id', `${this.id}_map`);
             this.feImage.setAttribute('width', this.diameter.toString());
             this.feImage.setAttribute('height', this.diameter.toString());
             this.feImage.setAttribute('preserveAspectRatio', 'none');
-            
             this.feDisplacementMap = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
             this.feDisplacementMap.setAttribute('in', 'SourceGraphic');
             this.feDisplacementMap.setAttribute('in2', `${this.id}_map`);
             this.feDisplacementMap.setAttribute('xChannelSelector', 'R');
             this.feDisplacementMap.setAttribute('yChannelSelector', 'G');
             this.feDisplacementMap.setAttribute('scale', '8');
-            
             filter.appendChild(this.feImage);
             filter.appendChild(this.feDisplacementMap);
             defs.appendChild(filter);
             this.svg.appendChild(defs);
-            
             this.canvas = document.createElement('canvas');
             this.canvas.width = this.diameter * this.canvasDPI;
             this.canvas.height = this.diameter * this.canvasDPI;
             this.canvas.style.display = 'none';
             this.ctx = this.canvas.getContext('2d');
-            
             document.body.appendChild(this.svg);
             document.body.appendChild(this.container);
             document.body.appendChild(this.canvas);
         }
         
         updateDisplacementMap() {
-            const w = this.diameter * this.canvasDPI;
-            const h = this.diameter * this.canvasDPI;
+            const w = this.diameter * this.canvasDPI, h = this.diameter * this.canvasDPI;
             const data = new Uint8ClampedArray(w * h * 4);
-            
-            const radiusPixels = this.radius;
-            const innerRadiusPx = this.innerRadius;
-            const ringThickness = radiusPixels - innerRadiusPx;
+            const radiusPixels = this.radius, innerRadiusPx = this.innerRadius, ringThickness = radiusPixels - innerRadiusPx;
             const maxPixelShift = Math.min(16, ringThickness * 0.65) * this.maxRefractStrength * 2.2;
-            
             const rawVec = [];
             let maxObservedOffset = 0;
-            
             for (let i = 0; i < data.length; i += 4) {
-                const px = (i / 4) % w;
-                const py = Math.floor(i / 4 / w);
-                const cx = w / 2;
-                const cy = h / 2;
-                const dxc = px - cx;
-                const dyc = py - cy;
-                const distToCenter = length(dxc, dyc);
-                
+                const px = (i / 4) % w, py = Math.floor(i / 4 / w);
+                const cx = w / 2, cy = h / 2, dxc = px - cx, dyc = py - cy, distToCenter = length(dxc, dyc);
                 let offsetX = 0, offsetY = 0;
-                
                 if (distToCenter > innerRadiusPx && distToCenter <= radiusPixels) {
                     let t = (distToCenter - innerRadiusPx) / ringThickness;
                     t = Math.min(1.0, Math.max(0.0, t));
                     let intensity = smoothStep(0, 1, t);
                     intensity = Math.pow(intensity, 1.2);
-                    let dirX = dxc / distToCenter;
-                    let dirY = dyc / distToCenter;
+                    let dirX = dxc / distToCenter, dirY = dyc / distToCenter;
                     if (!isFinite(dirX)) dirX = 0;
                     if (!isFinite(dirY)) dirY = 0;
                     const offsetMagnitude = intensity * maxPixelShift;
                     offsetX = dirX * offsetMagnitude;
                     offsetY = dirY * offsetMagnitude;
                 }
-                
                 rawVec.push(offsetX, offsetY);
-                const absX = Math.abs(offsetX);
-                const absY = Math.abs(offsetY);
+                const absX = Math.abs(offsetX), absY = Math.abs(offsetY);
                 if (absX > maxObservedOffset) maxObservedOffset = absX;
                 if (absY > maxObservedOffset) maxObservedOffset = absY;
             }
-            
             if (maxObservedOffset < 0.01) maxObservedOffset = 0.01;
-            
             let idx = 0;
             for (let i = 0; i < data.length; i += 4) {
-                const dx = rawVec[idx++];
-                const dy = rawVec[idx++];
-                let r = (dx / maxObservedOffset) * 0.5 + 0.5;
-                let g = (dy / maxObservedOffset) * 0.5 + 0.5;
-                r = Math.min(0.99, Math.max(0.01, r));
-                g = Math.min(0.99, Math.max(0.01, g));
-                data[i] = r * 255;
-                data[i+1] = g * 255;
-                data[i+2] = 128;
-                data[i+3] = 255;
+                const dx = rawVec[idx++], dy = rawVec[idx++];
+                let r = (dx / maxObservedOffset) * 0.5 + 0.5, g = (dy / maxObservedOffset) * 0.5 + 0.5;
+                r = Math.min(0.99, Math.max(0.01, r)); g = Math.min(0.99, Math.max(0.01, g));
+                data[i] = r * 255; data[i+1] = g * 255; data[i+2] = 128; data[i+3] = 255;
             }
-            
             const imgData = new ImageData(data, w, h);
             this.ctx.putImageData(imgData, 0, 0);
             const dataURL = this.canvas.toDataURL();
             this.feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', dataURL);
-            
             const scaleValue = maxObservedOffset * 0.85;
             const finalScale = Math.min(22, Math.max(3, scaleValue));
             this.feDisplacementMap.setAttribute('scale', finalScale.toString());
@@ -615,103 +854,24 @@ document.addEventListener('mousedown', e => {
         setupMouseTracking() {
             let rafPending = false;
             const handleMouseMove = (e) => {
-                let clientX = e.clientX;
-                let clientY = e.clientY;
-                let left = clientX - this.radius;
-                let top = clientY - this.radius;
-                const maxLeft = window.innerWidth - this.diameter;
-                const maxTop = window.innerHeight - this.diameter;
-                left = Math.min(Math.max(0, left), maxLeft);
-                top = Math.min(Math.max(0, top), maxTop);
-                
-                this.posX = left;
-                this.posY = top;
-                this.container.style.left = left + 'px';
-                this.container.style.top = top + 'px';
-                
-                const relU = (clientX - left) / this.diameter;
-                const relV = (clientY - top) / this.diameter;
-                this.mouseUV = { x: Math.min(0.98, Math.max(0.02, relU)), y: Math.min(0.98, Math.max(0.02, relV)) };
-                
-                if (!rafPending) {
-                    rafPending = true;
-                    requestAnimationFrame(() => {
-                        this.updateDisplacementMap();
-                        rafPending = false;
-                    });
-                }
+                let left = e.clientX - this.radius, top = e.clientY - this.radius;
+                const maxLeft = window.innerWidth - this.diameter, maxTop = window.innerHeight - this.diameter;
+                left = Math.min(Math.max(0, left), maxLeft); top = Math.min(Math.max(0, top), maxTop);
+                this.posX = left; this.posY = top;
+                this.container.style.left = left + 'px'; this.container.style.top = top + 'px';
+                if (!rafPending) { rafPending = true; requestAnimationFrame(() => { this.updateDisplacementMap(); rafPending = false; }); }
             };
-            
             window.addEventListener('mousemove', handleMouseMove);
             this.mouseMoveHandler = handleMouseMove;
-            
-            const initLeft = window.innerWidth / 2 - this.radius;
-            const initTop = window.innerHeight / 2 - this.radius;
+            const initLeft = window.innerWidth / 2 - this.radius, initTop = window.innerHeight / 2 - this.radius;
             this.posX = Math.min(Math.max(0, initLeft), window.innerWidth - this.diameter);
             this.posY = Math.min(Math.max(0, initTop), window.innerHeight - this.diameter);
-            this.container.style.left = this.posX + 'px';
-            this.container.style.top = this.posY + 'px';
+            this.container.style.left = this.posX + 'px'; this.container.style.top = this.posY + 'px';
             this.updateDisplacementMap();
         }
-        
         setupResizeHandler() {
             const onResize = () => {
-                let newLeft = this.posX;
-                let newTop = this.posY;
-                const maxLeft = window.innerWidth - this.diameter;
-                const maxTop = window.innerHeight - this.diameter;
-                if (newLeft > maxLeft) newLeft = maxLeft;
-                if (newTop > maxTop) newTop = maxTop;
-                if (newLeft < 0) newLeft = 0;
-                if (newTop < 0) newTop = 0;
-                if (newLeft !== this.posX || newTop !== this.posY) {
-                    this.posX = newLeft;
-                    this.posY = newTop;
-                    this.container.style.left = newLeft + 'px';
-                    this.container.style.top = newTop + 'px';
-                }
-                this.updateDisplacementMap();
-            };
-            window.addEventListener('resize', onResize);
-            this.resizeCallback = onResize;
-        }
-        
-        destroy() {
-            if (this.mouseMoveHandler) window.removeEventListener('mousemove', this.mouseMoveHandler);
-            if (this.resizeCallback) window.removeEventListener('resize', this.resizeCallback);
-            if (this.container) this.container.remove();
-            if (this.svg) this.svg.remove();
-            if (this.canvas) this.canvas.remove();
-        }
-    }
-    
-    let activeLens = null;
-    
-    function initRingLens() {
-        if (activeLens) {
-            activeLens.destroy();
-            activeLens = null;
-        }
-        activeLens = new RingRefractionCursor({
-            diameter: 94,
-            ringWidthPx: 24,
-            maxStrength: 0.26
-        });
-    }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initRingLens);
-    } else {
-        initRingLens();
-    }
-    
-    window.addEventListener('beforeunload', () => {
-        if (activeLens) {
-            activeLens.destroy();
-        }
-    });
-})();
-</script>
-
-</body>
-</html>
+                let newLeft = this.posX, newTop = this.posY;
+                const maxLeft = window.innerWidth - this.diameter, maxTop = window.innerHeight - this.diameter;
+                if (newLeft > maxLeft) newLeft = maxLeft; if (newTop > maxTop) newTop = maxTop;
+                if (newLeft < 0) newLeft = 0; if (newTop 

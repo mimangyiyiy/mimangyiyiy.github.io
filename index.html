@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>我的Scratch作品集 | 3D倾转 + 跟随光晕</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>我的Scratch作品集 | 3D倾转 + 卡片折射扭曲 + 按钮方向拉伸</title>
 
 <style>
 /* ================= 基础变量 ================= */
@@ -20,8 +20,15 @@ body {
   background: url('https://img95.699pic.com/photo/40243/5928.jpg_wh860.jpg') no-repeat center center fixed;
   background-size: cover;
   color: white;
-  cursor: none;
   position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: auto;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 body::before {
@@ -67,13 +74,14 @@ body.glass-off .glass {
   box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
-/* 卡片背景不透明度降低 */
+/* ===== 卡片样式 - 带有折射扭曲效果（透明柔和，无黄色闪烁） ===== */
 .project-card.glass {
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.3);
-  overflow: hidden; /* 让光晕不超出圆角 */
+  overflow: visible;
+  position: relative;
 }
 
 body.glass-off .project-card.glass {
@@ -82,13 +90,75 @@ body.glass-off .project-card.glass {
   border: none;
 }
 
-/* ===== 跟随鼠标的高亮光晕效果 ===== */
 .project-card {
   position: relative;
   isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: grab;
+  transition: box-shadow 0.3s ease;
+  padding: 1.5rem;
+  text-align: center;
+  border-radius: 20px;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
 }
 
-/* 光晕层 - 默认隐藏，鼠标移入时显示并跟随鼠标 */
+.project-card:active {
+  cursor: grabbing;
+}
+
+/* 纯折射扭曲光晕（无黄色，透明柔和） */
+.project-card .refract-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+              rgba(255, 255, 255, 0.2) 0%, 
+              rgba(255, 255, 255, 0.08) 25%,
+              transparent 70%);
+  mix-blend-mode: screen;
+  filter: blur(12px);
+}
+
+/* 边缘折射增强（更透明） */
+.project-card .refract-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+              transparent 60%,
+              rgba(255, 255, 255, 0.06) 80%,
+              rgba(255, 255, 255, 0.12) 95%);
+  filter: blur(8px);
+}
+
+body.glass-off .project-card .refract-glow {
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+              rgba(200, 220, 255, 0.15) 0%, 
+              rgba(180, 200, 240, 0.06) 30%,
+              transparent 70%);
+  mix-blend-mode: normal;
+}
+
+.project-card.refract-active .refract-glow {
+  opacity: 1;
+}
+
+.project-card.refract-active .refract-ring {
+  opacity: 0.7;
+}
+
+/* 轻微的跟随光晕（非常淡） */
 .project-card .glow-effect {
   position: absolute;
   inset: 0;
@@ -98,73 +168,22 @@ body.glass-off .project-card.glass {
   opacity: 0;
   transition: opacity 0.2s ease;
   background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-              rgba(255, 255, 200, 0.5) 0%, 
-              rgba(255, 215, 100, 0.25) 40%,
+              rgba(255, 255, 255, 0.12) 0%, 
+              rgba(255, 255, 255, 0.04) 40%,
               transparent 70%);
   mix-blend-mode: overlay;
-  filter: blur(6px);
-}
-
-body.glass-off .project-card .glow-effect {
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-              rgba(255, 220, 120, 0.45) 0%, 
-              rgba(255, 200, 80, 0.2) 50%,
-              transparent 70%);
-  mix-blend-mode: normal;
+  filter: blur(10px);
 }
 
 .project-card.glow-active .glow-effect {
-  opacity: 1;
+  opacity: 0.6;
 }
 
-/* 卡片内容层级提高 */
-.project-card > *:not(.glow-effect) {
+.project-card > *:not(.refract-glow):not(.refract-ring):not(.glow-effect) {
   position: relative;
   z-index: 2;
 }
 
-header {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: linear-gradient(135deg, rgba(255,171,25,0.85), rgba(76,151,255,0.85));
-  backdrop-filter: blur(4px);
-}
-
-.container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
-
-.section-title {
-  font-size: 1.8rem;
-  border-left: 5px solid var(--orange);
-  padding-left: 10px;
-  margin-bottom: 0.4rem;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-/* 3D卡片网格 */
-.project-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  perspective: 1200px;
-}
-
-/* 卡片本体 (3D 容器) */
-.project-card {
-  padding: 1.5rem;
-  text-align: center;
-  border-radius: 20px;
-  transform-style: preserve-3d;
-  will-change: transform;
-  transition: box-shadow 0.3s ease;
-  cursor: pointer;
-  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
-}
-
-/* 内部元素提升平面感 */
 .project-image {
   height: 150px;
   border-radius: 12px;
@@ -180,6 +199,7 @@ header {
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s;
+  pointer-events: none;
 }
 
 .project-card:hover .project-image img {
@@ -188,6 +208,7 @@ header {
 
 .project-card h3, .project-card p, .project-card .btn {
   transform: translateZ(6px);
+  pointer-events: auto;
 }
 
 .btn {
@@ -203,6 +224,8 @@ header {
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .btn:hover {
@@ -215,7 +238,17 @@ header {
   box-shadow: 0 25px 35px -12px rgba(0,0,0,0.4);
 }
 
-/* 固定控件 */
+/* ===== 开关按钮和下载按钮的拉伸效果 ===== */
+.glass-toggle, .download-trigger {
+  transition: transform 0.05s linear;
+  transform-origin: center;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+}
+
 .glass-toggle {
   position: fixed;
   top: 16px;
@@ -226,11 +259,13 @@ header {
   border-radius: 50%;
   background: rgba(255,255,255,0.25);
   backdrop-filter: blur(12px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.2s;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.glass-toggle:active {
+  cursor: grabbing;
 }
 
 .glass-toggle svg {
@@ -258,8 +293,16 @@ body.glass-off .glass-toggle svg {
   align-items: center;
   justify-content: center;
   padding: 0;
-  cursor: pointer;
+  cursor: grab;
   transition: 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(12px);
+}
+
+.download-trigger:active {
+  cursor: grabbing;
 }
 
 .download-trigger svg {
@@ -295,6 +338,8 @@ body.glass-off .glass-toggle svg {
   border-radius: 20px;
   text-decoration: none;
   font-size: 12px;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .download-mask {
@@ -305,11 +350,38 @@ body.glass-off .glass-toggle svg {
   display: none;
 }
 
+header {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: linear-gradient(135deg, rgba(255,171,25,0.85), rgba(76,151,255,0.85));
+  backdrop-filter: blur(4px);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  border-left: 5px solid var(--orange);
+  padding-left: 10px;
+  margin-bottom: 0.4rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.project-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  perspective: 1200px;
+}
+
 footer {
   display: none;
 }
 
-/* 涟漪效果 */
 .ripple {
   position: fixed;
   border-radius: 50%;
@@ -346,7 +418,7 @@ body.glass-off .ripple {
 
 <header class="glass">
   <h1>我的Scratch作品集</h1>
-  <p>✨ 3D倾斜 · 点击冲击 · 跟随鼠标高亮光晕 ✨</p>
+  <p>✨ 3D倾斜 · 八方向拉伸 · 透明折射光晕 · 按钮方向拉伸 ✨</p>
 </header>
 
 <div class="container">
@@ -446,25 +518,136 @@ document.addEventListener('mousedown', e => {
   setTimeout(() => ripple.remove(), 1000);
 });
 
-/* ================= 3D卡片跟随鼠标倾斜 + 点击冲击 + 跟随鼠标高亮光晕 ================= */
+/* ================= 按钮方向拉伸效果（向手指/鼠标移动的方向拉伸） ================= */
+function makeButtonDirectionStretch(element, maxStretch = 18) {
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let rafId = null;
+  let currentStretchX = 0, currentStretchY = 0;
+  let targetStretchX = 0, targetStretchY = 0;
+  
+  function updateTransform() {
+    if (!element) return;
+    const scaleX = 1 + Math.abs(currentStretchX) * 0.025;
+    const scaleY = 1 + Math.abs(currentStretchY) * 0.025;
+    let translateX = currentStretchX * 0.4;
+    let translateY = currentStretchY * 0.4;
+    element.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+  }
+  
+  function animateToTarget() {
+    const startStretchX = currentStretchX;
+    const startStretchY = currentStretchY;
+    const startTime = performance.now();
+    const duration = 200;
+    
+    function animate(now) {
+      const elapsed = now - startTime;
+      let t = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - t, 3);
+      currentStretchX = startStretchX + (targetStretchX - startStretchX) * easeOut;
+      currentStretchY = startStretchY + (targetStretchY - startStretchY) * easeOut;
+      updateTransform();
+      if (t < 1) {
+        rafId = requestAnimationFrame(animate);
+      } else {
+        rafId = null;
+      }
+    }
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(animate);
+  }
+  
+  function onStart(clientX, clientY) {
+    isDragging = true;
+    startX = clientX;
+    startY = clientY;
+    targetStretchX = 0;
+    targetStretchY = 0;
+    currentStretchX = 0;
+    currentStretchY = 0;
+    element.style.cursor = 'grabbing';
+  }
+  
+  function onMove(clientX, clientY) {
+    if (!isDragging) return;
+    let deltaX = clientX - startX;
+    let deltaY = clientY - startY;
+    let maxDelta = maxStretch;
+    deltaX = Math.min(Math.max(deltaX, -maxDelta), maxDelta);
+    deltaY = Math.min(Math.max(deltaY, -maxDelta), maxDelta);
+    targetStretchX = deltaX;
+    targetStretchY = deltaY;
+    currentStretchX = deltaX;
+    currentStretchY = deltaY;
+    updateTransform();
+  }
+  
+  function onEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    element.style.cursor = 'grab';
+    targetStretchX = 0;
+    targetStretchY = 0;
+    animateToTarget();
+  }
+  
+  element.addEventListener('mousedown', (e) => {
+    if (e.target.closest('a')) return;
+    e.preventDefault();
+    onStart(e.clientX, e.clientY);
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (isDragging) onMove(e.clientX, e.clientY);
+  });
+  window.addEventListener('mouseup', () => onEnd());
+  
+  element.addEventListener('touchstart', (e) => {
+    if (e.target.closest('a')) return;
+    const touch = e.touches[0];
+    onStart(touch.clientX, touch.clientY);
+  });
+  element.addEventListener('touchmove', (e) => {
+    if (isDragging) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      onMove(touch.clientX, touch.clientY);
+    }
+  });
+  element.addEventListener('touchend', () => onEnd());
+  element.addEventListener('touchcancel', () => onEnd());
+  
+  element.style.cursor = 'grab';
+  element.style.transition = 'transform 0.05s linear';
+  element.style.willChange = 'transform';
+}
+
+/* ================= 卡片核心效果：3D倾斜 + 八方向拉伸 + 透明折射光晕 ================= */
 (function() {
     'use strict';
     
     const CONFIG = {
-        maxRotateX: 14,
-        maxRotateY: 14,
+        maxRotateX: 12,
+        maxRotateY: 12,
         boostDuration: 380,
-        boostStrength: 16
+        boostStrength: 14,
+        stretchMax: 10,
+        stretchSmooth: 0.28
     };
     
     const cards = document.querySelectorAll('.project-card[data-tilt]');
     if (!cards.length) return;
     
-    // 为每个卡片添加光晕效果元素
     cards.forEach(card => {
         const glowDiv = document.createElement('div');
         glowDiv.className = 'glow-effect';
         card.appendChild(glowDiv);
+        const refractDiv = document.createElement('div');
+        refractDiv.className = 'refract-glow';
+        card.appendChild(refractDiv);
+        const ringDiv = document.createElement('div');
+        ringDiv.className = 'refract-ring';
+        card.appendChild(ringDiv);
     });
     
     const cardStates = new Map();
@@ -472,421 +655,249 @@ document.addEventListener('mousedown', e => {
     cards.forEach(card => {
         card.style.transformStyle = 'preserve-3d';
         cardStates.set(card, {
-            currentRotateX: 0,
-            currentRotateY: 0,
-            targetRotateX: 0,
-            targetRotateY: 0,
-            boostX: 0,
-            boostY: 0,
-            boostAnimId: null,
+            currentRotateX: 0, currentRotateY: 0,
+            targetRotateX: 0, targetRotateY: 0,
+            boostX: 0, boostY: 0, boostAnimId: null,
             rafActive: false,
-            // 光晕状态
-            glowActive: false
+            currentStretchX: 0, currentStretchY: 0,
+            targetStretchX: 0, targetStretchY: 0,
+            isDragging: false, dragStartX: 0, dragStartY: 0
         });
     });
     
-    // 平滑动画
+    function getClientCoords(e) {
+        if (e.touches) return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        return { clientX: e.clientX, clientY: e.clientY };
+    }
+    
     function startSmoothAnimation(card) {
         const state = cardStates.get(card);
-        if (!state) return;
-        if (state.rafActive) return;
+        if (!state || state.rafActive) return;
         state.rafActive = true;
         
         function updateTransform() {
             const s = cardStates.get(card);
-            if (!s) return;
+            if (!s) { if(s) s.rafActive = false; return; }
             
             let dx = s.targetRotateX - s.currentRotateX;
             let dy = s.targetRotateY - s.currentRotateY;
-            const factor = 0.22;
-            let newX = s.currentRotateX + dx * factor;
-            let newY = s.currentRotateY + dy * factor;
+            let newX = s.currentRotateX + dx * 0.22;
+            let newY = s.currentRotateY + dy * 0.22;
+            
+            let sx = s.targetStretchX - s.currentStretchX;
+            let sy = s.targetStretchY - s.currentStretchY;
+            let newSx = s.currentStretchX + sx * CONFIG.stretchSmooth;
+            let newSy = s.currentStretchY + sy * CONFIG.stretchSmooth;
             
             const eps = 0.02;
-            if (Math.abs(dx) < eps && Math.abs(dy) < eps && Math.abs(s.targetRotateX) < 0.01 && Math.abs(s.targetRotateY) < 0.01) {
-                newX = s.targetRotateX;
-                newY = s.targetRotateY;
-                s.currentRotateX = newX;
-                s.currentRotateY = newY;
+            const rotStable = Math.abs(dx) < eps && Math.abs(dy) < eps && Math.abs(s.targetRotateX) < 0.01 && Math.abs(s.targetRotateY) < 0.01;
+            const stretchStable = Math.abs(sx) < 0.1 && Math.abs(sy) < 0.1;
+            
+            if (rotStable && stretchStable) {
+                newX = s.targetRotateX; newY = s.targetRotateY;
+                newSx = s.targetStretchX; newSy = s.targetStretchY;
+                s.currentRotateX = newX; s.currentRotateY = newY;
+                s.currentStretchX = newSx; s.currentStretchY = newSy;
                 const finalX = s.currentRotateX + s.boostX;
                 const finalY = s.currentRotateY + s.boostY;
-                card.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg) translateZ(0)`;
+                const scaleX = 1 + Math.abs(s.currentStretchX) * 0.006;
+                const scaleY = 1 + Math.abs(s.currentStretchY) * 0.006;
+                card.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg) translate(${s.currentStretchX}px, ${s.currentStretchY}px) translateZ(0) scale(${scaleX}, ${scaleY})`;
                 s.rafActive = false;
                 return;
             }
             
-            s.currentRotateX = newX;
-            s.currentRotateY = newY;
+            s.currentRotateX = newX; s.currentRotateY = newY;
+            s.currentStretchX = newSx; s.currentStretchY = newSy;
             const finalX = s.currentRotateX + s.boostX;
             const finalY = s.currentRotateY + s.boostY;
-            card.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg) translateZ(0)`;
-            
+            const scaleX = 1 + Math.abs(s.currentStretchX) * 0.006;
+            const scaleY = 1 + Math.abs(s.currentStretchY) * 0.006;
+            card.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg) translate(${s.currentStretchX}px, ${s.currentStretchY}px) translateZ(0) scale(${scaleX}, ${scaleY})`;
             requestAnimationFrame(updateTransform);
         }
-        
         requestAnimationFrame(updateTransform);
     }
     
     function refreshCardTransform(card) {
         const state = cardStates.get(card);
-        if (!state) return;
-        if (!state.rafActive) {
-            startSmoothAnimation(card);
-        }
+        if (state && !state.rafActive) startSmoothAnimation(card);
     }
     
-    // 更新光晕效果的位置和可见性
-    function updateGlowEffect(card, mouseX, mouseY, isHover) {
+    function updateCardGlowEffects(card, clientX, clientY, isActive) {
         const glow = card.querySelector('.glow-effect');
-        if (!glow) return;
-        const rect = card.getBoundingClientRect();
-        const relX = mouseX - rect.left;
-        const relY = mouseY - rect.top;
-        glow.style.setProperty('--mouse-x', `${relX}px`);
-        glow.style.setProperty('--mouse-y', `${relY}px`);
-        if (isHover) {
-            card.classList.add('glow-active');
+        const refractGlow = card.querySelector('.refract-glow');
+        const refractRing = card.querySelector('.refract-ring');
+        
+        if (isActive && clientX !== undefined && clientY !== undefined) {
+            const rect = card.getBoundingClientRect();
+            const relX = clientX - rect.left;
+            const relY = clientY - rect.top;
+            if (relX >= 0 && relX <= rect.width && relY >= 0 && relY <= rect.height) {
+                if (glow) { glow.style.setProperty('--mouse-x', `${relX}px`); glow.style.setProperty('--mouse-y', `${relY}px`); card.classList.add('glow-active'); }
+                if (refractGlow) { refractGlow.style.setProperty('--mouse-x', `${relX}px`); refractGlow.style.setProperty('--mouse-y', `${relY}px`); card.classList.add('refract-active'); }
+                if (refractRing) { refractRing.style.setProperty('--mouse-x', `${relX}px`); refractRing.style.setProperty('--mouse-y', `${relY}px`); }
+            } else {
+                card.classList.remove('glow-active', 'refract-active');
+            }
         } else {
-            card.classList.remove('glow-active');
+            card.classList.remove('glow-active', 'refract-active');
         }
     }
     
-    // 获取点击冲击偏移
-    function getClickBoost(card, clickX, clickY) {
+    function getClickBoost(card, clientX, clientY) {
         const rect = card.getBoundingClientRect();
-        const w = rect.width;
-        const h = rect.height;
-        let relX = (clickX - rect.left) / w;
-        let relY = (clickY - rect.top) / h;
+        let relX = (clientX - rect.left) / rect.width;
+        let relY = (clientY - rect.top) / rect.height;
         relX = Math.min(Math.max(relX, 0), 1);
         relY = Math.min(Math.max(relY, 0), 1);
-        
-        const normX = (relX - 0.5) * 2;
-        const normY = (relY - 0.5) * 2;
-        const strengthFactor = Math.min(1.0, Math.max(0.35, Math.hypot(normX, normY)));
-        let boostX = -normY * CONFIG.boostStrength * strengthFactor;
-        let boostY = normX * CONFIG.boostStrength * strengthFactor;
-        
-        const maxBoost = CONFIG.boostStrength;
-        boostX = Math.min(Math.max(boostX, -maxBoost), maxBoost);
-        boostY = Math.min(Math.max(boostY, -maxBoost), maxBoost);
-        return { boostX, boostY };
+        const normX = (relX - 0.5) * 2, normY = (relY - 0.5) * 2;
+        const strength = Math.min(1, Math.max(0.35, Math.hypot(normX, normY)));
+        let boostX = -normY * CONFIG.boostStrength * strength;
+        let boostY = normX * CONFIG.boostStrength * strength;
+        return { boostX: Math.min(Math.max(boostX, -CONFIG.boostStrength), CONFIG.boostStrength), 
+                 boostY: Math.min(Math.max(boostY, -CONFIG.boostStrength), CONFIG.boostStrength) };
     }
     
     function applyBoostToCard(card, boostX, boostY) {
         const state = cardStates.get(card);
         if (!state) return;
-        if (state.boostAnimId) {
-            cancelAnimationFrame(state.boostAnimId);
-            state.boostAnimId = null;
-        }
+        if (state.boostAnimId) cancelAnimationFrame(state.boostAnimId);
         state.boostX = boostX;
         state.boostY = boostY;
         refreshCardTransform(card);
-        
         const startTime = performance.now();
-        const startBoostX = boostX;
-        const startBoostY = boostY;
-        
-        function decayBoost(now) {
-            const elapsed = now - startTime;
-            let t = Math.min(1, elapsed / CONFIG.boostDuration);
-            const easeOut = 1 - Math.pow(1 - t, 3);
-            const currentX = startBoostX * (1 - easeOut);
-            const currentY = startBoostY * (1 - easeOut);
-            state.boostX = currentX;
-            state.boostY = currentY;
+        const startBX = boostX, startBY = boostY;
+        function decay(now) {
+            const t = Math.min(1, (now - startTime) / CONFIG.boostDuration);
+            const ease = 1 - Math.pow(1 - t, 3);
+            state.boostX = startBX * (1 - ease);
+            state.boostY = startBY * (1 - ease);
             refreshCardTransform(card);
-            if (t < 1) {
-                state.boostAnimId = requestAnimationFrame(decayBoost);
-            } else {
-                state.boostX = 0;
-                state.boostY = 0;
-                refreshCardTransform(card);
-                state.boostAnimId = null;
-            }
+            if (t < 1) state.boostAnimId = requestAnimationFrame(decay);
+            else { state.boostX = 0; state.boostY = 0; refreshCardTransform(card); state.boostAnimId = null; }
         }
-        state.boostAnimId = requestAnimationFrame(decayBoost);
+        state.boostAnimId = requestAnimationFrame(decay);
     }
     
-    // 鼠标移动处理：旋转跟随 + 光晕跟随
-    document.body.addEventListener('mousemove', (e) => {
-        const targetCard = e.target.closest('.project-card[data-tilt]');
-        
-        if (!targetCard) {
-            // 所有卡片归零旋转并关闭光晕
-            cards.forEach(card => {
-                const state = cardStates.get(card);
-                if (state) {
-                    state.targetRotateX = 0;
-                    state.targetRotateY = 0;
-                    startSmoothAnimation(card);
-                }
-                updateGlowEffect(card, 0, 0, false);
-            });
-            return;
-        }
-        
-        // 处理当前卡片的旋转跟随
-        const rect = targetCard.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        let offsetX = (e.clientX - centerX) / (rect.width / 2);
-        let offsetY = (e.clientY - centerY) / (rect.height / 2);
-        offsetX = Math.min(Math.max(offsetX, -1), 1);
-        offsetY = Math.min(Math.max(offsetY, -1), 1);
-        
-        let targetY = -offsetX * CONFIG.maxRotateY;
-        let targetX = offsetY * CONFIG.maxRotateX;
-        targetX = Math.min(Math.max(targetX, -CONFIG.maxRotateX), CONFIG.maxRotateX);
-        targetY = Math.min(Math.max(targetY, -CONFIG.maxRotateY), CONFIG.maxRotateY);
-        
-        const state = cardStates.get(targetCard);
-        if (state) {
-            state.targetRotateX = targetX;
-            state.targetRotateY = targetY;
-            startSmoothAnimation(targetCard);
-        }
-        
-        // 更新当前卡片的光晕（高亮跟随鼠标）
-        updateGlowEffect(targetCard, e.clientX, e.clientY, true);
-        
-        // 其他卡片归零旋转并关闭光晕
-        cards.forEach(card => {
-            if (card !== targetCard) {
-                const otherState = cardStates.get(card);
-                if (otherState) {
-                    if (otherState.targetRotateX !== 0 || otherState.targetRotateY !== 0) {
-                        otherState.targetRotateX = 0;
-                        otherState.targetRotateY = 0;
-                        startSmoothAnimation(card);
-                    }
-                }
-                updateGlowEffect(card, 0, 0, false);
-            }
-        });
-    });
+    function updateStretchFromDrag(card, deltaX, deltaY) {
+        const state = cardStates.get(card);
+        if (!state) return;
+        state.targetStretchX = Math.min(Math.max(deltaX, -CONFIG.stretchMax), CONFIG.stretchMax);
+        state.targetStretchY = Math.min(Math.max(deltaY, -CONFIG.stretchMax), CONFIG.stretchMax);
+        refreshCardTransform(card);
+    }
     
-    // 卡片离开时复位旋转并关闭光晕
+    function startDrag(card, cx, cy) {
+        const s = cardStates.get(card);
+        if (!s || s.isDragging) return;
+        s.isDragging = true;
+        s.dragStartX = cx;
+        s.dragStartY = cy;
+        card.style.cursor = 'grabbing';
+    }
+    
+    function onDrag(card, cx, cy) {
+        const s = cardStates.get(card);
+        if (!s || !s.isDragging) return;
+        updateStretchFromDrag(card, cx - s.dragStartX, cy - s.dragStartY);
+    }
+    
+    function endDrag(card) {
+        const s = cardStates.get(card);
+        if (!s || !s.isDragging) return;
+        s.isDragging = false;
+        card.style.cursor = 'grab';
+        s.targetStretchX = 0;
+        s.targetStretchY = 0;
+        refreshCardTransform(card);
+    }
+    
     cards.forEach(card => {
-        card.addEventListener('mouseleave', () => {
-            const state = cardStates.get(card);
-            if (state) {
-                state.targetRotateX = 0;
-                state.targetRotateY = 0;
-                startSmoothAnimation(card);
-            }
-            updateGlowEffect(card, 0, 0, false);
+        card.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.btn') || e.target.closest('a')) return;
+            const coords = getClientCoords(e);
+            startDrag(card, coords.clientX, coords.clientY);
+            updateCardGlowEffects(card, coords.clientX, coords.clientY, true);
         });
-        
-        // 点击冲击特效
+        card.addEventListener('touchmove', (e) => {
+            const s = cardStates.get(card);
+            if (s && s.isDragging) {
+                const coords = getClientCoords(e);
+                onDrag(card, coords.clientX, coords.clientY);
+                updateCardGlowEffects(card, coords.clientX, coords.clientY, true);
+            }
+        });
+        card.addEventListener('touchend', () => { endDrag(card); updateCardGlowEffects(card, null, null, false); });
+        card.addEventListener('touchcancel', () => { endDrag(card); updateCardGlowEffects(card, null, null, false); });
+        card.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.btn') || e.target.closest('a')) return;
+            e.preventDefault();
+            startDrag(card, e.clientX, e.clientY);
+        });
+        card.style.cursor = 'grab';
+    });
+    
+    let currentHover = null;
+    function handleMove(cx, cy) {
+        let target = null;
+        for (const card of cards) {
+            const r = card.getBoundingClientRect();
+            if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) { target = card; break; }
+        }
+        if (currentHover !== target) {
+            if (currentHover) {
+                const s = cardStates.get(currentHover);
+                if (s && !s.isDragging) { s.targetRotateX = 0; s.targetRotateY = 0; refreshCardTransform(currentHover); }
+                updateCardGlowEffects(currentHover, null, null, false);
+            }
+            currentHover = target;
+        }
+        if (!target) return;
+        const s = cardStates.get(target);
+        const r = target.getBoundingClientRect();
+        const ox = Math.min(Math.max((cx - (r.left + r.width/2)) / (r.width/2), -1), 1);
+        const oy = Math.min(Math.max((cy - (r.top + r.height/2)) / (r.height/2), -1), 1);
+        let ty = -ox * CONFIG.maxRotateY, tx = oy * CONFIG.maxRotateX;
+        tx = Math.min(Math.max(tx, -CONFIG.maxRotateX), CONFIG.maxRotateX);
+        ty = Math.min(Math.max(ty, -CONFIG.maxRotateY), CONFIG.maxRotateY);
+        if (s) { s.targetRotateX = tx; s.targetRotateY = ty; refreshCardTransform(target); }
+        updateCardGlowEffects(target, cx, cy, true);
+        cards.forEach(c => { if (c !== target) { const os = cardStates.get(c); if (os && !os.isDragging && (os.targetRotateX !== 0 || os.targetRotateY !== 0)) { os.targetRotateX = 0; os.targetRotateY = 0; refreshCardTransform(c); } updateCardGlowEffects(c, null, null, false); } });
+    }
+    
+    document.body.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+    document.body.addEventListener('touchmove', (e) => { if (e.touches.length) handleMove(e.touches[0].clientX, e.touches[0].clientY); });
+    document.body.addEventListener('mouseleave', () => { cards.forEach(c => { const s = cardStates.get(c); if (s && !s.isDragging) { s.targetRotateX = 0; s.targetRotateY = 0; refreshCardTransform(c); } updateCardGlowEffects(c, null, null, false); }); currentHover = null; });
+    cards.forEach(card => {
+        card.addEventListener('mouseleave', (e) => {
+            if (e.relatedTarget && card.contains(e.relatedTarget)) return;
+            const s = cardStates.get(card);
+            if (s && !s.isDragging) { s.targetRotateX = 0; s.targetRotateY = 0; refreshCardTransform(card); }
+            updateCardGlowEffects(card, null, null, false);
+            if (currentHover === card) currentHover = null;
+        });
         card.addEventListener('click', (e) => {
-            // 阻止事件冒泡避免干扰
+            if (cardStates.get(card)?.isDragging) return;
+            if (e.target.closest('.btn') || e.target.closest('a')) return;
             e.stopPropagation();
-            const clickX = e.clientX;
-            const clickY = e.clientY;
-            const boost = getClickBoost(card, clickX, clickY);
+            const coords = getClientCoords(e);
+            const boost = getClickBoost(card, coords.clientX, coords.clientY);
             applyBoostToCard(card, boost.boostX, boost.boostY);
-            
-            // 微小脉冲增强反馈
-            const originalTransition = card.style.transition;
+            const orig = card.style.transition;
             card.style.transition = 'transform 0.05s ease-out';
-            const currentTransform = card.style.transform;
-            card.style.transform = `${currentTransform} scale(1.01)`;
-            setTimeout(() => {
-                if (card) {
-                    card.style.transition = originalTransition;
-                    const s = cardStates.get(card);
-                    if (s && !s.rafActive) {
-                        const finX = (s.currentRotateX + s.boostX);
-                        const finY = (s.currentRotateY + s.boostY);
-                        card.style.transform = `rotateX(${finX}deg) rotateY(${finY}deg) translateZ(0)`;
-                    }
-                }
-            }, 50);
+            const cur = card.style.transform;
+            card.style.transform = `${cur} scale(1.01)`;
+            setTimeout(() => { if (card) { card.style.transition = orig; const s = cardStates.get(card); if (s && !s.rafActive) { const fx = s.currentRotateX + s.boostX, fy = s.currentRotateY + s.boostY; const sx = 1 + Math.abs(s.currentStretchX) * 0.006, sy = 1 + Math.abs(s.currentStretchY) * 0.006; card.style.transform = `rotateX(${fx}deg) rotateY(${fy}deg) translate(${s.currentStretchX}px, ${s.currentStretchY}px) translateZ(0) scale(${sx}, ${sy})`; } } }, 50);
         });
     });
     
-    console.log('🎴 3D倾斜 + 点击冲击 + 跟随鼠标高亮光晕 已启用');
+    console.log('🎴 卡片: 3D倾斜 + 八方向拉伸 + 透明折射光晕（无黄色闪烁）');
 })();
 
-/* ================= 环形边缘折射鼠标透镜 ================= */
-(function() {
-    'use strict';
-    function length(x, y) { return Math.hypot(x, y); }
-    function smoothStep(edge0, edge1, t) {
-        const x = Math.max(0, Math.min(1, (t - edge0) / (edge1 - edge0)));
-        return x * x * (3 - 2 * x);
-    }
-    function generateId() { return 'ring-refract-' + Math.random().toString(36).substr(2, 10); }
-    
-    class RingRefractionCursor {
-        constructor(options = {}) {
-            this.diameter = options.diameter || 94;
-            this.width = this.diameter;
-            this.height = this.diameter;
-            this.ringWidthPx = options.ringWidthPx || 24;
-            this.radius = this.diameter / 2;
-            this.innerRadius = Math.max(0, this.radius - this.ringWidthPx);
-            this.maxRefractStrength = options.maxStrength || 0.26;
-            this.id = generateId();
-            this.canvasDPI = 1;
-            this.mouseUV = { x: 0.5, y: 0.5 };
-            this.posX = window.innerWidth / 2 - this.radius;
-            this.posY = window.innerHeight / 2 - this.radius;
-            this.createElement();
-            this.setupMouseTracking();
-            this.setupResizeHandler();
-            this.updateDisplacementMap();
-        }
-        
-        createElement() {
-            this.container = document.createElement('div');
-            this.container.style.cssText = `
-                position: fixed;
-                width: ${this.diameter}px;
-                height: ${this.diameter}px;
-                border-radius: 50%;
-                overflow: hidden;
-                box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 0 1.5px rgba(255,245,210,0.4) inset, 0 0 12px rgba(255,220,150,0.3);
-                backdrop-filter: url(#${this.id}_filter) blur(0.2px) contrast(1.08) brightness(1.02) saturate(1.15);
-                pointer-events: none;
-                z-index: 2147483647;
-                left: ${this.posX}px;
-                top: ${this.posY}px;
-                transition: none;
-                will-change: left, top;
-            `;
-            const aura = document.createElement('div');
-            aura.style.cssText = `position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, rgba(255,250,210,0.15) 0%, rgba(255,255,245,0) 70%); pointer-events: none; z-index: 2;`;
-            this.container.appendChild(aura);
-            this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            this.svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            this.svg.setAttribute('width', '0');
-            this.svg.setAttribute('height', '0');
-            this.svg.style.cssText = `position: fixed; top:0; left:0; pointer-events: none; z-index: 2147483646;`;
-            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-            filter.setAttribute('id', `${this.id}_filter`);
-            filter.setAttribute('filterUnits', 'userSpaceOnUse');
-            filter.setAttribute('colorInterpolationFilters', 'sRGB');
-            filter.setAttribute('x', '0');
-            filter.setAttribute('y', '0');
-            filter.setAttribute('width', this.diameter.toString());
-            filter.setAttribute('height', this.diameter.toString());
-            this.feImage = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
-            this.feImage.setAttribute('id', `${this.id}_map`);
-            this.feImage.setAttribute('width', this.diameter.toString());
-            this.feImage.setAttribute('height', this.diameter.toString());
-            this.feImage.setAttribute('preserveAspectRatio', 'none');
-            this.feDisplacementMap = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
-            this.feDisplacementMap.setAttribute('in', 'SourceGraphic');
-            this.feDisplacementMap.setAttribute('in2', `${this.id}_map`);
-            this.feDisplacementMap.setAttribute('xChannelSelector', 'R');
-            this.feDisplacementMap.setAttribute('yChannelSelector', 'G');
-            this.feDisplacementMap.setAttribute('scale', '8');
-            filter.appendChild(this.feImage);
-            filter.appendChild(this.feDisplacementMap);
-            defs.appendChild(filter);
-            this.svg.appendChild(defs);
-            this.canvas = document.createElement('canvas');
-            this.canvas.width = this.diameter * this.canvasDPI;
-            this.canvas.height = this.diameter * this.canvasDPI;
-            this.canvas.style.display = 'none';
-            this.ctx = this.canvas.getContext('2d');
-            document.body.appendChild(this.svg);
-            document.body.appendChild(this.container);
-            document.body.appendChild(this.canvas);
-        }
-        
-        updateDisplacementMap() {
-            const w = this.diameter * this.canvasDPI, h = this.diameter * this.canvasDPI;
-            const data = new Uint8ClampedArray(w * h * 4);
-            const radiusPixels = this.radius, innerRadiusPx = this.innerRadius, ringThickness = radiusPixels - innerRadiusPx;
-            const maxPixelShift = Math.min(16, ringThickness * 0.65) * this.maxRefractStrength * 2.2;
-            const rawVec = [];
-            let maxObservedOffset = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                const px = (i / 4) % w, py = Math.floor(i / 4 / w);
-                const cx = w / 2, cy = h / 2, dxc = px - cx, dyc = py - cy, distToCenter = length(dxc, dyc);
-                let offsetX = 0, offsetY = 0;
-                if (distToCenter > innerRadiusPx && distToCenter <= radiusPixels) {
-                    let t = (distToCenter - innerRadiusPx) / ringThickness;
-                    t = Math.min(1.0, Math.max(0.0, t));
-                    let intensity = smoothStep(0, 1, t);
-                    intensity = Math.pow(intensity, 1.2);
-                    let dirX = dxc / distToCenter, dirY = dyc / distToCenter;
-                    if (!isFinite(dirX)) dirX = 0;
-                    if (!isFinite(dirY)) dirY = 0;
-                    const offsetMagnitude = intensity * maxPixelShift;
-                    offsetX = dirX * offsetMagnitude;
-                    offsetY = dirY * offsetMagnitude;
-                }
-                rawVec.push(offsetX, offsetY);
-                const absX = Math.abs(offsetX), absY = Math.abs(offsetY);
-                if (absX > maxObservedOffset) maxObservedOffset = absX;
-                if (absY > maxObservedOffset) maxObservedOffset = absY;
-            }
-            if (maxObservedOffset < 0.01) maxObservedOffset = 0.01;
-            let idx = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                const dx = rawVec[idx++], dy = rawVec[idx++];
-                let r = (dx / maxObservedOffset) * 0.5 + 0.5, g = (dy / maxObservedOffset) * 0.5 + 0.5;
-                r = Math.min(0.99, Math.max(0.01, r)); g = Math.min(0.99, Math.max(0.01, g));
-                data[i] = r * 255; data[i+1] = g * 255; data[i+2] = 128; data[i+3] = 255;
-            }
-            const imgData = new ImageData(data, w, h);
-            this.ctx.putImageData(imgData, 0, 0);
-            const dataURL = this.canvas.toDataURL();
-            this.feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', dataURL);
-            const scaleValue = maxObservedOffset * 0.85;
-            const finalScale = Math.min(22, Math.max(3, scaleValue));
-            this.feDisplacementMap.setAttribute('scale', finalScale.toString());
-        }
-        
-        setupMouseTracking() {
-            let rafPending = false;
-            const handleMouseMove = (e) => {
-                let left = e.clientX - this.radius, top = e.clientY - this.radius;
-                const maxLeft = window.innerWidth - this.diameter, maxTop = window.innerHeight - this.diameter;
-                left = Math.min(Math.max(0, left), maxLeft); top = Math.min(Math.max(0, top), maxTop);
-                this.posX = left; this.posY = top;
-                this.container.style.left = left + 'px'; this.container.style.top = top + 'px';
-                if (!rafPending) { rafPending = true; requestAnimationFrame(() => { this.updateDisplacementMap(); rafPending = false; }); }
-            };
-            window.addEventListener('mousemove', handleMouseMove);
-            this.mouseMoveHandler = handleMouseMove;
-            const initLeft = window.innerWidth / 2 - this.radius, initTop = window.innerHeight / 2 - this.radius;
-            this.posX = Math.min(Math.max(0, initLeft), window.innerWidth - this.diameter);
-            this.posY = Math.min(Math.max(0, initTop), window.innerHeight - this.diameter);
-            this.container.style.left = this.posX + 'px'; this.container.style.top = this.posY + 'px';
-            this.updateDisplacementMap();
-        }
-        setupResizeHandler() {
-            const onResize = () => {
-                let newLeft = this.posX, newTop = this.posY;
-                const maxLeft = window.innerWidth - this.diameter, maxTop = window.innerHeight - this.diameter;
-                if (newLeft > maxLeft) newLeft = maxLeft; if (newTop > maxTop) newTop = maxTop;
-                if (newLeft < 0) newLeft = 0; if (newTop < 0) newTop = 0;
-                if (newLeft !== this.posX || newTop !== this.posY) { this.posX = newLeft; this.posY = newTop; this.container.style.left = newLeft + 'px'; this.container.style.top = newTop + 'px'; }
-                this.updateDisplacementMap();
-            };
-            window.addEventListener('resize', onResize);
-            this.resizeCallback = onResize;
-        }
-        destroy() {
-            if (this.mouseMoveHandler) window.removeEventListener('mousemove', this.mouseMoveHandler);
-            if (this.resizeCallback) window.removeEventListener('resize', this.resizeCallback);
-            if (this.container) this.container.remove();
-            if (this.svg) this.svg.remove();
-            if (this.canvas) this.canvas.remove();
-        }
-    }
-    let activeLens = null;
-    function initRingLens() { if (activeLens) activeLens.destroy(); activeLens = new RingRefractionCursor({ diameter: 94, ringWidthPx: 24, maxStrength: 0.26 }); }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRingLens); else initRingLens();
-    window.addEventListener('beforeunload', () => { if (activeLens) activeLens.destroy(); });
-})();
+// 为开关按钮和下载按钮添加方向拉伸效果
+makeButtonDirectionStretch(toggleBtn, 20);
+makeButtonDirectionStretch(btn, 24);
 </script>
 
 </body>

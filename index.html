@@ -73,7 +73,7 @@ body.glass-off .glass {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.3);
-  overflow: hidden;
+  overflow: hidden; /* 让光晕不超出圆角 */
 }
 
 body.glass-off .project-card.glass {
@@ -88,6 +88,7 @@ body.glass-off .project-card.glass {
   isolation: isolate;
 }
 
+/* 光晕层 - 默认隐藏，鼠标移入时显示并跟随鼠标 */
 .project-card .glow-effect {
   position: absolute;
   inset: 0;
@@ -116,6 +117,7 @@ body.glass-off .project-card .glow-effect {
   opacity: 1;
 }
 
+/* 卡片内容层级提高 */
 .project-card > *:not(.glow-effect) {
   position: relative;
   z-index: 2;
@@ -142,6 +144,7 @@ header {
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
+/* 3D卡片网格 */
 .project-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -149,6 +152,7 @@ header {
   perspective: 1200px;
 }
 
+/* 卡片本体 (3D 容器) */
 .project-card {
   padding: 1.5rem;
   text-align: center;
@@ -160,6 +164,7 @@ header {
   transform: rotateX(0deg) rotateY(0deg) translateZ(0);
 }
 
+/* 内部元素提升平面感 */
 .project-image {
   height: 150px;
   border-radius: 12px;
@@ -210,6 +215,7 @@ header {
   box-shadow: 0 25px 35px -12px rgba(0,0,0,0.4);
 }
 
+/* 固定控件 */
 .glass-toggle {
   position: fixed;
   top: 16px;
@@ -303,6 +309,7 @@ footer {
   display: none;
 }
 
+/* 涟漪效果 */
 .ripple {
   position: fixed;
   border-radius: 50%;
@@ -439,7 +446,7 @@ document.addEventListener('mousedown', e => {
   setTimeout(() => ripple.remove(), 1000);
 });
 
-/* ================= 3D卡片跟随鼠标倾斜 + 点击冲击 + 跟随光晕 ================= */
+/* ================= 3D卡片跟随鼠标倾斜 + 点击冲击 + 跟随鼠标高亮光晕 ================= */
 (function() {
     'use strict';
     
@@ -472,7 +479,9 @@ document.addEventListener('mousedown', e => {
             boostX: 0,
             boostY: 0,
             boostAnimId: null,
-            rafActive: false
+            rafActive: false,
+            // 光晕状态
+            glowActive: false
         });
     });
     
@@ -526,16 +535,16 @@ document.addEventListener('mousedown', e => {
         }
     }
     
-    // 更新光晕效果
+    // 更新光晕效果的位置和可见性
     function updateGlowEffect(card, mouseX, mouseY, isHover) {
         const glow = card.querySelector('.glow-effect');
         if (!glow) return;
-        if (isHover && mouseX && mouseY) {
-            const rect = card.getBoundingClientRect();
-            const relX = mouseX - rect.left;
-            const relY = mouseY - rect.top;
-            glow.style.setProperty('--mouse-x', `${relX}px`);
-            glow.style.setProperty('--mouse-y', `${relY}px`);
+        const rect = card.getBoundingClientRect();
+        const relX = mouseX - rect.left;
+        const relY = mouseY - rect.top;
+        glow.style.setProperty('--mouse-x', `${relX}px`);
+        glow.style.setProperty('--mouse-y', `${relY}px`);
+        if (isHover) {
             card.classList.add('glow-active');
         } else {
             card.classList.remove('glow-active');
@@ -600,30 +609,21 @@ document.addEventListener('mousedown', e => {
         state.boostAnimId = requestAnimationFrame(decayBoost);
     }
     
-    // 记录当前悬停的卡片，用于确保鼠标离开body时也能归位
-    let currentHoverCard = null;
-    
-    // 鼠标移动处理
+    // 鼠标移动处理：旋转跟随 + 光晕跟随
     document.body.addEventListener('mousemove', (e) => {
         const targetCard = e.target.closest('.project-card[data-tilt]');
         
-        // 如果当前悬停的卡片发生了变化
-        if (currentHoverCard !== targetCard) {
-            // 离开之前的卡片
-            if (currentHoverCard) {
-                const oldState = cardStates.get(currentHoverCard);
-                if (oldState) {
-                    oldState.targetRotateX = 0;
-                    oldState.targetRotateY = 0;
-                    startSmoothAnimation(currentHoverCard);
-                }
-                updateGlowEffect(currentHoverCard, null, null, false);
-            }
-            currentHoverCard = targetCard;
-        }
-        
         if (!targetCard) {
-            // 没有卡片悬停，不需要额外处理（已在上面清除了）
+            // 所有卡片归零旋转并关闭光晕
+            cards.forEach(card => {
+                const state = cardStates.get(card);
+                if (state) {
+                    state.targetRotateX = 0;
+                    state.targetRotateY = 0;
+                    startSmoothAnimation(card);
+                }
+                updateGlowEffect(card, 0, 0, false);
+            });
             return;
         }
         
@@ -636,7 +636,6 @@ document.addEventListener('mousedown', e => {
         offsetX = Math.min(Math.max(offsetX, -1), 1);
         offsetY = Math.min(Math.max(offsetY, -1), 1);
         
-        // 让卡片朝向鼠标方向倾斜
         let targetY = -offsetX * CONFIG.maxRotateY;
         let targetX = offsetY * CONFIG.maxRotateX;
         targetX = Math.min(Math.max(targetX, -CONFIG.maxRotateX), CONFIG.maxRotateX);
@@ -649,46 +648,40 @@ document.addEventListener('mousedown', e => {
             startSmoothAnimation(targetCard);
         }
         
-        // 更新光晕（跟随鼠标位置）
+        // 更新当前卡片的光晕（高亮跟随鼠标）
         updateGlowEffect(targetCard, e.clientX, e.clientY, true);
-    });
-    
-    // 鼠标离开整个窗口时，清除所有卡片的倾斜和光晕
-    document.body.addEventListener('mouseleave', () => {
+        
+        // 其他卡片归零旋转并关闭光晕
         cards.forEach(card => {
-            const state = cardStates.get(card);
-            if (state) {
-                state.targetRotateX = 0;
-                state.targetRotateY = 0;
-                startSmoothAnimation(card);
+            if (card !== targetCard) {
+                const otherState = cardStates.get(card);
+                if (otherState) {
+                    if (otherState.targetRotateX !== 0 || otherState.targetRotateY !== 0) {
+                        otherState.targetRotateX = 0;
+                        otherState.targetRotateY = 0;
+                        startSmoothAnimation(card);
+                    }
+                }
+                updateGlowEffect(card, 0, 0, false);
             }
-            updateGlowEffect(card, null, null, false);
         });
-        currentHoverCard = null;
     });
     
-    // 卡片单独的 mouseleave 确保精准归位（防止某些边界情况）
+    // 卡片离开时复位旋转并关闭光晕
     cards.forEach(card => {
-        card.addEventListener('mouseleave', (e) => {
-            // 检查鼠标是否真的离开了卡片（防止移动到子元素时误触发）
-            const relatedTarget = e.relatedTarget;
-            if (relatedTarget && card.contains(relatedTarget)) {
-                return;
-            }
+        card.addEventListener('mouseleave', () => {
             const state = cardStates.get(card);
             if (state) {
                 state.targetRotateX = 0;
                 state.targetRotateY = 0;
                 startSmoothAnimation(card);
             }
-            updateGlowEffect(card, null, null, false);
-            if (currentHoverCard === card) {
-                currentHoverCard = null;
-            }
+            updateGlowEffect(card, 0, 0, false);
         });
         
         // 点击冲击特效
         card.addEventListener('click', (e) => {
+            // 阻止事件冒泡避免干扰
             e.stopPropagation();
             const clickX = e.clientX;
             const clickY = e.clientY;
@@ -714,7 +707,7 @@ document.addEventListener('mousedown', e => {
         });
     });
     
-    console.log('🎴 3D倾斜（鼠标离开即归零） + 点击冲击 + 跟随光晕 已启用');
+    console.log('🎴 3D倾斜 + 点击冲击 + 跟随鼠标高亮光晕 已启用');
 })();
 
 /* ================= 环形边缘折射鼠标透镜 ================= */
@@ -874,4 +867,27 @@ document.addEventListener('mousedown', e => {
                 let newLeft = this.posX, newTop = this.posY;
                 const maxLeft = window.innerWidth - this.diameter, maxTop = window.innerHeight - this.diameter;
                 if (newLeft > maxLeft) newLeft = maxLeft; if (newTop > maxTop) newTop = maxTop;
-                if (newLeft < 0) newLeft = 0; if (newTop 
+                if (newLeft < 0) newLeft = 0; if (newTop < 0) newTop = 0;
+                if (newLeft !== this.posX || newTop !== this.posY) { this.posX = newLeft; this.posY = newTop; this.container.style.left = newLeft + 'px'; this.container.style.top = newTop + 'px'; }
+                this.updateDisplacementMap();
+            };
+            window.addEventListener('resize', onResize);
+            this.resizeCallback = onResize;
+        }
+        destroy() {
+            if (this.mouseMoveHandler) window.removeEventListener('mousemove', this.mouseMoveHandler);
+            if (this.resizeCallback) window.removeEventListener('resize', this.resizeCallback);
+            if (this.container) this.container.remove();
+            if (this.svg) this.svg.remove();
+            if (this.canvas) this.canvas.remove();
+        }
+    }
+    let activeLens = null;
+    function initRingLens() { if (activeLens) activeLens.destroy(); activeLens = new RingRefractionCursor({ diameter: 94, ringWidthPx: 24, maxStrength: 0.26 }); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRingLens); else initRingLens();
+    window.addEventListener('beforeunload', () => { if (activeLens) activeLens.destroy(); });
+})();
+</script>
+
+</body>
+</html>

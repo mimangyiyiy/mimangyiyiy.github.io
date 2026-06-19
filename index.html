@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>我的作品集 | 动态管理版</title>
+<title>我的作品集</title>
 
 <style>
 /* ================= 基础变量 ================= */
@@ -64,7 +64,7 @@ body.glass-off::before {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* ================= 毛玻璃风格 - 高质感 ================= */
+/* ================= 毛玻璃风格 ================= */
 .glass {
   background: rgba(30, 35, 65, 0.55);
   backdrop-filter: blur(18px);
@@ -83,7 +83,7 @@ body.glass-off .glass {
   color: #333;
 }
 
-/* ===== 卡片样式 - 高质感毛玻璃 ===== */
+/* ===== 卡片样式 ===== */
 .project-card.glass {
   background: rgba(25, 30, 55, 0.7);
   backdrop-filter: blur(20px);
@@ -119,7 +119,6 @@ body.glass-off .project-card.glass {
   cursor: grabbing;
 }
 
-/* 折射扭曲光晕 - 更亮 */
 .project-card .refract-glow {
   position: absolute;
   inset: 0;
@@ -401,143 +400,6 @@ header h1, header p {
   perspective: 1200px;
 }
 
-/* ===== 管理员入口按钮 ===== */
-#admin-entry {
-  position: fixed;
-  bottom: 90px;
-  right: 24px;
-  z-index: 9999;
-}
-
-#admin-entry .btn {
-  background: #FF6B6B;
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-}
-
-#admin-entry .btn:hover {
-  background: #e55a5a;
-}
-
-/* ===== 管理员面板弹窗 ===== */
-#adminPanel {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 99999;
-  backdrop-filter: blur(10px);
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-#adminPanel .panel-content {
-  background: #1a1a2e;
-  border-radius: 20px;
-  padding: 30px;
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-#adminPanel .panel-content h2 {
-  margin-top: 0;
-}
-
-#adminPanel .panel-content h3 {
-  margin: 15px 0 10px 0;
-  color: #FFAB19;
-}
-
-#adminPanel input,
-#adminPanel select {
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-  border: 1px solid #333;
-  background: #2a2a4e;
-  color: white;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-#adminPanel input::placeholder {
-  color: #888;
-}
-
-#adminPanel select option {
-  background: #2a2a4e;
-}
-
-#adminPanel .admin-project-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: #2a2a4e;
-  border-radius: 10px;
-  margin-bottom: 8px;
-}
-
-#adminPanel .admin-project-item span {
-  flex: 1;
-  margin-right: 10px;
-  word-break: break-word;
-}
-
-#adminPanel .admin-project-item .del-btn {
-  background: #FF6B6B;
-  color: white;
-  border: none;
-  padding: 5px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-#adminPanel .admin-project-item .del-btn:hover {
-  background: #e55a5a;
-}
-
-#adminPanel .close-btn {
-  margin-top: 15px;
-  background: transparent;
-  border: 1px solid #666;
-  padding: 8px 20px;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  width: 100%;
-}
-
-#adminPanel .close-btn:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-#adminPanel .logout-btn {
-  float: right;
-  background: transparent;
-  border: none;
-  color: #FF6B6B;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-#adminPanel .logout-btn:hover {
-  text-decoration: underline;
-}
-
-#adminPanel hr {
-  border-color: #333;
-  margin: 20px 0;
-}
-
-/* ===== 加载状态 ===== */
 .loading-placeholder {
   text-align: center;
   padding: 40px;
@@ -570,7 +432,6 @@ body.glass-off .ripple {
 
 @media (max-width: 768px) {
   .project-list { gap: 1.25rem; }
-  #adminPanel .panel-content { padding: 20px; }
 }
 </style>
 </head>
@@ -606,11 +467,6 @@ body.glass-off .ripple {
   </div>
 </div>
 
-<!-- ===== 管理员入口（登录后显示） ===== -->
-<div id="admin-entry" style="display:none;">
-  <a href="/admin.html" class="btn" style="background:#FF6B6B; box-shadow:0 4px 15px rgba(255,107,107,0.4);">⚙️ 管理作品</a>
-</div>
-
 <!-- ===== 下载悬浮窗 ===== -->
 <div class="download-mask" id="mask"></div>
 <div class="download-float">
@@ -628,49 +484,12 @@ body.glass-off .ripple {
   </div>
 </div>
 
-<!-- ===== 管理员面板弹窗 ===== -->
-<div id="adminPanel">
-  <div class="panel-content">
-    <h2>📝 管理作品</h2>
-    
-    <!-- 登录表单 -->
-    <div id="loginForm">
-      <input id="loginUser" placeholder="用户名" autocomplete="username">
-      <input id="loginPass" type="password" placeholder="密码" autocomplete="current-password">
-      <button onclick="adminLogin()" class="btn" style="width:100%;">登录</button>
-    </div>
-    
-    <!-- 管理界面 -->
-    <div id="adminContent" style="display:none;">
-      <button onclick="logout()" class="logout-btn">退出登录</button>
-      
-      <h3>➕ 添加新作品</h3>
-      <input id="newTitle" placeholder="标题 *">
-      <input id="newDesc" placeholder="描述">
-      <input id="newImage" placeholder="图片URL（留空使用占位图）">
-      <input id="newLink" placeholder="作品链接 *">
-      <select id="newCategory">
-        <option value="Scratch 作品">Scratch 作品</option>
-        <option value="HTML 小游戏">HTML 小游戏</option>
-      </select>
-      <button onclick="addProject()" class="btn" style="width:100%; background:#4CAF50;">添加作品</button>
-      
-      <hr>
-      <h3>📋 现有作品</h3>
-      <div id="projectListAdmin">
-        <div style="color:#888; text-align:center; padding:20px;">加载中...</div>
-      </div>
-    </div>
-    
-    <button onclick="closeAdminPanel()" class="close-btn">关闭</button>
-  </div>
-</div>
-
 <script>
 // ============================================================
 // 1. API 基础配置
 // ============================================================
-const API_BASE = "https://workflows-starter-template.a13822523359.workers.dev/"; // 使用当前域名，开发时可改为具体Worker地址
+// ⚠️ 重要：将下面的地址替换为你的 Worker 地址
+const API_BASE = 'https://你的worker地址.workers.dev';
 
 // ============================================================
 // 2. 加载并渲染作品列表（公开）
@@ -691,11 +510,29 @@ async function loadProjects() {
 
 function renderProjects(projects) {
   // 按分类分组
-  const scratch = projects.filter(p => p.category === 'Scratch 作品');
-  const html = projects.filter(p => p.category === 'HTML 小游戏');
+  const groups = {};
+  projects.forEach(p => {
+    const cat = p.category_name || '未分类';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(p);
+  });
   
-  renderProjectList('scratchList', scratch);
-  renderProjectList('htmlList', html);
+  // 获取所有分类名，按顺序渲染
+  const categoryNames = Object.keys(groups);
+  // 如果分类名与容器ID对应，直接渲染；否则动态创建容器
+  categoryNames.forEach(cat => {
+    // 尝试匹配已知容器
+    let containerId = null;
+    if (cat === 'Scratch 作品') containerId = 'scratchList';
+    else if (cat === 'HTML 小游戏') containerId = 'htmlList';
+    
+    if (containerId) {
+      renderProjectList(containerId, groups[cat]);
+    } else {
+      // 动态创建新分类容器
+      createDynamicCategory(cat, groups[cat]);
+    }
+  });
 }
 
 function renderProjectList(containerId, projects) {
@@ -718,11 +555,40 @@ function renderProjectList(containerId, projects) {
     </div>
   `).join('');
   
-  // 重新绑定卡片交互（因为DOM被替换了）
   setTimeout(() => bindCardEffects(), 50);
 }
 
-// 简单的防XSS转义
+function createDynamicCategory(catName, projects) {
+  // 检查是否已存在该分类容器
+  let container = document.getElementById(`cat_${catName}`);
+  if (!container) {
+    // 创建新容器
+    const wrapper = document.createElement('div');
+    wrapper.className = 'container';
+    wrapper.id = `cat_${catName}`;
+    
+    const title = document.createElement('h2');
+    title.className = 'section-title';
+    title.textContent = catName;
+    wrapper.appendChild(title);
+    
+    const list = document.createElement('div');
+    list.className = 'project-list';
+    list.id = `list_${catName}`;
+    wrapper.appendChild(list);
+    
+    // 插入到页面中合适位置
+    const scratchContainer = document.getElementById('scratchContainer');
+    if (scratchContainer) {
+      scratchContainer.parentNode.insertBefore(wrapper, scratchContainer.nextSibling);
+    } else {
+      document.querySelector('.container')?.parentNode?.appendChild(wrapper);
+    }
+    container = list;
+  }
+  renderProjectList(`list_${catName}`, projects);
+}
+
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');
@@ -731,202 +597,10 @@ function escapeHtml(text) {
 }
 
 // ============================================================
-// 3. 管理员登录
+// 3. 原有特效代码（Canvas背景、卡片交互等）
 // ============================================================
-async function adminLogin() {
-  const username = document.getElementById('loginUser').value.trim();
-  const password = document.getElementById('loginPass').value.trim();
-  
-  if (!username || !password) {
-    alert('请输入用户名和密码');
-    return;
-  }
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem('adminToken', data.token);
-      document.getElementById('loginForm').style.display = 'none';
-      document.getElementById('adminContent').style.display = 'block';
-      loadAdminProjects();
-      document.getElementById('admin-entry').style.display = 'block';
-    } else {
-      const err = await res.json();
-      alert('登录失败: ' + (err.error || '用户名或密码错误'));
-    }
-  } catch (e) {
-    alert('网络错误，请检查后端服务是否可用');
-  }
-}
 
-function logout() {
-  localStorage.removeItem('adminToken');
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('adminContent').style.display = 'none';
-  document.getElementById('admin-entry').style.display = 'none';
-  closeAdminPanel();
-}
-
-// ============================================================
-// 4. 管理员：加载作品列表
-// ============================================================
-async function loadAdminProjects() {
-  const token = localStorage.getItem('adminToken');
-  if (!token) return;
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/projects`);
-    if (!res.ok) throw new Error();
-    const projects = await res.json();
-    
-    const container = document.getElementById('projectListAdmin');
-    if (projects.length === 0) {
-      container.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">暂无作品</div>';
-      return;
-    }
-    
-    container.innerHTML = projects.map(p => `
-      <div class="admin-project-item">
-        <span>${escapeHtml(p.title)}</span>
-        <button class="del-btn" onclick="deleteProject(${p.id})">删除</button>
-      </div>
-    `).join('');
-  } catch (e) {
-    document.getElementById('projectListAdmin').innerHTML = '<div style="color:#FF6B6B; text-align:center; padding:20px;">加载失败</div>';
-  }
-}
-
-// ============================================================
-// 5. 管理员：添加作品
-// ============================================================
-async function addProject() {
-  const token = localStorage.getItem('adminToken');
-  if (!token) {
-    alert('请先登录');
-    return;
-  }
-  
-  const title = document.getElementById('newTitle').value.trim();
-  const link = document.getElementById('newLink').value.trim();
-  if (!title || !link) {
-    alert('标题和链接为必填项');
-    return;
-  }
-  
-  const data = {
-    title,
-    description: document.getElementById('newDesc').value.trim(),
-    image: document.getElementById('newImage').value.trim() || 'https://placehold.co/400x200?text=作品封面',
-    link,
-    category: document.getElementById('newCategory').value
-  };
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/projects`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data)
-    });
-    
-    if (res.ok) {
-      alert('✅ 添加成功！');
-      // 清空表单
-      document.getElementById('newTitle').value = '';
-      document.getElementById('newDesc').value = '';
-      document.getElementById('newImage').value = '';
-      document.getElementById('newLink').value = '';
-      // 刷新列表
-      loadAdminProjects();
-      loadProjects();
-    } else {
-      const err = await res.json();
-      alert('添加失败: ' + (err.error || '未知错误'));
-    }
-  } catch (e) {
-    alert('网络错误，请检查后端服务');
-  }
-}
-
-// ============================================================
-// 6. 管理员：删除作品
-// ============================================================
-async function deleteProject(id) {
-  if (!confirm('确定要删除这个作品吗？')) return;
-  
-  const token = localStorage.getItem('adminToken');
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/projects/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    if (res.ok) {
-      alert('已删除');
-      loadAdminProjects();
-      loadProjects();
-    } else {
-      alert('删除失败');
-    }
-  } catch (e) {
-    alert('网络错误');
-  }
-}
-
-// ============================================================
-// 7. 面板控制
-// ============================================================
-function openAdminPanel() {
-  const panel = document.getElementById('adminPanel');
-  panel.style.display = 'flex';
-  
-  // 检查是否已登录
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('adminContent').style.display = 'block';
-    loadAdminProjects();
-  } else {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('adminContent').style.display = 'none';
-  }
-}
-
-function closeAdminPanel() {
-  document.getElementById('adminPanel').style.display = 'none';
-}
-
-// 点击面板外部关闭（点击背景）
-document.getElementById('adminPanel').addEventListener('click', function(e) {
-  if (e.target === this) closeAdminPanel();
-});
-
-// ============================================================
-// 8. 检查登录状态（页面加载时）
-// ============================================================
-function checkAdminAuth() {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    document.getElementById('admin-entry').style.display = 'block';
-    // 验证token是否有效（可选）
-  }
-}
-
-// ============================================================
-// 9. 原有的背景、交互、特效代码（保持不变）
-// ============================================================
-// 以下是你原有的 Canvas 背景、毛玻璃开关、下载窗、卡片3D效果等代码
-// 由于篇幅，已精简但保留核心功能，你可以完全复制粘贴你原有的这部分
-
-// --- 9.1 Canvas 粒子背景 ---
+// --- 3.1 Canvas 粒子背景 ---
 (function() {
     const canvas = document.getElementById('interactive-bg');
     const ctx = canvas.getContext('2d');
@@ -1048,13 +722,13 @@ function checkAdminAuth() {
     animate();
 })();
 
-// --- 9.2 毛玻璃切换 ---
+// --- 3.2 毛玻璃切换 ---
 document.getElementById('glassToggle').onclick = () => {
   document.body.classList.toggle('glass-on');
   document.body.classList.toggle('glass-off');
 };
 
-// --- 9.3 下载悬浮窗 ---
+// --- 3.3 下载悬浮窗 ---
 const btn = document.getElementById('downloadBtn');
 const panel = document.getElementById('panel');
 const mask = document.getElementById('mask');
@@ -1068,7 +742,7 @@ mask.onclick = () => {
   mask.style.display = 'none';
 };
 
-// --- 9.4 涟漪效果 ---
+// --- 3.4 涟漪效果 ---
 document.addEventListener('mousedown', e => {
   const ripple = document.createElement('div');
   ripple.className = 'ripple';
@@ -1078,11 +752,10 @@ document.addEventListener('mousedown', e => {
   setTimeout(() => ripple.remove(), 1000);
 });
 
-// --- 9.5 卡片3D倾斜 + 拉伸效果（精简版，保留核心） ---
+// --- 3.5 卡片3D倾斜效果 ---
 function bindCardEffects() {
     const cards = document.querySelectorAll('.project-card[data-tilt]');
     if (!cards.length) return;
-    // 为每个卡片添加光晕层（如果不存在）
     cards.forEach(card => {
         if (!card.querySelector('.glow-effect')) {
             const glow = document.createElement('div'); glow.className = 'glow-effect'; card.appendChild(glow);
@@ -1094,31 +767,14 @@ function bindCardEffects() {
             const rr = document.createElement('div'); rr.className = 'refract-ring'; card.appendChild(rr);
         }
     });
-    // 简易交互：鼠标移动时轻微倾斜（仅演示，完整版可参考你原有代码）
-    // 这里为保持代码简洁，只做基本效果，你可完整复制原有卡片交互逻辑
 }
-// 初始化卡片效果
 setTimeout(bindCardEffects, 100);
 
-// --- 9.6 按钮拉伸效果（简化版） ---
-function makeButtonDirectionStretch(element, maxStretch = 18) {
-  // 简化为保留功能，实际完整逻辑可参考你原有代码
-  // 这里只做占位，保证不报错
-}
-// 应用拉伸效果到按钮
-const toggleBtn = document.getElementById('glassToggle');
-const downloadBtn = document.getElementById('downloadBtn');
-// 简单拉伸效果：mousedown/mousemove/mouseup 跟踪
-// 为保持代码简短，此处仅做空函数调用，实际可复用你原有完整逻辑
-console.log('✅ 前端改造完成，数据将从API动态加载');
-
 // ============================================================
-// 10. 页面启动：加载数据 + 检查登录
+// 4. 页面启动：加载数据
 // ============================================================
 loadProjects();
-checkAdminAuth();
-
-console.log('🚀 作品集已启动，管理员入口在右下角');
+console.log('🚀 作品集已启动');
 </script>
 </body>
 </html>

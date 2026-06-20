@@ -109,6 +109,45 @@ select option { background: #2a2a4e; }
 }
 .status-msg.success { background: rgba(76, 175, 80, 0.2); color: #81C784; display: block; }
 .status-msg.error { background: rgba(255, 107, 107, 0.2); color: #FF6B6B; display: block; }
+
+/* 转移弹窗 */
+#transferModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 99999;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+}
+#transferModal .modal-content {
+  background: #1a1a2e;
+  padding: 30px;
+  border-radius: 16px;
+  max-width: 450px;
+  width: 90%;
+  border: 1px solid #333;
+}
+#transferModal .modal-content h3 {
+  margin-top: 0;
+}
+#transferModal .modal-content select {
+  width: 100%;
+  padding: 10px;
+  margin: 15px 0;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #2a2a4e;
+  color: #fff;
+}
+#transferModal .modal-content .btn-row {
+  display: flex;
+  gap: 10px;
+}
+#transferModal .modal-content .btn-row .btn {
+  flex: 1;
+}
 </style>
 </head>
 <body>
@@ -134,16 +173,19 @@ select option { background: #2a2a4e; }
       <button class="btn btn-danger" onclick="logout()">退出</button>
     </div>
     
-    <!-- 添加分类 -->
+    <!-- ===== 添加分类 ===== -->
     <div class="card">
-      <h3>🏷️ 添加分类</h3>
-      <div style="display:flex; gap:10px;">
-        <input id="newCategoryName" placeholder="分类名称（如：Unity作品）" style="flex:1; margin-bottom:0;">
+      <h3>🏷️ 管理分类</h3>
+      <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <input id="newCategoryName" placeholder="新分类名称" style="flex:1; margin-bottom:0;">
         <button class="btn btn-success" onclick="addCategory()" style="flex-shrink:0;">添加</button>
+      </div>
+      <div id="categoryList">
+        <div class="empty-msg">加载中...</div>
       </div>
     </div>
     
-    <!-- 添加作品 -->
+    <!-- ===== 添加作品 ===== -->
     <div class="card">
       <h3>➕ 添加作品</h3>
       <input id="newTitle" placeholder="标题 *">
@@ -154,7 +196,7 @@ select option { background: #2a2a4e; }
       <button class="btn btn-success" onclick="addProject()" style="width:100%;">添加作品</button>
     </div>
     
-    <!-- 作品列表 -->
+    <!-- ===== 作品列表 ===== -->
     <div class="card">
       <h3>📋 所有作品</h3>
       <div id="projectListAdmin">
@@ -164,11 +206,24 @@ select option { background: #2a2a4e; }
   </div>
 </div>
 
+<!-- ===== 转移弹窗 ===== -->
+<div id="transferModal">
+  <div class="modal-content">
+    <h3>⚠️ 分类下有作品</h3>
+    <p id="transferMsg">该分类下有 <strong>0</strong> 个作品，请选择转移目标：</p>
+    <select id="transferTarget"></select>
+    <div class="btn-row">
+      <button class="btn btn-danger" onclick="confirmDeleteCategory()">确认删除并转移</button>
+      <button class="btn btn-secondary" onclick="closeTransferModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // 1. API 配置
 // ============================================================
-// ⚠️ 重要：将下面的地址替换为你的 Worker 地址
+// ⚠️ 将下面的地址替换为你的 Pages 域名（留空表示同域名）
 const API_BASE = '';
 
 // ============================================================
@@ -186,6 +241,14 @@ function showStatus(msg, type = 'success') {
   el.textContent = msg;
   el.className = 'status-msg ' + type;
   setTimeout(() => { el.className = 'status-msg'; }, 4000);
+}
+
+function getToken() {
+  return localStorage.getItem('adminToken');
+}
+
+function isLoggedIn() {
+  return !!getToken();
 }
 
 // ============================================================
@@ -212,7 +275,7 @@ async function adminLogin() {
       localStorage.setItem('adminToken', data.token);
       document.getElementById('loginArea').style.display = 'none';
       document.getElementById('adminArea').style.display = 'block';
-      loadCategories();
+      loadCategoriesWithDelete();
       loadAdminProjects();
       showStatus('✅ 登录成功');
     } else {
@@ -232,8 +295,11 @@ function logout() {
 }
 
 // ============================================================
-// 4. 加载分类列表（用于下拉菜单）
+// 4. 分类管理（含删除 + 转移）
 // ============================================================
+let deletingCategoryId = null;
+
+// 加载分类列表（用于下拉菜单）
 async function loadCategories() {
   try {
     const res = await fetch(`${API_BASE}/api/categories`);
@@ -250,11 +316,166 @@ async function loadCategories() {
   }
 }
 
+// 加载分类列表（带删除按钮）
+async function loadCategoriesWithDelete() {
+  try {
+    const res = await fetch(`${API_BASE}/api/categories`);
+    if (!res.ok) throw new Error();
+    const categories = await res.json();
+    
+    // 更新下拉菜单
+    const select = document.getElementById('newCategory');
+    select.innerHTML = categories.map(c => 
+      `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+    ).join('');
+    
+    // 更新分类列表
+    const container = document.getElementById('categoryList');
+    if (categories.length === 0) {
+      container.innerHTML = '<div class="empty-msg">暂无分类</div>';
+      return;
+    }
+    
+    container.innerHTML = categories.map(c => `
+      <div class="project-item">
+        <span>${escapeHtml(c.name)}</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteCategoryWithCheck(${c.id})">删除</button>
+      </div>
+    `).join('');
+    
+    return categories;
+  } catch (e) {
+    document.getElementById('categoryList').innerHTML = '<div class="empty-msg">❌ 加载失败</div>';
+    return [];
+  }
+}
+
+// 添加分类
+async function addCategory() {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  
+  const name = document.getElementById('newCategoryName').value.trim();
+  if (!name) { showStatus('请输入分类名称', 'error'); return; }
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name })
+    });
+    
+    if (res.ok) {
+      showStatus('✅ 分类添加成功');
+      document.getElementById('newCategoryName').value = '';
+      loadCategoriesWithDelete();
+    } else {
+      const err = await res.json();
+      showStatus('❌ ' + (err.error || '添加失败'), 'error');
+    }
+  } catch (e) {
+    showStatus('❌ 网络错误', 'error');
+  }
+}
+
+// 删除分类（检查是否有作品）
+async function deleteCategoryWithCheck(categoryId) {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  
+  try {
+    // 先尝试删除，看是否有作品
+    const res = await fetch(`${API_BASE}/api/admin/categories/${categoryId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    });
+    
+    if (res.ok) {
+      showStatus('✅ 分类已删除');
+      loadCategoriesWithDelete();
+    } else {
+      const data = await res.json();
+      
+      if (data.hasProjects) {
+        // 分类下有作品，弹出转移对话框
+        deletingCategoryId = categoryId;
+        document.getElementById('transferMsg').innerHTML = 
+          `该分类下有 <strong>${data.projectCount}</strong> 个作品，请选择转移目标：`;
+        
+        const select = document.getElementById('transferTarget');
+        select.innerHTML = data.availableCategories.map(c => 
+          `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+        ).join('');
+        
+        if (data.availableCategories.length === 0) {
+          select.innerHTML = '<option value="">⚠️ 请先创建其他分类</option>';
+          select.disabled = true;
+        } else {
+          select.disabled = false;
+        }
+        
+        document.getElementById('transferModal').style.display = 'flex';
+      } else {
+        showStatus('❌ ' + (data.error || '删除失败'), 'error');
+      }
+    }
+  } catch (e) {
+    showStatus('❌ 网络错误', 'error');
+  }
+}
+
+// 确认删除分类（带转移）
+async function confirmDeleteCategory() {
+  const token = getToken();
+  if (!token) return;
+  
+  const targetId = document.getElementById('transferTarget').value;
+  if (!targetId) {
+    showStatus('请选择目标分类', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/categories/${deletingCategoryId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ transferToId: parseInt(targetId) })
+    });
+    
+    if (res.ok) {
+      showStatus('✅ 分类已删除，作品已转移');
+      closeTransferModal();
+      loadCategoriesWithDelete();
+      loadAdminProjects();
+    } else {
+      const data = await res.json();
+      showStatus('❌ ' + (data.error || '删除失败'), 'error');
+    }
+  } catch (e) {
+    showStatus('❌ 网络错误', 'error');
+  }
+}
+
+function closeTransferModal() {
+  document.getElementById('transferModal').style.display = 'none';
+  deletingCategoryId = null;
+}
+
 // ============================================================
-// 5. 管理员：加载作品列表
+// 5. 作品管理
 // ============================================================
 async function loadAdminProjects() {
-  const token = localStorage.getItem('adminToken');
+  const token = getToken();
   if (!token) return;
   
   try {
@@ -284,44 +505,8 @@ async function loadAdminProjects() {
   }
 }
 
-// ============================================================
-// 6. 管理员：添加分类
-// ============================================================
-async function addCategory() {
-  const token = localStorage.getItem('adminToken');
-  if (!token) { showStatus('请先登录', 'error'); return; }
-  
-  const name = document.getElementById('newCategoryName').value.trim();
-  if (!name) { showStatus('请输入分类名称', 'error'); return; }
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/categories`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ name })
-    });
-    
-    if (res.ok) {
-      showStatus('✅ 分类添加成功');
-      document.getElementById('newCategoryName').value = '';
-      loadCategories();
-    } else {
-      const err = await res.json();
-      showStatus('❌ ' + (err.error || '添加失败'), 'error');
-    }
-  } catch (e) {
-    showStatus('❌ 网络错误', 'error');
-  }
-}
-
-// ============================================================
-// 7. 管理员：添加作品
-// ============================================================
 async function addProject() {
-  const token = localStorage.getItem('adminToken');
+  const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
   
   const title = document.getElementById('newTitle').value.trim();
@@ -367,13 +552,10 @@ async function addProject() {
   }
 }
 
-// ============================================================
-// 8. 管理员：删除作品
-// ============================================================
 async function deleteProject(id) {
   if (!confirm('确定要删除这个作品吗？')) return;
   
-  const token = localStorage.getItem('adminToken');
+  const token = getToken();
   try {
     const res = await fetch(`${API_BASE}/api/admin/projects/${id}`, {
       method: 'DELETE',
@@ -392,20 +574,20 @@ async function deleteProject(id) {
 }
 
 // ============================================================
-// 9. 检查登录状态（页面加载时）
+// 6. 检查登录状态（页面加载时）
 // ============================================================
 function checkAuth() {
-  const token = localStorage.getItem('adminToken');
+  const token = getToken();
   if (token) {
     document.getElementById('loginArea').style.display = 'none';
     document.getElementById('adminArea').style.display = 'block';
-    loadCategories();
+    loadCategoriesWithDelete();
     loadAdminProjects();
   }
 }
 
 // ============================================================
-// 10. 页面启动
+// 7. 页面启动
 // ============================================================
 checkAuth();
 console.log('🔐 管理后台已加载');

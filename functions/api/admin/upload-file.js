@@ -1,5 +1,5 @@
-// functions/api/admin/upload-file.js
-// 上传 .html 作品文件到 Pages 的 assets 目录
+// functions/api/admin/upload-html.js
+// 使用 KV 存储 .html 文件
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -14,43 +14,46 @@ export async function onRequest(context) {
   }
 
   try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const fileName = formData.get('fileName') || file.name;
+    const { fileName, content } = await request.json();
 
-    // 只允许 .html 文件
-    if (!file.name.endsWith('.html') && !fileName.endsWith('.html')) {
-      return new Response(JSON.stringify({ error: '只允许上传 .html 文件' }), {
+    if (!fileName || !content) {
+      return new Response(JSON.stringify({ error: '文件名和内容不能为空' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // 限制文件大小（2MB）
-    if (file.size > 10 * 1024 * 1024) {
+    if (!fileName.endsWith('.html')) {
+      return new Response(JSON.stringify({ error: '只支持 .html 文件' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 检查文件大小（10MB）
+    const fileSize = new Blob([content]).size;
+    if (fileSize > 10 * 1024 * 1024) {
       return new Response(JSON.stringify({ error: '文件大小不能超过 10MB' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // 读取文件内容
-    const content = await file.text();
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const safeName = fileName.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const uniqueName = `${timestamp}-${safeName}`;
 
-    // 这里你需要将文件内容保存到某个存储中
-    // 由于 Pages Functions 无法直接写入文件系统，你需要使用 KV 或 R2
-    // 或者存到数据库的 TEXT 字段中
+    // 保存到 KV
+    await env.HTML_FILES.put(uniqueName, content);
 
-    // 方案A：存到 D1 数据库（适合小文件）
-    const result = await env.DB.prepare(`
-      INSERT INTO html_files (filename, content, created_at) 
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-    `).bind(fileName, content).run();
+    // 返回访问 URL
+    const url = `/cody/${uniqueName}`;
 
     return new Response(JSON.stringify({
       success: true,
-      url: `/cody/${fileName}`,
-      id: result.meta.last_row_id
+      url: url,
+      fileName: uniqueName
     }), {
       headers: { 'Content-Type': 'application/json' },
     });

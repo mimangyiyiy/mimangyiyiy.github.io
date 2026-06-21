@@ -108,6 +108,11 @@ body.glass-off .glass-toggle svg {
   fill: #000 !important;
 }
 
+/* 液态光晕在关闭毛玻璃时隐藏 */
+body.glass-off .project-card .glass-glow {
+  display: none !important;
+}
+
 /* 涟漪效果在关闭毛玻璃时隐藏 */
 body.glass-off .ripple {
   display: none !important;
@@ -124,7 +129,7 @@ body.glass-off .ripple {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* ===== 卡片样式（更通透） ===== */
+/* ===== 卡片样式（液态玻璃） ===== */
 .project-card {
   position: relative;
   padding: 1.5rem;
@@ -140,10 +145,31 @@ body.glass-off .ripple {
   transform-style: preserve-3d;
   will-change: transform;
   cursor: default;
+  overflow: hidden;
 }
 
 .project-card:hover {
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+/* 液态光晕 */
+.project-card .glass-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at 50% 50%, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    transparent 60%
+  );
+  transition: background 0.1s ease;
+}
+
+/* 卡片内容在光晕之上 */
+.project-card > *:not(.glass-glow) {
+  position: relative;
+  z-index: 1;
 }
 
 .project-image {
@@ -389,7 +415,7 @@ body.glass-on .ripple {
 
 <header class="glass">
   <h1>我的作品集</h1>
-  <p>✨ 3D吸附卡片 · 动态分类 · 动态下载 ✨</p>
+  <p>✨ 液态玻璃 · 动态分类 · 动态下载 ✨</p>
 </header>
 
 <div id="projectContainer">
@@ -475,6 +501,7 @@ function renderProjects(projects, container) {
     list.className = 'project-list';
     list.innerHTML = projectsInCat.map(p => `
       <div class="project-card" data-tilt>
+        <div class="glass-glow"></div>
         <div class="project-image">
           <img src="${p.image || 'https://placehold.co/400x200?text=No+Image'}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x200?text=加载失败'">
         </div>
@@ -492,46 +519,150 @@ function renderProjects(projects, container) {
 }
 
 // ============================================================
-// 4. ✨ 3D吸附式卡片倾斜效果（朝鼠标方向吸附）
+// 4. ✨ 苹果液态玻璃效果（弹性拉伸 + 光晕跟随）
 // ============================================================
 function bindCardTiltEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
   
   cards.forEach(card => {
-    card.removeEventListener('mousemove', tiltHandler);
-    card.removeEventListener('mouseleave', resetHandler);
+    // ---- 状态变量 ----
+    let isHovering = false;
+    let rafId = null;
+    let currentRotateX = 0, targetRotateX = 0;
+    let currentRotateY = 0, targetRotateY = 0;
+    let currentScaleX = 1, targetScaleX = 1;
+    let currentScaleY = 1, targetScaleY = 1;
+    let currentTranslateX = 0, targetTranslateX = 0;
+    let currentTranslateY = 0, targetTranslateY = 0;
     
+    // 获取光晕元素
+    const glow = card.querySelector('.glass-glow');
+    
+    // ---- 平滑动画循环（60fps） ----
+    function animate() {
+      // 使用弹性缓动系数（0.12 产生液态跟随感）
+      const ease = 0.12;
+      
+      currentRotateX += (targetRotateX - currentRotateX) * ease;
+      currentRotateY += (targetRotateY - currentRotateY) * ease;
+      currentScaleX += (targetScaleX - currentScaleX) * ease;
+      currentScaleY += (targetScaleY - currentScaleY) * ease;
+      currentTranslateX += (targetTranslateX - currentTranslateX) * ease;
+      currentTranslateY += (targetTranslateY - currentTranslateY) * ease;
+      
+      // 应用变换
+      const rotX = currentRotateX * 0.6;
+      const rotY = currentRotateY * 0.6;
+      const scaleX = currentScaleX;
+      const scaleY = currentScaleY;
+      const transX = currentTranslateX * 0.3;
+      const transY = currentTranslateY * 0.3;
+      
+      card.style.transform = `
+        perspective(800px) 
+        rotateX(${rotX}deg) 
+        rotateY(${rotY}deg) 
+        scale(${scaleX}, ${scaleY}) 
+        translateX(${transX}px) 
+        translateY(${transY}px)
+      `;
+      
+      // 光晕跟随鼠标（液态光效）
+      if (glow) {
+        const rect = card.getBoundingClientRect();
+        // 基于位移量计算光晕位置
+        const glowX = 50 + (currentTranslateX / rect.width) * 40;
+        const glowY = 50 + (currentTranslateY / rect.height) * 40;
+        const intensity = 0.08 + Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.08);
+        glow.style.background = `
+          radial-gradient(circle at ${glowX}% ${glowY}%, 
+            rgba(255,255,255,${intensity + 0.05}) 0%, 
+            rgba(255,255,255,${intensity * 0.5}) 30%, 
+            transparent 70%
+          )
+        `;
+      }
+      
+      // 继续动画
+      rafId = requestAnimationFrame(animate);
+    }
+    
+    // ---- 启动动画循环（只启动一次） ----
+    if (!card._animStarted) {
+      card._animStarted = true;
+      animate();
+    }
+    
+    // ---- 鼠标移动：计算目标变形值 ----
     function tiltHandler(e) {
       const rect = card.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
       
-      // ✅ 朝鼠标方向吸附
-      const rotateY = (x - 0.5) * 18;
-      const rotateX = (0.5 - y) * 18;
-      const offsetX = (x - 0.5) * 14;
-      const offsetY = (y - 0.5) * 14;
-      const distFromCenter = Math.sqrt(Math.pow(x - 0.5, 2) + Math.pow(y - 0.5, 2));
-      const scale = 1 + distFromCenter * 0.05;
+      // 从中心到鼠标的距离（-1 ~ 1）
+      const dx = (x - 0.5) * 2;
+      const dy = (y - 0.5) * 2;
+      const distance = Math.sqrt(dx * dx + dy * dy);
       
-      card.style.transition = 'transform 0.06s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
-      card.style.transform = `
-        perspective(800px) 
-        rotateX(${rotateX}deg) 
-        rotateY(${rotateY}deg) 
-        translateX(${offsetX}px) 
-        translateY(${offsetY}px) 
-        scale(${scale})
-      `;
+      // 限制最大变形幅度
+      const maxRotation = 14;
+      const maxScale = 1 + Math.min(distance * 0.07, 0.07);
+      const maxTranslate = 22;
+      
+      // 液态拉伸：鼠标指向哪边，哪边就被“拉长”
+      const scaleX = 1 + dx * 0.04;
+      const scaleY = 1 + dy * 0.04;
+      
+      // 旋转：朝鼠标方向倾斜
+      const rotateY = dx * maxRotation;
+      const rotateX = -dy * maxRotation;
+      
+      // 位移：轻微跟随鼠标
+      const translateX = dx * maxTranslate;
+      const translateY = dy * maxTranslate;
+      
+      // 平滑更新目标值
+      targetRotateX = rotateX;
+      targetRotateY = rotateY;
+      targetScaleX = Math.max(0.92, Math.min(1.08, scaleX));
+      targetScaleY = Math.max(0.92, Math.min(1.08, scaleY));
+      targetTranslateX = translateX;
+      targetTranslateY = translateY;
+      
+      isHovering = true;
     }
     
+    // ---- 鼠标离开：弹性回弹 ----
     function resetHandler() {
-      card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
-      card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateX(0px) translateY(0px) scale(1)';
+      targetRotateX = 0;
+      targetRotateY = 0;
+      targetScaleX = 1;
+      targetScaleY = 1;
+      targetTranslateX = 0;
+      targetTranslateY = 0;
+      isHovering = false;
+      
+      // 回弹光晕归位
+      if (glow) {
+        glow.style.background = `
+          radial-gradient(circle at 50% 50%, 
+            rgba(255,255,255,0.06) 0%, 
+            transparent 60%
+          )
+        `;
+      }
     }
     
+    // ---- 绑定事件 ----
     card.addEventListener('mousemove', tiltHandler);
     card.addEventListener('mouseleave', resetHandler);
+    
+    // ---- 清理动画（防止内存泄漏） ----
+    card._cleanup = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      card.removeEventListener('mousemove', tiltHandler);
+      card.removeEventListener('mouseleave', resetHandler);
+    };
   });
 }
 
@@ -601,7 +732,7 @@ document.addEventListener('mousedown', e => {
 // ============================================================
 loadProjects();
 loadDownloads();
-console.log('🚀 作品集已启动（3D吸附式卡片效果 + 描述已恢复）');
+console.log('🚀 作品集已启动（苹果液态玻璃效果）');
 </script>
 </body>
 </html>

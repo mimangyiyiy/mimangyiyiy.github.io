@@ -1,7 +1,10 @@
 // functions/api/admin/upload-html.js
+// 使用 KV 存储 .html 文件
+
 export async function onRequest(context) {
   const { request, env } = context;
 
+  // 验证管理员身份
   const auth = request.headers.get('Authorization');
   if (!auth || !isAdmin(auth)) {
     return new Response(JSON.stringify({ error: '未授权' }), {
@@ -27,16 +30,30 @@ export async function onRequest(context) {
       });
     }
 
-    // 保存到数据库
-    const result = await env.DB.prepare(`
-      INSERT INTO html_files (filename, content, created_at) 
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-    `).bind(fileName, content).run();
+    // 检查文件大小（10MB）
+    const fileSize = new Blob([content]).size;
+    if (fileSize > 10 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: '文件大小不能超过 10MB' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const safeName = fileName.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const uniqueName = `${timestamp}-${safeName}`;
+
+    // 保存到 KV
+    await env.HTML_FILES.put(uniqueName, content);
+
+    // 返回访问 URL
+    const url = `/cody/${uniqueName}`;
 
     return new Response(JSON.stringify({
       success: true,
-      url: `/cody/${fileName}`,
-      id: result.meta.last_row_id
+      url: url,
+      fileName: uniqueName
     }), {
       headers: { 'Content-Type': 'application/json' },
     });

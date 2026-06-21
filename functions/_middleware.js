@@ -1,6 +1,4 @@
 // functions/_middleware.js
-// 修复版：明确公开登录接口
-
 export async function onRequest(context) {
   const { request, next, env } = context;
   const url = new URL(request.url);
@@ -12,14 +10,14 @@ export async function onRequest(context) {
   const publicPaths = [
     '/',
     '/admin.html',
-    '/admin',                    // admin 页面本身
+    '/admin',
     '/api/projects',
     '/api/categories',
     '/api/downloads',
     '/api/health',
-    '/api/admin/login',          // ⚠️ 登录接口必须在这里！
-    '/cody/',
-    '/cody'
+    '/api/admin/login',
+    '/cody/',        // 作品文件目录
+    '/cody',         // 精确匹配
     '/image/',
     '/images/'
   ];

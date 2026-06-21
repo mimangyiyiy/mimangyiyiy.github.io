@@ -599,14 +599,17 @@ function renderProjects(projects, container) {
 // ============================================================
 async function loadDownloads() {
   const container = document.getElementById('downloadList');
+  console.log('🔄 正在加载下载列表(前台)...');
   
   try {
     const res = await fetch(`${API_BASE}/api/downloads`);
+    console.log('📡 前台响应状态:', res.status);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const downloads = await res.json();
+    console.log('✅ 前台下载数据:', downloads);
     renderDownloads(downloads, container);
   } catch (e) {
-    console.error('加载下载项失败:', e);
+    console.error('❌ 加载下载项失败(前台):', e);
     if (container) {
       container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:10px;">⚠️ 加载失败</div>`;
     }

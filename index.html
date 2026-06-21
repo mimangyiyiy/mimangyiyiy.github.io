@@ -53,6 +53,11 @@ body.glass-off {
   background-image: none !important;
   background-color: #f5f5f7 !important;
 }
+body.glass-off .project-card h3,
+body.glass-off .project-card p,
+body.glass-off .project-card .btn {
+  color: #000 !important;
+}
 body.glass-off::before {
   display: none !important;
 }
@@ -474,6 +479,40 @@ function renderProjects(projects, container) {
     container.innerHTML = `<div style="color:rgba(255,255,255,0.5); text-align:center; padding:40px;">暂无作品</div>`;
     return;
   }
+
+  categoryNames.forEach(catName => {
+    const projectsInCat = groups[catName];
+    const section = document.createElement('div');
+    section.className = 'container';
+    section.style.maxWidth = '1200px';
+    section.style.margin = '0 auto 2rem auto';
+    section.style.padding = '0 1rem';
+    
+    const title = document.createElement('h2');
+    title.className = 'section-title';
+    title.textContent = catName;
+    section.appendChild(title);
+    
+    const list = document.createElement('div');
+    list.className = 'project-list';
+    // ✅ 加回描述 <p> 标签
+    list.innerHTML = projectsInCat.map(p => `
+      <div class="project-card" data-tilt>
+        <div class="project-image">
+          <img src="${p.image || 'https://placehold.co/400x200?text=No+Image'}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x200?text=加载失败'">
+        </div>
+        <h3>${escapeHtml(p.title)}</h3>
+        <p>${escapeHtml(p.description || '')}</p>
+        <a href="${escapeHtml(p.link)}" class="btn" target="_blank">查看作品</a>
+      </div>
+    `).join('');
+    
+    section.appendChild(list);
+    container.appendChild(section);
+  });
+
+  bindCardTiltEffects();
+}
 
   categoryNames.forEach(catName => {
     const projectsInCat = groups[catName];

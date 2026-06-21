@@ -1,36 +1,35 @@
 // functions/_middleware.js
-// 修复版：只保护 /api/admin/* 路径，其他路径公开
+// 修复版：未登录时返回登录页面，而不是 401 错误
 
 export async function onRequest(context) {
-  const { request, next } = context;
+  const { request, next, env } = context;
   const url = new URL(request.url);
 
-  // 1. 定义不需要登录的公开路径
+  // 1. 定义公开路径（不需要登录）
   const publicPaths = [
     '/',                 // 首页
-    '/admin.html',       // 管理后台页面本身（登录界面）
-    '/api/projects',     // 作品列表 API
-    '/api/categories',   // 分类列表 API
-    '/api/downloads',    // 下载列表 API
-    '/api/health',       // 健康检查
-    '/cody/',            // 你的作品子页面目录
-    '/image/',           // 你的图片目录
-    '/images/'           // 如果有图片目录
+    '/admin.html',       // 登录页面本身（注意：不是 /admin）
+    '/api/projects',     // 公开 API
+    '/api/categories',
+    '/api/downloads',
+    '/api/health',
+    '/cody/',
+    '/image/',
+    '/images/'
   ];
 
-  // 检查当前请求路径是否在公开列表中
   const isPublic = publicPaths.some(path => url.pathname === path || url.pathname.startsWith(path + '/'));
 
   // 如果是公开路径，直接放行
   if (isPublic) {
     const response = await next();
-    // 为公开路径添加 CORS 头（允许跨域）
     response.headers.set('Access-Control-Allow-Origin', '*');
     return response;
   }
 
-  // 2. 以下代码仅对非公开路径生效（即 /api/admin/*）
-  // 处理预检请求（OPTIONS）
+  // 2. 处理需要登录的路径（如 /admin 页面或 /api/admin/*）
+
+  // 处理 OPTIONS 预检请求
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -41,22 +40,42 @@ export async function onRequest(context) {
     });
   }
 
-  // 验证管理员 Token
+  // 检查 Token
   const auth = request.headers.get('Authorization');
-  if (!auth || !isAdmin(auth)) {
+  const tokenValid = auth && isAdmin(auth);
+
+  // 如果请求的是 /admin 页面（非 API），且未登录，返回登录页面
+  if (url.pathname === '/admin' && !tokenValid) {
+    // 读取 admin.html 的内容并返回
+    try {
+      // 尝试从 Pages 的静态资源中获取 admin.html
+      // 如果获取失败，直接返回一个内联的登录页面
+      const adminPage = await env.ASSETS.fetch(new URL('/admin.html', request.url));
+      if (adminPage.ok) {
+        return adminPage;
+      }
+    } catch (e) {
+      // 如果无法获取，返回一个简单的内联登录页面
+      return new Response(getLoginPageHTML(), {
+        headers: { 'Content-Type': 'text/html' },
+      });
+    }
+  }
+
+  // 如果是 API 请求（/api/admin/*）且未登录，返回 401
+  if (url.pathname.startsWith('/api/admin/') && !tokenValid) {
     return new Response(JSON.stringify({ error: '未授权，请先登录' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  // 验证通过，执行请求
+  // 其他情况：验证通过，执行请求
   const response = await next();
   response.headers.set('Access-Control-Allow-Origin', '*');
   return response;
 }
 
-// 验证 Token 的辅助函数
 function isAdmin(auth) {
   try {
     const token = auth.replace('Bearer ', '');
@@ -65,4 +84,31 @@ function isAdmin(auth) {
   } catch {
     return false;
   }
+}
+
+// 内联登录页面（如果无法读取 admin.html 时的备用方案）
+function getLoginPageHTML() {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>登录</title>
+<style>
+body{background:#0a0a1a;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
+.card{background:#1a1a2e;padding:40px;border-radius:16px;width:100%;max-width:400px;}
+input{width:100%;padding:10px;margin:10px 0;border-radius:8px;border:1px solid #333;background:#2a2a4e;color:#fff;}
+.btn{width:100%;padding:10px;background:#4C97FF;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
+.btn:hover{background:#3a7be0;}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>🔐 管理员登录</h2>
+<input id="user" placeholder="用户名">
+<input id="pass" type="password" placeholder="密码">
+<button class="btn" onclick="login()">登录</button>
+<script>
+async function login(){const u=document.getElementById('user').value;const p=document.getElementById('pass').value;if(!u||!p){alert('请输入用户名和密码');return;}try{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const d=await r.json();if(r.ok){localStorage.setItem('adminToken',d.token);location.href='/admin';}else{alert('登录失败：'+(d.error||'请重试'));}}catch(e){alert('网络错误');}}
+</script>
+</div>
+</body>
+</html>`;
 }

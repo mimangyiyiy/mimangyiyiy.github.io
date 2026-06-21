@@ -27,8 +27,8 @@ export async function onRequest(context) {
     }
 
     // 限制文件大小（2MB）
-    if (file.size > 2 * 1024 * 1024) {
-      return new Response(JSON.stringify({ error: '文件大小不能超过 2MB' }), {
+    if (file.size > 10 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: '文件大小不能超过 10MB' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });

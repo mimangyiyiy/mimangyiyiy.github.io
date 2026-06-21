@@ -1,47 +1,28 @@
-// functions/api/admin/downloads.js
-export async function onRequest(context) {
-  const { request, env } = context;
+// functions/api/downloads.js
+// 公开 API：获取下载列表，无需登录
 
-  const auth = request.headers.get("Authorization");
-  if (!auth || !isAdmin(auth)) {
-    return new Response(JSON.stringify({ error: "未授权" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+export async function onRequest(context) {
+  const { env } = context;
 
   try {
-    const { title, description, link, link_text } = await request.json();
+    // 从数据库查询所有下载项，按排序字段升序排列
+    const result = await env.DB.prepare(
+      "SELECT * FROM downloads ORDER BY sort_order ASC"
+    ).all();
 
-    if (!title || !link) {
-      return new Response(JSON.stringify({ error: "标题和链接为必填项" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const result = await env.DB.prepare(`
-      INSERT INTO downloads (title, description, link, link_text, sort_order) 
-      VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM downloads))
-    `).bind(title, description || "", link, link_text || "下载").run();
-
-    return new Response(JSON.stringify({ id: result.meta.last_row_id, success: true }), {
-      headers: { "Content-Type": "application/json" },
+    // 返回 JSON 数据
+    return new Response(JSON.stringify(result.results || []), {
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   } catch (e) {
+    // 如果出错，返回错误信息
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
-  }
-}
-
-function isAdmin(auth) {
-  try {
-    const token = auth.replace("Bearer ", "");
-    const payload = JSON.parse(atob(token));
-    return payload.exp > Date.now();
-  } catch {
-    return false;
   }
 }

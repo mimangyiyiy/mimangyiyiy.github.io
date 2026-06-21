@@ -7,10 +7,11 @@ export async function onRequest(context) {
 
   // 1. 定义公开路径（不需要登录）
   const publicPaths = [
-    '/',                 // 首页
+    '/',           // 首页
     '/admin.html',       // 登录页面本身（注意：不是 /admin）
     '/api/projects',     // 公开 API
     '/api/categories',
+    '/admin', 
     '/api/downloads',
     '/api/health',
     '/api/admin/login'

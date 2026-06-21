@@ -47,11 +47,70 @@ header, .container, .download-float, .glass-toggle {
   z-index: 2;
 }
 
+/* ===== 关闭毛玻璃模式：纯色背景 + 黑色文字 ===== */
 body.glass-off {
-  color: #333;
+  color: #000 !important;
+  background-image: none !important;
+  background-color: #f5f5f7 !important;
 }
 body.glass-off::before {
-  background: rgba(255, 255, 255, 0.7);
+  display: none !important;
+}
+
+/* 所有毛玻璃元素变成不透明纯色 */
+body.glass-off .glass,
+body.glass-off .project-card,
+body.glass-off .download-panel,
+body.glass-off .download-trigger,
+body.glass-off .glass-toggle,
+body.glass-off header {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  color: #000 !important;
+}
+
+/* 卡片内文字变黑 */
+body.glass-off .project-card h3,
+body.glass-off .project-card p,
+body.glass-off .project-card .btn {
+  color: #000 !important;
+}
+
+/* 卡片内按钮调整 */
+body.glass-off .project-card .btn {
+  background: #4C97FF !important;
+  color: #fff !important;
+}
+
+/* 标题和描述文字变黑 */
+body.glass-off .section-title,
+body.glass-off .section-desc,
+body.glass-off header h1,
+body.glass-off header p {
+  color: #000 !important;
+  text-shadow: none !important;
+}
+
+/* 下载面板文字变黑 */
+body.glass-off .download-panel h4,
+body.glass-off .download-item,
+body.glass-off .download-item .info .title,
+body.glass-off .download-item .info .desc {
+  color: #000 !important;
+}
+
+/* 下载按钮图标变黑 */
+body.glass-off .download-trigger svg,
+body.glass-off .glass-toggle svg {
+  fill: #000 !important;
+}
+
+/* 涟漪效果在关闭毛玻璃时隐藏 */
+body.glass-off .ripple {
+  display: none !important;
 }
 
 /* ================= 毛玻璃风格 ================= */

@@ -49,6 +49,8 @@ select option { background: #2a2a4e; }
 .btn-primary:hover { background: #3a7be0; }
 .btn-success { background: #4CAF50; color: #fff; }
 .btn-success:hover { background: #3d8b40; }
+.btn-warning { background: #FFAB19; color: #222; }
+.btn-warning:hover { background: #e89a0f; }
 .btn-danger { background: #FF6B6B; color: #fff; }
 .btn-danger:hover { background: #e55a5a; }
 .btn-secondary { background: #555; color: #fff; }
@@ -223,6 +225,47 @@ select option { background: #2a2a4e; }
   margin-bottom: 0;
 }
 .file-upload-row .btn { flex-shrink: 0; }
+
+/* 编辑弹窗 */
+#editModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 99999;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+}
+#editModal .modal-content {
+  background: #1a1a2e;
+  padding: 30px;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #333;
+}
+#editModal .modal-content h3 { margin-top: 0; }
+#editModal .modal-content input, 
+#editModal .modal-content select {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #2a2a4e;
+  color: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+#editModal .modal-content .btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+#editModal .modal-content .btn-row .btn { flex: 1; }
 </style>
 </head>
 <body>
@@ -247,7 +290,6 @@ select option { background: #2a2a4e; }
       <button class="btn btn-danger" onclick="logout()">退出</button>
     </div>
     
-    <!-- Tab 切换 -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="tab-projects" onclick="switchTab('tab-projects')">📂 作品</button>
       <button class="tab-btn" data-tab="tab-downloads" onclick="switchTab('tab-downloads')">📦 下载</button>
@@ -259,7 +301,6 @@ select option { background: #2a2a4e; }
       <div class="card">
         <h3>➕ 添加作品</h3>
         
-        <!-- 作品文件上传 -->
         <div style="margin-bottom:10px;">
           <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">📄 作品文件 (.html)</label>
           <div class="file-upload-row">
@@ -271,7 +312,6 @@ select option { background: #2a2a4e; }
           <div class="hint">💡 上传 .html 文件后会自动填入链接</div>
         </div>
         
-        <!-- 图片上传 -->
         <div style="margin-bottom:10px;">
           <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">📷 作品封面图片</label>
           <div class="upload-area">
@@ -340,12 +380,29 @@ select option { background: #2a2a4e; }
   </div>
 </div>
 
+<!-- ===== 编辑弹窗 ===== -->
+<div id="editModal">
+  <div class="modal-content">
+    <h3>✏️ 编辑作品</h3>
+    <input id="editId" type="hidden">
+    <input id="editTitle" placeholder="标题 *">
+    <input id="editDesc" placeholder="描述">
+    <input id="editLink" placeholder="作品链接 *">
+    <input id="editImage" placeholder="图片URL">
+    <select id="editCategory"></select>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="saveEdit()">保存修改</button>
+      <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // 1. 配置
 // ============================================================
 const API_BASE = '';
-const IMGBB_API_KEY = '152e30b5914fa4ee74371fab84a848bb'; // 到 https://imgbb.com/api 免费获取
+const IMGBB_API_KEY = '你的ImgBB_API_Key';
 
 // ============================================================
 // 2. 工具函数
@@ -404,26 +461,21 @@ async function adminLogin() {
     });
     
     const data = await res.json();
-    console.log('登录响应:', data);
-
     if (res.ok && data.token) {
       localStorage.setItem('adminToken', data.token);
       document.getElementById('loginArea').style.display = 'none';
       document.getElementById('adminArea').style.display = 'block';
-      
       await Promise.all([
         loadCategoriesWithDelete(),
         loadAdminProjects(),
         loadAdminDownloads()
       ]);
-      
       showStatus('✅ 登录成功');
     } else {
       showStatus('❌ ' + (data.error || '用户名或密码错误'), 'error');
     }
   } catch (e) {
-    console.error('登录错误:', e);
-    showStatus('❌ 网络错误，请检查后端服务', 'error');
+    showStatus('❌ 网络错误', 'error');
   }
 }
 
@@ -445,8 +497,14 @@ async function loadCategoriesWithDelete() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const categories = await res.json();
 
+    // 更新下拉菜单
     const select = document.getElementById('newCategory');
     select.innerHTML = categories.map(c => 
+      `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+    ).join('');
+    // 编辑弹窗的下拉菜单
+    const editSelect = document.getElementById('editCategory');
+    editSelect.innerHTML = categories.map(c => 
       `<option value="${c.id}">${escapeHtml(c.name)}</option>`
     ).join('');
 
@@ -463,7 +521,6 @@ async function loadCategoriesWithDelete() {
       </div>
     `).join('');
   } catch (e) {
-    console.error('加载分类失败:', e);
     document.getElementById('categoryList').innerHTML = `<div class="empty-msg">❌ 加载失败</div>`;
   }
 }
@@ -586,7 +643,7 @@ function closeTransferModal() {
 }
 
 // ============================================================
-// 5. 作品管理
+// 5. 作品管理（含编辑）
 // ============================================================
 async function loadAdminProjects() {
   try {
@@ -608,6 +665,7 @@ async function loadAdminProjects() {
           ${p.file_name ? `<span class="file-info">📄 ${escapeHtml(p.file_name)}</span>` : ''}
         </div>
         <div class="actions">
+          <button class="btn btn-warning btn-sm" onclick="openEditModal(${p.id})">✏️ 编辑</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">删除</button>
         </div>
       </div>
@@ -617,6 +675,84 @@ async function loadAdminProjects() {
   }
 }
 
+// ---- 编辑功能 ----
+let editingProjectId = null;
+
+async function openEditModal(id) {
+  try {
+    const res = await fetch(`${API_BASE}/api/projects`);
+    const projects = await res.json();
+    const project = projects.find(p => p.id === id);
+    if (!project) {
+      showStatus('未找到该作品', 'error');
+      return;
+    }
+
+    editingProjectId = id;
+    document.getElementById('editId').value = id;
+    document.getElementById('editTitle').value = project.title || '';
+    document.getElementById('editDesc').value = project.description || '';
+    document.getElementById('editLink').value = project.link || '';
+    document.getElementById('editImage').value = project.image || '';
+    document.getElementById('editCategory').value = project.category_id || '';
+    
+    document.getElementById('editModal').style.display = 'flex';
+  } catch (e) {
+    showStatus('加载作品数据失败', 'error');
+  }
+}
+
+async function saveEdit() {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+
+  const id = document.getElementById('editId').value;
+  const title = document.getElementById('editTitle').value.trim();
+  const link = document.getElementById('editLink').value.trim();
+  const category_id = document.getElementById('editCategory').value;
+
+  if (!title || !link) {
+    showStatus('标题和链接为必填项', 'error');
+    return;
+  }
+
+  const data = {
+    title,
+    description: document.getElementById('editDesc').value.trim(),
+    link,
+    image: document.getElementById('editImage').value.trim() || 'https://placehold.co/400x200?text=作品封面',
+    category_id: parseInt(category_id) || null
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      showStatus('✅ 作品已更新');
+      closeEditModal();
+      loadAdminProjects();
+    } else {
+      const err = await res.json();
+      showStatus('❌ ' + (err.error || '更新失败'), 'error');
+    }
+  } catch (e) {
+    showStatus('❌ 网络错误', 'error');
+  }
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  editingProjectId = null;
+}
+
+// ---- 添加和删除 ----
 async function addProject() {
   const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
@@ -692,12 +828,10 @@ async function deleteProject(id) {
 // 6. 下载项管理
 // ============================================================
 async function loadAdminDownloads() {
-  console.log('🔄 正在加载下载列表(后台)...');
   try {
     const res = await fetch(`${API_BASE}/api/downloads`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const downloads = await res.json();
-    console.log('✅ 下载数据(后台):', downloads);
     
     const container = document.getElementById('downloadListAdmin');
     if (downloads.length === 0) {
@@ -718,8 +852,7 @@ async function loadAdminDownloads() {
       </div>
     `).join('');
   } catch (e) {
-    console.error('❌ 加载下载项失败(后台):', e);
-    document.getElementById('downloadListAdmin').innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
+    document.getElementById('downloadListAdmin').innerHTML = `<div class="empty-msg">❌ 加载失败</div>`;
   }
 }
 
@@ -807,7 +940,6 @@ async function uploadImageToImgBB() {
 
   try {
     const base64 = await fileToBase64(file);
-    
     const formData = new FormData();
     formData.append('key', IMGBB_API_KEY);
     formData.append('image', base64.split(',')[1]);
@@ -822,12 +954,10 @@ async function uploadImageToImgBB() {
 
     if (data.success) {
       document.getElementById('newImage').value = data.data.url;
-      
       const preview = document.getElementById('imagePreview');
       const previewImg = document.getElementById('previewImg');
       previewImg.src = data.data.url;
       preview.style.display = 'block';
-      
       showStatus('✅ 图片上传成功！');
       progressEl.textContent = '✅ 上传完成';
     } else {
@@ -845,7 +975,7 @@ async function uploadImageToImgBB() {
 }
 
 // ============================================================
-// 8. 作品文件上传（.html 到数据库）
+// 8. 作品文件上传（.html 到 KV）
 // ============================================================
 async function uploadHtmlFile() {
   const fileInput = document.getElementById('newHtmlFile');
@@ -878,7 +1008,6 @@ async function uploadHtmlFile() {
 
   try {
     const content = await file.text();
-    
     const res = await fetch(`${API_BASE}/api/admin/upload-html`, {
       method: 'POST',
       headers: {
@@ -892,8 +1021,6 @@ async function uploadHtmlFile() {
     });
 
     const data = await res.json();
-    console.log('📡 上传响应:', data);
-
     if (res.ok && data.success) {
       document.getElementById('newLink').value = data.url;
       showStatus('✅ 作品文件上传成功！');
@@ -903,7 +1030,6 @@ async function uploadHtmlFile() {
       progressEl.style.display = 'none';
     }
   } catch (e) {
-    console.error('❌ 上传失败:', e);
     showStatus('❌ 上传失败：' + e.message, 'error');
     progressEl.style.display = 'none';
   }
@@ -954,7 +1080,7 @@ function checkAuth() {
 // 10. 页面启动
 // ============================================================
 checkAuth();
-console.log('🔐 管理后台已加载（含 .html 文件上传）');
+console.log('🔐 管理后台已加载（含编辑功能）');
 </script>
 </body>
 </html>

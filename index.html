@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>我的作品集 | 动态分类 + 动态下载</title>
+<title>我的作品集</title>
 
 <style>
 /* ================= 基础变量 ================= */
@@ -21,9 +21,7 @@ body {
   position: relative;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  cursor: auto;
   overflow-x: hidden;
-  /* 使用背景图片 */
   background-image: url('https://ts1.tc.mm.bing.net/th/id/R-C.b0ea268fa1be279d112489ce83ad4696?rik=qItsh%2fBiy33hlg&riu=http%3a%2f%2fwww.quazero.com%2fuploads%2fallimg%2f140303%2f1-140303215009.jpg&ehk=S6PLWamt%2bMzQV8uO9ugcU5d5M19BpXtCpNz2cRJ7q9M%3d&risl=&pid=ImgRaw&r=0');
   background-size: cover;
   background-position: center;
@@ -31,7 +29,7 @@ body {
   background-repeat: no-repeat;
 }
 
-/* 深色遮罩层 - 增强对比度，让文字更清晰 */
+/* 深色遮罩层 */
 body::before {
   content: '';
   position: fixed;
@@ -39,33 +37,30 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   pointer-events: none;
   z-index: 0;
 }
 
-/* 所有主要内容都在这个层级之上 */
 header, .container, .download-float, .glass-toggle {
   position: relative;
   z-index: 2;
 }
 
-/* 毛玻璃模式关闭时的样式调整 */
 body.glass-off {
   color: #333;
 }
-
 body.glass-off::before {
   background: rgba(255, 255, 255, 0.7);
 }
 
 /* ================= 毛玻璃风格 ================= */
 .glass {
-  background: rgba(30, 35, 65, 0.55);
+  background: rgba(30, 35, 65, 0.45);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: inherit;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
@@ -78,105 +73,32 @@ body.glass-off .glass {
   color: #333;
 }
 
-/* ===== 卡片样式 ===== */
-.project-card.glass {
-  background: rgba(25, 30, 55, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  overflow: visible;
-  position: relative;
-}
-
-body.glass-off .project-card.glass {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: none;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
+/* ===== 卡片样式（更通透） ===== */
 .project-card {
   position: relative;
-  isolation: isolate;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  cursor: grab;
-  transition: box-shadow 0.3s ease;
   padding: 1.5rem;
   text-align: center;
   border-radius: 20px;
+  background: rgba(25, 30, 55, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: white;
+  transition: box-shadow 0.3s ease;
   transform-style: preserve-3d;
   will-change: transform;
-  transform: rotateX(0deg) rotateY(0deg) translateZ(0);
-  color: white;
+  cursor: default;
 }
 
-.project-card:active {
-  cursor: grabbing;
+body.glass-off .project-card {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #333;
 }
 
-/* 折射光晕效果 */
-.project-card .refract-glow {
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-              rgba(180, 220, 255, 0.4) 0%, 
-              rgba(120, 170, 255, 0.15) 25%,
-              transparent 70%);
-  mix-blend-mode: screen;
-  filter: blur(12px);
-}
-
-.project-card .refract-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-              transparent 60%,
-              rgba(120, 170, 255, 0.12) 80%,
-              rgba(180, 220, 255, 0.22) 95%);
-  filter: blur(8px);
-}
-
-.project-card.refract-active .refract-glow {
-  opacity: 1;
-}
-
-.project-card.refract-active .refract-ring {
-  opacity: 0.8;
-}
-
-.project-card .glow-effect {
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-              rgba(220, 240, 255, 0.25) 0%, 
-              rgba(170, 200, 255, 0.08) 40%,
-              transparent 70%);
-  mix-blend-mode: overlay;
-  filter: blur(10px);
-}
-
-.project-card.glow-active .glow-effect {
-  opacity: 0.7;
-}
-
-.project-card > *:not(.refract-glow):not(.refract-ring):not(.glow-effect) {
-  position: relative;
-  z-index: 2;
+.project-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .project-image {
@@ -184,8 +106,7 @@ body.glass-off .project-card.glass {
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 1rem;
-  transform: translateZ(10px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
   transition: transform 0.2s;
 }
 
@@ -198,58 +119,41 @@ body.glass-off .project-card.glass {
 }
 
 .project-card:hover .project-image img {
-  transform: scale(1.02);
+  transform: scale(1.03);
 }
 
-.project-card h3, .project-card p, .project-card .btn {
+.project-card h3 {
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
   transform: translateZ(6px);
-  pointer-events: auto;
-  color: white;
 }
 
-body.glass-off .project-card h3,
-body.glass-off .project-card p {
-  color: #333;
-}
-
-.btn {
+.project-card .btn {
   display: inline-block;
-  padding: 0.8rem 1.5rem;
+  padding: 0.6rem 1.5rem;
   border-radius: 50px;
   font-weight: bold;
   text-decoration: none;
   background: var(--blue);
   color: white;
   transition: all 0.2s;
-  margin-top: 0.5rem;
   border: none;
   cursor: pointer;
-  font-size: 0.9rem;
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
+  font-size: 0.85rem;
+  transform: translateZ(6px);
 }
 
-.btn:hover {
-  transform: scale(1.02) translateZ(8px);
+.project-card .btn:hover {
   background: #3a7be0;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 20px rgba(76, 151, 255, 0.4);
+  transform: translateZ(8px) scale(1.02);
 }
 
-.project-card:hover {
-  box-shadow: 0 25px 40px -12px rgba(0,0,0,0.6);
+body.glass-off .project-card .btn {
+  color: #fff;
 }
 
-/* ===== 开关按钮和下载按钮 ===== */
-.glass-toggle, .download-trigger {
-  transition: transform 0.05s linear;
-  transform-origin: center;
-  will-change: transform;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backface-visibility: hidden;
-}
-
+/* ===== 按钮和下载 ===== */
 .glass-toggle {
   position: fixed;
   top: 16px;
@@ -258,24 +162,20 @@ body.glass-off .project-card p {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(30, 35, 65, 0.6);
+  background: rgba(30, 35, 65, 0.5);
   backdrop-filter: blur(14px);
-  cursor: grab;
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
-  border: 1px solid rgba(255,255,255,0.35);
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.05s linear;
 }
-
-.glass-toggle:active {
-  cursor: grabbing;
-}
-
 .glass-toggle svg {
   width: 22px;
   height: 22px;
   fill: white;
 }
-
 body.glass-off .glass-toggle svg {
   fill: #333;
 }
@@ -286,7 +186,6 @@ body.glass-off .glass-toggle svg {
   bottom: 24px;
   z-index: 9999;
 }
-
 .download-trigger {
   width: 56px;
   height: 56px;
@@ -294,26 +193,17 @@ body.glass-off .glass-toggle svg {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  cursor: grab;
-  transition: 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
-  background: rgba(30, 35, 65, 0.6);
+  background: rgba(30, 35, 65, 0.5);
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  transition: transform 0.05s linear;
 }
-
-.download-trigger:active {
-  cursor: grabbing;
-}
-
 .download-trigger svg {
   width: 24px;
   height: 24px;
   fill: white;
 }
-
 .download-panel {
   position: absolute;
   right: 0;
@@ -324,17 +214,15 @@ body.glass-off .glass-toggle svg {
   backdrop-filter: blur(20px);
   background: rgba(25, 30, 55, 0.85);
   border-radius: 15px;
-  border: 1px solid rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.2);
   max-height: 400px;
   overflow-y: auto;
 }
-
 .download-panel h4 {
   margin-top: 0;
   margin-bottom: 12px;
   color: white;
 }
-
 .download-item {
   display: flex;
   justify-content: space-between;
@@ -346,24 +234,20 @@ body.glass-off .glass-toggle svg {
   color: white;
   background: rgba(255,255,255,0.05);
 }
-
 .download-item .info {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
 }
-
 .download-item .info .title {
   font-weight: bold;
   font-size: 13px;
 }
-
 .download-item .info .desc {
   font-size: 11px;
   opacity: 0.7;
 }
-
 .download-item a {
   padding: 4px 12px;
   background: var(--blue);
@@ -373,15 +257,7 @@ body.glass-off .glass-toggle svg {
   font-size: 12px;
   flex-shrink: 0;
   margin-left: 8px;
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
-  transition: background 0.2s;
 }
-
-.download-item a:hover {
-  background: #3a7be0;
-}
-
 .download-mask {
   position: fixed;
   inset: 0;
@@ -392,15 +268,21 @@ body.glass-off .glass-toggle svg {
 
 header {
   text-align: center;
-  padding: 3rem 1rem;
-  background: linear-gradient(135deg, rgba(50, 80, 180, 0.5), rgba(80, 60, 140, 0.5));
+  padding: 2.5rem 1rem;
+  background: linear-gradient(135deg, rgba(50, 80, 180, 0.4), rgba(80, 60, 140, 0.4));
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.25);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
 }
-
-header h1, header p {
+header h1 {
   color: white;
   text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  margin: 0;
+  font-size: 2rem;
+}
+header p {
+  color: rgba(255,255,255,0.7);
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
 }
 
 #projectContainer {
@@ -408,28 +290,21 @@ header h1, header p {
   margin: 2rem auto;
   padding: 0 1rem;
 }
-
 .section-title {
-  font-size: 1.8rem;
-  border-left: 5px solid var(--orange);
+  font-size: 1.6rem;
+  border-left: 4px solid var(--orange);
   padding-left: 10px;
   margin-bottom: 0.4rem;
   color: white;
   text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
-
-.section-desc {
-  color: rgba(255,255,255,0.85);
-}
-
 .project-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
   perspective: 1200px;
   margin-bottom: 2rem;
 }
-
 .loading-placeholder {
   text-align: center;
   padding: 40px;
@@ -437,7 +312,6 @@ header h1, header p {
   font-size: 18px;
 }
 
-/* ===== 涟漪效果 ===== */
 .ripple {
   position: fixed;
   border-radius: 50%;
@@ -446,15 +320,12 @@ header h1, header p {
   transform: translate(-50%, -50%);
   animation: rippleAnim 1s ease-out forwards;
 }
-
 body.glass-on .ripple {
-  border: 2px solid rgba(100, 150, 255, 0.7);
+  border: 2px solid rgba(100, 150, 255, 0.6);
 }
-
 body.glass-off .ripple {
   border: 2px solid rgba(0,0,0,0.3);
 }
-
 @keyframes rippleAnim {
   from { width: 32px; height: 32px; opacity: 1; }
   to { width: 140px; height: 140px; opacity: 0; }
@@ -463,29 +334,26 @@ body.glass-off .ripple {
 @media (max-width: 768px) {
   .project-list { gap: 1.25rem; }
   .download-panel { width: 240px; right: 0; }
+  header h1 { font-size: 1.5rem; }
 }
 </style>
 </head>
 
 <body class="glass-on">
 
-<!-- ===== 毛玻璃切换按钮 ===== -->
 <div class="glass-toggle" id="glassToggle">
   <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h11v2zm0-4H6V7h11v2z"/></svg>
 </div>
 
-<!-- ===== 页眉 ===== -->
 <header class="glass">
   <h1>我的作品集</h1>
-  <p>✨ 3D倾斜 · 动态分类 · 动态下载 ✨</p>
+  <p>✨ 3D吸附卡片 · 动态分类 · 动态下载 ✨</p>
 </header>
 
-<!-- ===== 动态作品列表容器 ===== -->
 <div id="projectContainer">
   <div class="loading-placeholder">⏳ 加载作品中...</div>
 </div>
 
-<!-- ===== 动态下载悬浮窗 ===== -->
 <div class="download-mask" id="mask"></div>
 <div class="download-float">
   <button class="download-trigger glass" id="downloadBtn">
@@ -493,9 +361,7 @@ body.glass-off .ripple {
   </button>
   <div class="download-panel glass" id="panel">
     <h4>📦 资源下载</h4>
-    <div id="downloadList">
-      <div style="color:rgba(255,255,255,0.5); text-align:center; padding:10px;">加载中...</div>
-    </div>
+    <div id="downloadList"><div style="color:rgba(255,255,255,0.5); text-align:center; padding:10px;">加载中...</div></div>
   </div>
 </div>
 
@@ -535,7 +401,6 @@ async function loadProjects() {
 }
 
 function renderProjects(projects, container) {
-  // 按分类分组
   const groups = {};
   projects.forEach(p => {
     const catName = p.category_name || '未分类';
@@ -551,7 +416,6 @@ function renderProjects(projects, container) {
     return;
   }
 
-  // 遍历分类生成 HTML
   categoryNames.forEach(catName => {
     const projectsInCat = groups[catName];
     const section = document.createElement('div');
@@ -581,42 +445,33 @@ function renderProjects(projects, container) {
     container.appendChild(section);
   });
 
-  // ✅ 关键：绑定卡片吸附效果
   bindCardTiltEffects();
 }
 
 // ============================================================
-// 4. ✨ 3D卡片倾斜 + 吸附拉伸效果（增强版）
+// 4. ✨ 3D吸附式卡片倾斜效果
 // ============================================================
 function bindCardTiltEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
   
   cards.forEach(card => {
-    // 移除之前绑定的监听器（避免重复）
+    // 移除旧监听器，防止重复绑定
     card.removeEventListener('mousemove', tiltHandler);
     card.removeEventListener('mouseleave', resetHandler);
     
-    // 定义处理函数
     function tiltHandler(e) {
       const rect = card.getBoundingClientRect();
-      // 计算鼠标在卡片内的相对位置 (0~1)
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
       
-      // 计算旋转角度：以中心为基准，-1 到 1 之间
-      const rotateY = (x - 0.5) * 20;   // 左右旋转 ±10度
-      const rotateX = (0.5 - y) * 20;   // 上下旋转 ±10度
-      
-      // 计算拉伸偏移：鼠标位置越靠边，拉伸越大
-      const offsetX = (x - 0.5) * 16;   // 水平拉伸偏移
-      const offsetY = (y - 0.5) * 16;   // 垂直拉伸偏移
-      
-      // 计算缩放：产生“吸入”感，鼠标靠近边缘时轻微放大
+      const rotateY = (x - 0.5) * 18;
+      const rotateX = (0.5 - y) * 18;
+      const offsetX = (x - 0.5) * 14;
+      const offsetY = (y - 0.5) * 14;
       const distFromCenter = Math.sqrt(Math.pow(x - 0.5, 2) + Math.pow(y - 0.5, 2));
-      const scale = 1 + distFromCenter * 0.06;
+      const scale = 1 + distFromCenter * 0.05;
       
-      // 应用变换：3D旋转 + 位移拉伸 + 缩放，形成吸附效果
-      card.style.transition = 'transform 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+      card.style.transition = 'transform 0.06s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
       card.style.transform = `
         perspective(800px) 
         rotateX(${rotateX}deg) 
@@ -628,7 +483,7 @@ function bindCardTiltEffects() {
     }
     
     function resetHandler() {
-      card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+      card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
       card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateX(0px) translateY(0px) scale(1)';
     }
     
@@ -638,43 +493,7 @@ function bindCardTiltEffects() {
 }
 
 // ============================================================
-// 5. 毛玻璃切换 + 下载悬浮窗 + 涟漪效果（保持不变）
-// ============================================================
-// 毛玻璃切换
-document.getElementById('glassToggle').onclick = () => {
-  document.body.classList.toggle('glass-on');
-  document.body.classList.toggle('glass-off');
-};
-
-// 下载悬浮窗
-const btn = document.getElementById('downloadBtn');
-const panel = document.getElementById('panel');
-const mask = document.getElementById('mask');
-
-btn.onclick = () => {
-  const show = panel.style.display === 'block';
-  panel.style.display = show ? 'none' : 'block';
-  mask.style.display = show ? 'none' : 'block';
-  if (!show) loadDownloads();
-};
-
-mask.onclick = () => {
-  panel.style.display = 'none';
-  mask.style.display = 'none';
-};
-
-// 涟漪效果
-document.addEventListener('mousedown', e => {
-  const ripple = document.createElement('div');
-  ripple.className = 'ripple';
-  ripple.style.left = e.clientX + 'px';
-  ripple.style.top = e.clientY + 'px';
-  document.body.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 1000);
-});
-
-// ============================================================
-// 6. 下载加载（动态）
+// 5. 下载加载（动态）
 // ============================================================
 async function loadDownloads() {
   const container = document.getElementById('downloadList');
@@ -702,11 +521,44 @@ async function loadDownloads() {
 }
 
 // ============================================================
+// 6. 毛玻璃切换 + 下载面板 + 涟漪效果
+// ============================================================
+document.getElementById('glassToggle').onclick = () => {
+  document.body.classList.toggle('glass-on');
+  document.body.classList.toggle('glass-off');
+};
+
+const btn = document.getElementById('downloadBtn');
+const panel = document.getElementById('panel');
+const mask = document.getElementById('mask');
+
+btn.onclick = () => {
+  const show = panel.style.display === 'block';
+  panel.style.display = show ? 'none' : 'block';
+  mask.style.display = show ? 'none' : 'block';
+  if (!show) loadDownloads();
+};
+
+mask.onclick = () => {
+  panel.style.display = 'none';
+  mask.style.display = 'none';
+};
+
+document.addEventListener('mousedown', e => {
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  ripple.style.left = e.clientX + 'px';
+  ripple.style.top = e.clientY + 'px';
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 1000);
+});
+
+// ============================================================
 // 7. 页面启动
 // ============================================================
 loadProjects();
 loadDownloads();
-console.log('🚀 作品集已启动（吸附式3D卡片效果）');
+console.log('🚀 作品集已启动（3D吸附式卡片效果）');
 </script>
 </body>
 </html>

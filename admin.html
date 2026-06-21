@@ -861,8 +861,8 @@ async function uploadHtmlFile() {
     return;
   }
 
-  if (file.size > 2 * 1024 * 1024) {
-    showStatus('文件大小不能超过 2MB', 'error');
+  if (file.size > 10 * 1024 * 1024) {
+    showStatus('文件大小不能超过 10MB', 'error');
     return;
   }
 

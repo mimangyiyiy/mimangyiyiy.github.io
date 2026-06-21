@@ -648,17 +648,26 @@ async function deleteProject(id) {
 // 6. 下载项管理（新增）
 // ============================================================
 async function loadAdminDownloads() {
+  console.log('🔄 正在加载下载列表...');
+  const container = document.getElementById('downloadListAdmin');
+  if (!container) {
+    console.error('❌ 找不到 downloadListAdmin 元素');
+    return;
+  }
+  
   try {
     const res = await fetch(`${API_BASE}/api/downloads`);
-    if (!res.ok) throw new Error();
-    const downloads = await res.json();
+    console.log('📡 响应状态:', res.status);
     
-    const container = document.getElementById('downloadListAdmin');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const downloads = await res.json();
+    console.log('✅ 下载数据:', downloads);
+
     if (downloads.length === 0) {
       container.innerHTML = '<div class="empty-msg">暂无下载项</div>';
       return;
     }
-    
+
     container.innerHTML = downloads.map(d => `
       <div class="project-item">
         <div class="info">
@@ -672,7 +681,8 @@ async function loadAdminDownloads() {
       </div>
     `).join('');
   } catch (e) {
-    document.getElementById('downloadListAdmin').innerHTML = '<div class="empty-msg">❌ 加载失败</div>';
+    console.error('❌ 加载下载项失败:', e);
+    container.innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
   }
 }
 

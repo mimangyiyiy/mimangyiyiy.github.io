@@ -503,7 +503,6 @@ body.glass-off .ripple {
 // ============================================================
 // 1. API 配置
 // ============================================================
-// 如果你的 API 和前端在同一个 Pages 项目，留空即可
 const API_BASE = '';
 
 // ============================================================
@@ -521,6 +520,8 @@ function escapeHtml(text) {
 // ============================================================
 async function loadProjects() {
   const container = document.getElementById('projectContainer');
+  if (!container) return;
+  container.innerHTML = '<div class="loading-placeholder">⏳ 加载作品中...</div>';
   
   try {
     const res = await fetch(`${API_BASE}/api/projects`);
@@ -529,9 +530,7 @@ async function loadProjects() {
     renderProjects(projects, container);
   } catch (e) {
     console.error('加载作品失败:', e);
-    if (container) {
-      container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:40px;">⚠️ 加载失败，请刷新重试</div>`;
-    }
+    container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:40px;">⚠️ 加载失败，请刷新重试</div>`;
   }
 }
 
@@ -545,44 +544,36 @@ function renderProjects(projects, container) {
   });
 
   const categoryNames = Object.keys(groups);
-
-  // 清空容器
   container.innerHTML = '';
 
-  // 如果没有作品
   if (categoryNames.length === 0) {
     container.innerHTML = `<div style="color:rgba(255,255,255,0.5); text-align:center; padding:40px;">暂无作品</div>`;
     return;
   }
 
-  // 遍历每个分类，生成 HTML
+  // 遍历分类生成 HTML
   categoryNames.forEach(catName => {
     const projectsInCat = groups[catName];
-    
-    // 创建分类区域
     const section = document.createElement('div');
     section.className = 'container';
     section.style.maxWidth = '1200px';
     section.style.margin = '0 auto 2rem auto';
     section.style.padding = '0 1rem';
     
-    // 分类标题
     const title = document.createElement('h2');
     title.className = 'section-title';
     title.textContent = catName;
     section.appendChild(title);
     
-    // 作品网格
     const list = document.createElement('div');
     list.className = 'project-list';
     list.innerHTML = projectsInCat.map(p => `
-      <div class="project-card glass" data-tilt>
+      <div class="project-card" data-tilt>
         <div class="project-image">
           <img src="${p.image || 'https://placehold.co/400x200?text=No+Image'}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x200?text=加载失败'">
         </div>
         <h3>${escapeHtml(p.title)}</h3>
-        <p>${escapeHtml(p.description || '')}</p>
-        <a href="${escapeHtml(p.link)}" class="btn" target="_blank">开始体验</a>
+        <a href="${escapeHtml(p.link)}" class="btn" target="_blank">查看作品</a>
       </div>
     `).join('');
     
@@ -590,69 +581,72 @@ function renderProjects(projects, container) {
     container.appendChild(section);
   });
 
-  // 重新绑定卡片交互效果
-  setTimeout(() => bindCardEffects(), 50);
+  // ✅ 关键：绑定卡片吸附效果
+  bindCardTiltEffects();
 }
 
 // ============================================================
-// 4. 加载并渲染下载项（动态）
+// 4. ✨ 3D卡片倾斜 + 吸附拉伸效果（增强版）
 // ============================================================
-async function loadDownloads() {
-  const container = document.getElementById('downloadList');
-  console.log('🔄 正在加载下载列表(前台)...');
+function bindCardTiltEffects() {
+  const cards = document.querySelectorAll('.project-card[data-tilt]');
   
-  try {
-    const res = await fetch(`${API_BASE}/api/downloads`);
-    console.log('📡 前台响应状态:', res.status);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const downloads = await res.json();
-    console.log('✅ 前台下载数据:', downloads);
-    renderDownloads(downloads, container);
-  } catch (e) {
-    console.error('❌ 加载下载项失败(前台):', e);
-    if (container) {
-      container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:10px;">⚠️ 加载失败</div>`;
+  cards.forEach(card => {
+    // 移除之前绑定的监听器（避免重复）
+    card.removeEventListener('mousemove', tiltHandler);
+    card.removeEventListener('mouseleave', resetHandler);
+    
+    // 定义处理函数
+    function tiltHandler(e) {
+      const rect = card.getBoundingClientRect();
+      // 计算鼠标在卡片内的相对位置 (0~1)
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      
+      // 计算旋转角度：以中心为基准，-1 到 1 之间
+      const rotateY = (x - 0.5) * 20;   // 左右旋转 ±10度
+      const rotateX = (0.5 - y) * 20;   // 上下旋转 ±10度
+      
+      // 计算拉伸偏移：鼠标位置越靠边，拉伸越大
+      const offsetX = (x - 0.5) * 16;   // 水平拉伸偏移
+      const offsetY = (y - 0.5) * 16;   // 垂直拉伸偏移
+      
+      // 计算缩放：产生“吸入”感，鼠标靠近边缘时轻微放大
+      const distFromCenter = Math.sqrt(Math.pow(x - 0.5, 2) + Math.pow(y - 0.5, 2));
+      const scale = 1 + distFromCenter * 0.06;
+      
+      // 应用变换：3D旋转 + 位移拉伸 + 缩放，形成吸附效果
+      card.style.transition = 'transform 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+      card.style.transform = `
+        perspective(800px) 
+        rotateX(${rotateX}deg) 
+        rotateY(${rotateY}deg) 
+        translateX(${offsetX}px) 
+        translateY(${offsetY}px) 
+        scale(${scale})
+      `;
     }
-  }
-}
-
-function renderDownloads(downloads, container) {
-  if (!downloads || downloads.length === 0) {
-    container.innerHTML = `<div style="color:rgba(255,255,255,0.5); text-align:center; padding:10px;">暂无下载资源</div>`;
-    return;
-  }
-
-  container.innerHTML = downloads.map(item => `
-    <div class="download-item">
-      <div class="info">
-        <span class="title">${escapeHtml(item.title)}</span>
-        ${item.description ? `<span class="desc">${escapeHtml(item.description)}</span>` : ''}
-      </div>
-      <a href="${escapeHtml(item.link)}" target="_blank">${escapeHtml(item.link_text || '下载')}</a>
-    </div>
-  `).join('');
+    
+    function resetHandler() {
+      card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+      card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateX(0px) translateY(0px) scale(1)';
+    }
+    
+    card.addEventListener('mousemove', tiltHandler);
+    card.addEventListener('mouseleave', resetHandler);
+  });
 }
 
 // ============================================================
-// 5. 卡片 3D 倾斜、光晕、拉伸效果
+// 5. 毛玻璃切换 + 下载悬浮窗 + 涟漪效果（保持不变）
 // ============================================================
-function bindCardEffects() {
-  // 这里保留你原有的卡片交互逻辑，为避免代码过长，此处只做占位
-  // 你可以把原有的卡片效果代码完整复制过来
-  console.log('🎴 卡片效果已绑定');
-}
-
-// ============================================================
-// 6. 毛玻璃切换
-// ============================================================
+// 毛玻璃切换
 document.getElementById('glassToggle').onclick = () => {
   document.body.classList.toggle('glass-on');
   document.body.classList.toggle('glass-off');
 };
 
-// ============================================================
-// 7. 下载悬浮窗控制
-// ============================================================
+// 下载悬浮窗
 const btn = document.getElementById('downloadBtn');
 const panel = document.getElementById('panel');
 const mask = document.getElementById('mask');
@@ -661,11 +655,7 @@ btn.onclick = () => {
   const show = panel.style.display === 'block';
   panel.style.display = show ? 'none' : 'block';
   mask.style.display = show ? 'none' : 'block';
-  
-  // 如果面板要打开，且下载列表还未加载，则加载
-  if (!show && document.getElementById('downloadList').children.length <= 1) {
-    loadDownloads();
-  }
+  if (!show) loadDownloads();
 };
 
 mask.onclick = () => {
@@ -673,9 +663,7 @@ mask.onclick = () => {
   mask.style.display = 'none';
 };
 
-// ============================================================
-// 8. 涟漪效果
-// ============================================================
+// 涟漪效果
 document.addEventListener('mousedown', e => {
   const ripple = document.createElement('div');
   ripple.className = 'ripple';
@@ -686,12 +674,39 @@ document.addEventListener('mousedown', e => {
 });
 
 // ============================================================
-// 9. 页面启动
+// 6. 下载加载（动态）
+// ============================================================
+async function loadDownloads() {
+  const container = document.getElementById('downloadList');
+  if (!container) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/downloads`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const downloads = await res.json();
+    if (downloads.length === 0) {
+      container.innerHTML = `<div style="color:rgba(255,255,255,0.5); text-align:center; padding:10px;">暂无资源</div>`;
+      return;
+    }
+    container.innerHTML = downloads.map(item => `
+      <div class="download-item">
+        <div class="info">
+          <span class="title">${escapeHtml(item.title)}</span>
+          ${item.description ? `<span class="desc">${escapeHtml(item.description)}</span>` : ''}
+        </div>
+        <a href="${escapeHtml(item.link)}" target="_blank">${escapeHtml(item.link_text || '下载')}</a>
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:10px;">⚠️ 加载失败</div>`;
+  }
+}
+
+// ============================================================
+// 7. 页面启动
 // ============================================================
 loadProjects();
-// 预先加载下载项，这样点击悬浮窗时立刻显示
 loadDownloads();
-console.log('🚀 作品集已启动（动态分类 + 动态下载）');
+console.log('🚀 作品集已启动（吸附式3D卡片效果）');
 </script>
 </body>
 </html>

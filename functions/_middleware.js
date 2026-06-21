@@ -13,6 +13,7 @@ export async function onRequest(context) {
     '/api/categories',
     '/api/downloads',
     '/api/health',
+    '/api/admin/login'
     '/cody/',
     '/image/',
     '/images/'

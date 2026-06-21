@@ -19,6 +19,7 @@ export async function onRequest(context) {
     '/api/health',
     '/api/admin/login',          // ⚠️ 登录接口必须在这里！
     '/cody/',
+    '/cody'
     '/image/',
     '/images/'
   ];

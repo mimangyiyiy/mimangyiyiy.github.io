@@ -455,7 +455,6 @@ function bindCardTiltEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
   
   cards.forEach(card => {
-    // 移除旧监听器，防止重复绑定
     card.removeEventListener('mousemove', tiltHandler);
     card.removeEventListener('mouseleave', resetHandler);
     
@@ -464,6 +463,7 @@ function bindCardTiltEffects() {
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
       
+      // ✅ 朝鼠标方向吸附（鼠标在右 → 卡片向右转）
       const rotateY = (x - 0.5) * 18;
       const rotateX = (0.5 - y) * 18;
       const offsetX = (x - 0.5) * 14;

@@ -132,7 +132,6 @@ select option { background: #2a2a4e; }
 #imagePreview img { max-height: 120px; border-radius: 8px; border: 1px solid #333; }
 .hint { font-size: 12px; color: #888; margin-top: 4px; }
 
-/* 转移弹窗 */
 #transferModal {
   display: none;
   position: fixed;
@@ -167,7 +166,6 @@ select option { background: #2a2a4e; }
 }
 #transferModal .modal-content .btn-row .btn { flex: 1; }
 
-/* Tab 切换 */
 .tabs {
   display: flex;
   gap: 0;
@@ -363,8 +361,10 @@ async function adminLogin() {
       body: JSON.stringify({ username, password })
     });
     
-    if (res.ok) {
-      const data = await res.json();
+    const data = await res.json();
+    console.log('登录响应:', data);
+
+    if (res.ok && data.token) {
       localStorage.setItem('adminToken', data.token);
       document.getElementById('loginArea').style.display = 'none';
       document.getElementById('adminArea').style.display = 'block';
@@ -378,11 +378,11 @@ async function adminLogin() {
       
       showStatus('✅ 登录成功');
     } else {
-      const err = await res.json();
-      showStatus('❌ ' + (err.error || '用户名或密码错误'), 'error');
+      showStatus('❌ ' + (data.error || '用户名或密码错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    console.error('登录错误:', e);
+    showStatus('❌ 网络错误，请检查后端服务', 'error');
   }
 }
 
@@ -422,6 +422,7 @@ async function loadCategoriesWithDelete() {
       </div>
     `).join('');
   } catch (e) {
+    console.error('加载分类失败:', e);
     document.getElementById('categoryList').innerHTML = `<div class="empty-msg">❌ 加载失败</div>`;
   }
 }
@@ -645,29 +646,22 @@ async function deleteProject(id) {
 }
 
 // ============================================================
-// 6. 下载项管理（新增）
+// 6. 下载项管理
 // ============================================================
 async function loadAdminDownloads() {
-  console.log('🔄 正在加载下载列表...');
-  const container = document.getElementById('downloadListAdmin');
-  if (!container) {
-    console.error('❌ 找不到 downloadListAdmin 元素');
-    return;
-  }
-  
+  console.log('🔄 正在加载下载列表(后台)...');
   try {
     const res = await fetch(`${API_BASE}/api/downloads`);
-    console.log('📡 响应状态:', res.status);
-    
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const downloads = await res.json();
-    console.log('✅ 下载数据:', downloads);
-
+    console.log('✅ 下载数据(后台):', downloads);
+    
+    const container = document.getElementById('downloadListAdmin');
     if (downloads.length === 0) {
       container.innerHTML = '<div class="empty-msg">暂无下载项</div>';
       return;
     }
-
+    
     container.innerHTML = downloads.map(d => `
       <div class="project-item">
         <div class="info">
@@ -681,14 +675,19 @@ async function loadAdminDownloads() {
       </div>
     `).join('');
   } catch (e) {
-    console.error('❌ 加载下载项失败:', e);
-    container.innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
+    console.error('❌ 加载下载项失败(后台):', e);
+    document.getElementById('downloadListAdmin').innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
   }
 }
 
 async function addDownload() {
   const token = getToken();
-  if (!token) { showStatus('请先登录', 'error'); return; }
+  console.log('🔑 Token(添加下载):', token ? '存在' : '不存在');
+  
+  if (!token) {
+    showStatus('请先登录', 'error');
+    return;
+  }
   
   const title = document.getElementById('newDownloadTitle').value.trim();
   const link = document.getElementById('newDownloadLink').value.trim();
@@ -701,6 +700,7 @@ async function addDownload() {
   }
   
   try {
+    console.log('📤 发送添加下载请求:', { title, description, link, linkText });
     const res = await fetch(`${API_BASE}/api/admin/downloads`, {
       method: 'POST',
       headers: {
@@ -710,6 +710,10 @@ async function addDownload() {
       body: JSON.stringify({ title, description, link, link_text: linkText })
     });
     
+    console.log('📡 响应状态:', res.status);
+    const data = await res.json();
+    console.log('📡 响应数据:', data);
+    
     if (res.ok) {
       showStatus('✅ 下载项添加成功！');
       document.getElementById('newDownloadTitle').value = '';
@@ -718,10 +722,10 @@ async function addDownload() {
       document.getElementById('newDownloadLinkText').value = '下载';
       loadAdminDownloads();
     } else {
-      const err = await res.json();
-      showStatus('❌ ' + (err.error || '添加失败'), 'error');
+      showStatus('❌ ' + (data.error || '添加失败'), 'error');
     }
   } catch (e) {
+    console.error('❌ 请求失败:', e);
     showStatus('❌ 网络错误', 'error');
   }
 }
@@ -838,6 +842,9 @@ function checkAuth() {
     loadCategoriesWithDelete();
     loadAdminProjects();
     loadAdminDownloads();
+  } else {
+    document.getElementById('loginArea').style.display = 'block';
+    document.getElementById('adminArea').style.display = 'none';
   }
 }
 

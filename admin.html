@@ -88,6 +88,11 @@ select option { background: #2a2a4e; }
   font-size: 11px;
   margin-top: 4px;
 }
+.project-item .info .file-info {
+  font-size: 11px;
+  opacity: 0.5;
+  display: block;
+}
 .project-item .actions {
   display: flex;
   gap: 6px;
@@ -127,7 +132,12 @@ select option { background: #2a2a4e; }
   margin-bottom: 0;
 }
 .upload-area .btn { flex-shrink: 0; }
-#uploadProgress { display: none; margin-top: 6px; font-size: 13px; color: #4C97FF; }
+#uploadProgress, #htmlUploadProgress {
+  display: none;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #4C97FF;
+}
 #imagePreview { display: none; margin-top: 8px; }
 #imagePreview img { max-height: 120px; border-radius: 8px; border: 1px solid #333; }
 .hint { font-size: 12px; color: #888; margin-top: 4px; }
@@ -195,6 +205,24 @@ select option { background: #2a2a4e; }
 }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+
+.file-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.file-upload-row input[type="file"] {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px;
+  background: #2a2a4e;
+  border-radius: 8px;
+  border: 1px solid #333;
+  color: #fff;
+  margin-bottom: 0;
+}
+.file-upload-row .btn { flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -230,8 +258,20 @@ select option { background: #2a2a4e; }
     <div id="tab-projects" class="tab-content active">
       <div class="card">
         <h3>➕ 添加作品</h3>
-        <input id="newTitle" placeholder="标题 *">
-        <input id="newDesc" placeholder="描述">
+        
+        <!-- 作品文件上传 -->
+        <div style="margin-bottom:10px;">
+          <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">📄 作品文件 (.html)</label>
+          <div class="file-upload-row">
+            <input type="file" id="newHtmlFile" accept=".html">
+            <button class="btn btn-primary" onclick="uploadHtmlFile()">上传作品</button>
+          </div>
+          <div id="htmlUploadProgress">⏳ 上传中...</div>
+          <input id="newLink" placeholder="或手动输入作品链接 *" style="margin-top:8px;">
+          <div class="hint">💡 上传 .html 文件后会自动填入链接</div>
+        </div>
+        
+        <!-- 图片上传 -->
         <div style="margin-bottom:10px;">
           <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">📷 作品封面图片</label>
           <div class="upload-area">
@@ -243,7 +283,9 @@ select option { background: #2a2a4e; }
           <input id="newImage" placeholder="或手动输入图片URL" style="margin-top:8px;">
           <div class="hint">💡 支持 JPG / PNG / WebP / GIF，最大 32MB</div>
         </div>
-        <input id="newLink" placeholder="作品链接 *">
+        
+        <input id="newTitle" placeholder="标题 *">
+        <input id="newDesc" placeholder="描述">
         <select id="newCategory"></select>
         <button class="btn btn-success" onclick="addProject()" style="width:100%;">添加作品</button>
       </div>
@@ -303,7 +345,7 @@ select option { background: #2a2a4e; }
 // 1. 配置
 // ============================================================
 const API_BASE = '';
-const IMGBB_API_KEY = '2ea0509422f95d525110028825d0c25d'; // 到 https://imgbb.com/api 免费获取
+const IMGBB_API_KEY = '你的ImgBB_API_Key'; // 到 https://imgbb.com/api 免费获取
 
 // ============================================================
 // 2. 工具函数
@@ -369,7 +411,6 @@ async function adminLogin() {
       document.getElementById('loginArea').style.display = 'none';
       document.getElementById('adminArea').style.display = 'block';
       
-      // 加载所有数据
       await Promise.all([
         loadCategoriesWithDelete(),
         loadAdminProjects(),
@@ -564,6 +605,7 @@ async function loadAdminProjects() {
         <div class="info">
           <span class="title">${escapeHtml(p.title)}</span>
           <span class="cat-tag">${escapeHtml(p.category_name || '未分类')}</span>
+          ${p.file_name ? `<span class="file-info">📄 ${escapeHtml(p.file_name)}</span>` : ''}
         </div>
         <div class="actions">
           <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">删除</button>
@@ -614,6 +656,7 @@ async function addProject() {
       document.getElementById('newLink').value = '';
       document.getElementById('imagePreview').style.display = 'none';
       document.getElementById('newImageFile').value = '';
+      document.getElementById('newHtmlFile').value = '';
       loadAdminProjects();
     } else {
       const err = await res.json();
@@ -682,12 +725,7 @@ async function loadAdminDownloads() {
 
 async function addDownload() {
   const token = getToken();
-  console.log('🔑 Token(添加下载):', token ? '存在' : '不存在');
-  
-  if (!token) {
-    showStatus('请先登录', 'error');
-    return;
-  }
+  if (!token) { showStatus('请先登录', 'error'); return; }
   
   const title = document.getElementById('newDownloadTitle').value.trim();
   const link = document.getElementById('newDownloadLink').value.trim();
@@ -700,7 +738,6 @@ async function addDownload() {
   }
   
   try {
-    console.log('📤 发送添加下载请求:', { title, description, link, linkText });
     const res = await fetch(`${API_BASE}/api/admin/downloads`, {
       method: 'POST',
       headers: {
@@ -710,10 +747,6 @@ async function addDownload() {
       body: JSON.stringify({ title, description, link, link_text: linkText })
     });
     
-    console.log('📡 响应状态:', res.status);
-    const data = await res.json();
-    console.log('📡 响应数据:', data);
-    
     if (res.ok) {
       showStatus('✅ 下载项添加成功！');
       document.getElementById('newDownloadTitle').value = '';
@@ -722,10 +755,10 @@ async function addDownload() {
       document.getElementById('newDownloadLinkText').value = '下载';
       loadAdminDownloads();
     } else {
-      showStatus('❌ ' + (data.error || '添加失败'), 'error');
+      const err = await res.json();
+      showStatus('❌ ' + (err.error || '添加失败'), 'error');
     }
   } catch (e) {
-    console.error('❌ 请求失败:', e);
     showStatus('❌ 网络错误', 'error');
   }
 }
@@ -752,7 +785,7 @@ async function deleteDownload(id) {
 }
 
 // ============================================================
-// 7. 图片上传
+// 7. 图片上传（ImgBB）
 // ============================================================
 async function uploadImageToImgBB() {
   const fileInput = document.getElementById('newImageFile');
@@ -811,6 +844,75 @@ async function uploadImageToImgBB() {
   }, 3000);
 }
 
+// ============================================================
+// 8. 作品文件上传（.html 到数据库）
+// ============================================================
+async function uploadHtmlFile() {
+  const fileInput = document.getElementById('newHtmlFile');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    showStatus('请先选择 .html 文件', 'error');
+    return;
+  }
+
+  if (!file.name.endsWith('.html')) {
+    showStatus('只支持 .html 文件', 'error');
+    return;
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    showStatus('文件大小不能超过 2MB', 'error');
+    return;
+  }
+
+  const token = getToken();
+  if (!token) {
+    showStatus('请先登录', 'error');
+    return;
+  }
+
+  const progressEl = document.getElementById('htmlUploadProgress');
+  progressEl.style.display = 'block';
+  progressEl.textContent = '⏳ 上传中...';
+
+  try {
+    const content = await file.text();
+    
+    const res = await fetch(`${API_BASE}/api/admin/upload-html`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        content: content
+      })
+    });
+
+    const data = await res.json();
+    console.log('📡 上传响应:', data);
+
+    if (res.ok && data.success) {
+      document.getElementById('newLink').value = data.url;
+      showStatus('✅ 作品文件上传成功！');
+      progressEl.textContent = '✅ 上传完成';
+    } else {
+      showStatus('❌ ' + (data.error || '上传失败'), 'error');
+      progressEl.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('❌ 上传失败:', e);
+    showStatus('❌ 上传失败：' + e.message, 'error');
+    progressEl.style.display = 'none';
+  }
+
+  setTimeout(() => {
+    progressEl.style.display = 'none';
+  }, 3000);
+}
+
 // 选择文件预览
 document.addEventListener('DOMContentLoaded', function() {
   const fileInput = document.getElementById('newImageFile');
@@ -832,7 +934,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// 8. 检查登录状态
+// 9. 检查登录状态
 // ============================================================
 function checkAuth() {
   const token = getToken();
@@ -849,10 +951,10 @@ function checkAuth() {
 }
 
 // ============================================================
-// 9. 页面启动
+// 10. 页面启动
 // ============================================================
 checkAuth();
-console.log('🔐 管理后台已加载（含下载管理）');
+console.log('🔐 管理后台已加载（含 .html 文件上传）');
 </script>
 </body>
 </html>

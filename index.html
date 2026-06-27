@@ -27,7 +27,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.3);
   pointer-events: none;
   z-index: 0;
 }
@@ -53,8 +53,8 @@ body.glass-off header {
   background: #fff !important;
   backdrop-filter: none !important;
   border: 1px solid #e0e0e0 !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
   color: #000 !important;
+  box-shadow: none !important;
 }
 body.glass-off .project-card h3,
 body.glass-off .project-card p,
@@ -70,12 +70,12 @@ body.glass-off .liquid-glass-svg { display: none !important; }
 
 /* ===== 毛玻璃 ===== */
 .glass {
-  background: rgba(30,35,65,0.3);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(30,35,65,0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: none;
 }
 
 /* ===== 卡片 ===== */
@@ -84,32 +84,33 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   padding: 1.5rem;
   text-align: center;
   border-radius: 24px;
-  background: rgba(25,30,55,0.2);
-  backdrop-filter: blur(10px) saturate(1.1);
-  -webkit-backdrop-filter: blur(10px) saturate(1.1);
-  border: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  background: rgba(25,30,55,0.15);
+  backdrop-filter: blur(8px) saturate(1.05);
+  -webkit-backdrop-filter: blur(8px) saturate(1.05);
+  border: 1px solid rgba(255,255,255,0.04);
   color: #fff;
-  transition: box-shadow 0.3s ease;
+  transition: none;
   transform-style: preserve-3d;
   will-change: transform;
   cursor: default;
   overflow: visible !important;
   isolation: isolate;
+  box-shadow: none !important;
 }
-.project-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+.project-card:hover { box-shadow: none !important; }
 
-/* 液态玻璃容器 */
+/* ✅ 液态玻璃容器 - 只有边缘折射，无阴影 */
 .project-card .liquid-container {
   position: absolute;
-  inset: -8px;
+  inset: -4px;
   border-radius: 28px;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  backdrop-filter: blur(0.5px) contrast(1.1) brightness(1.02) saturate(1.05);
-  -webkit-backdrop-filter: blur(0.5px) contrast(1.1) brightness(1.02) saturate(1.05);
-  transition: backdrop-filter 0.15s ease;
+  backdrop-filter: blur(0.5px) contrast(1.02) brightness(1.01);
+  -webkit-backdrop-filter: blur(0.5px) contrast(1.02) brightness(1.01);
+  transition: backdrop-filter 0.1s ease;
+  box-shadow: none !important;
 }
 .project-card .liquid-container svg {
   position: absolute;
@@ -133,7 +134,7 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 1rem;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  box-shadow: none;
   transform: translateZ(8px);
 }
 .project-image img {
@@ -152,7 +153,7 @@ body.glass-off .liquid-glass-svg { display: none !important; }
 .project-card p {
   margin: 0.2rem 0 0.8rem;
   font-size: 0.85rem;
-  opacity: 0.7;
+  opacity: 0.65;
   transform: translateZ(8px);
   line-height: 1.4;
 }
@@ -162,28 +163,30 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   border-radius: 50px;
   font-weight: 500;
   text-decoration: none;
-  background: rgba(76,151,255,0.8);
+  background: rgba(76,151,255,0.7);
   backdrop-filter: blur(4px);
   color: #fff;
   transition: all 0.25s ease;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.06);
   cursor: pointer;
   font-size: 0.85rem;
   transform: translateZ(16px);
+  box-shadow: none !important;
 }
 .project-card .btn:hover {
   background: #4C97FF;
   transform: translateZ(20px) scale(1.03);
-  border-color: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.12);
 }
 
 /* ===== 控件 ===== */
 .glass-toggle {
   position: fixed; top: 16px; right: 16px; z-index: 9999;
   width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(30,35,65,0.35); backdrop-filter: blur(12px);
-  cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(30,35,65,0.25); backdrop-filter: blur(10px);
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.06);
   display: flex; align-items: center; justify-content: center;
+  box-shadow: none;
 }
 .glass-toggle svg { width: 22px; height: 22px; fill: #fff; }
 
@@ -193,23 +196,25 @@ body.glass-off .liquid-glass-svg { display: none !important; }
 .download-trigger {
   width: 56px; height: 56px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(30,35,65,0.35); backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+  background: rgba(30,35,65,0.25); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.06); cursor: pointer;
+  box-shadow: none;
 }
 .download-trigger svg { width: 24px; height: 24px; fill: #fff; }
 .download-panel {
   position: absolute; right: 0; bottom: 70px;
   width: 280px; padding: 16px; display: none;
-  backdrop-filter: blur(20px);
-  background: rgba(25,30,55,0.6);
-  border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+  backdrop-filter: blur(16px);
+  background: rgba(25,30,55,0.5);
+  border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
   max-height: 400px; overflow-y: auto;
+  box-shadow: none;
 }
 .download-panel h4 { margin-top: 0; margin-bottom: 12px; color: #fff; font-weight: 400; }
 .download-item {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 12px; border-radius: 10px; font-size: 14px;
-  margin-bottom: 6px; color: #fff; background: rgba(255,255,255,0.03);
+  margin-bottom: 6px; color: #fff; background: rgba(255,255,255,0.02);
 }
 .download-item .info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .download-item .info .title { font-weight: 500; font-size: 13px; }
@@ -220,18 +225,19 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   flex-shrink: 0; margin-left: 8px;
 }
 .download-mask {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  position: fixed; inset: 0; background: rgba(0,0,0,0.2);
   z-index: 9998; display: none;
 }
 
 header {
   text-align: center; padding: 2rem 1rem;
-  background: linear-gradient(135deg, rgba(50,80,180,0.25), rgba(80,60,140,0.25));
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: linear-gradient(135deg, rgba(50,80,180,0.2), rgba(80,60,140,0.2));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  box-shadow: none;
 }
 header h1 {
-  color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.15);
+  color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.1);
   margin: 0; font-size: 1.8rem; font-weight: 500;
 }
 
@@ -298,13 +304,12 @@ function escapeHtml(text) {
 }
 
 // ============================================================
-// 3. 液态玻璃核心（基于 Shu Ding 的实现）
+// 3. 液态玻璃核心（边缘折射，无阴影）
 // ============================================================
 function createLiquidGlassForCard(cardElement) {
   const container = cardElement.querySelector('.liquid-container');
   if (!container) return null;
 
-  // SVG 滤镜
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.setAttribute('width', '100%');
@@ -313,65 +318,56 @@ function createLiquidGlassForCard(cardElement) {
 
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
   const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-  filter.setAttribute('id', 'liquid-filter-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6));
+  const filterId = 'liquid-filter-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+  filter.setAttribute('id', filterId);
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
   filter.setAttribute('colorInterpolationFilters', 'sRGB');
-  filter.setAttribute('x', '-20%');
-  filter.setAttribute('y', '-20%');
-  filter.setAttribute('width', '140%');
-  filter.setAttribute('height', '140%');
+  filter.setAttribute('x', '-10%');
+  filter.setAttribute('y', '-10%');
+  filter.setAttribute('width', '120%');
+  filter.setAttribute('height', '120%');
 
   const feImage = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
-  feImage.setAttribute('id', 'displacement-map-' + Date.now());
+  const imgId = 'displacement-map-' + Date.now();
+  feImage.setAttribute('id', imgId);
   feImage.setAttribute('width', '100%');
   feImage.setAttribute('height', '100%');
 
   const feDisplacement = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
   feDisplacement.setAttribute('in', 'SourceGraphic');
-  feDisplacement.setAttribute('in2', feImage.getAttribute('id'));
+  feDisplacement.setAttribute('in2', imgId);
   feDisplacement.setAttribute('xChannelSelector', 'R');
   feDisplacement.setAttribute('yChannelSelector', 'G');
-  feDisplacement.setAttribute('scale', '12');
+  feDisplacement.setAttribute('scale', '6');
 
   filter.appendChild(feImage);
   filter.appendChild(feDisplacement);
   defs.appendChild(filter);
   svg.appendChild(defs);
 
-  // 将 SVG 添加到容器
   container.appendChild(svg);
 
-  // 用于生成位移图的 canvas
+  // 位移图 canvas
   const canvas = document.createElement('canvas');
-  canvas.width = 300;
-  canvas.height = 200;
+  canvas.width = 200;
+  canvas.height = 150;
   const ctx = canvas.getContext('2d');
 
-  // 工具函数
   function smoothStep(a, b, t) {
     t = Math.max(0, Math.min(1, (t - a) / (b - a)));
     return t * t * (3 - 2 * t);
   }
-
   function length(x, y) { return Math.sqrt(x * x + y * y); }
-
   function roundedRectSDF(x, y, w, h, r) {
     const qx = Math.abs(x) - w + r;
     const qy = Math.abs(y) - h + r;
     return Math.min(Math.max(qx, qy), 0) + length(Math.max(qx, 0), Math.max(qy, 0)) - r;
   }
 
-  function texture(x, y) {
-    return { x, y };
-  }
-
-  // 更新位移图
   function updateDisplacementMap(mouseX, mouseY) {
     const w = canvas.width;
     const h = canvas.height;
     const data = new Uint8ClampedArray(w * h * 4);
-
-    // 鼠标位置（归一化）
     const mx = mouseX !== undefined ? mouseX : 0.5;
     const my = mouseY !== undefined ? mouseY : 0.5;
 
@@ -384,16 +380,16 @@ function createLiquidGlassForCard(cardElement) {
       const ux = x / w;
       const uy = y / h;
 
-      // 计算位移
+      // 边缘折射：只有边缘附近产生位移
       const ix = ux - 0.5;
       const iy = uy - 0.5;
-      const distToEdge = roundedRectSDF(ix, iy, 0.3, 0.2, 0.6);
-      const displacement = smoothStep(0.8, 0, distToEdge - 0.15);
+      const distToEdge = roundedRectSDF(ix, iy, 0.35, 0.25, 0.55);
+      const displacement = smoothStep(0.85, 0, distToEdge - 0.12);
       const scaled = smoothStep(0, 1, displacement);
       
-      // 添加鼠标影响
-      const dx = (ux - mx) * 0.15 * scaled;
-      const dy = (uy - my) * 0.15 * scaled;
+      // 鼠标影响：朝鼠标方向偏移
+      const dx = (ux - mx) * 0.08 * scaled;
+      const dy = (uy - my) * 0.08 * scaled;
       
       const outX = ux + dx;
       const outY = uy + dy;
@@ -404,7 +400,7 @@ function createLiquidGlassForCard(cardElement) {
       rawValues.push(rawDx, rawDy);
     }
 
-    maxScale = Math.max(maxScale, 1);
+    maxScale = Math.max(maxScale, 0.1);
 
     let idx = 0;
     for (let i = 0; i < data.length; i += 4) {
@@ -418,23 +414,17 @@ function createLiquidGlassForCard(cardElement) {
 
     ctx.putImageData(new ImageData(data, w, h), 0, 0);
 
-    // 更新 SVG feImage
     const img = svg.querySelector('feImage');
     if (img) {
       img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', canvas.toDataURL());
     }
   }
 
-  // 初始生成
   updateDisplacementMap(0.5, 0.5);
 
-  // 返回更新函数，供鼠标事件调用
   return {
     update: updateDisplacementMap,
-    destroy: () => {
-      svg.remove();
-      canvas.remove();
-    }
+    destroy: () => { svg.remove(); canvas.remove(); }
   };
 }
 
@@ -504,9 +494,7 @@ function renderProjects(projects, container) {
     container.appendChild(section);
   });
 
-  // 绑定液态玻璃效果
   bindLiquidGlass();
-  // 绑定 3D 倾斜
   bindTiltEffects();
 }
 
@@ -518,13 +506,11 @@ const liquidInstances = [];
 function bindLiquidGlass() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
   
-  cards.forEach((card, index) => {
-    // 为每张卡片创建液态玻璃
+  cards.forEach((card) => {
     const instance = createLiquidGlassForCard(card);
     if (instance) {
       liquidInstances.push({ card, instance });
       
-      // 鼠标移动更新位移图
       card.addEventListener('mousemove', (e) => {
         const rect = card.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
@@ -540,7 +526,7 @@ function bindLiquidGlass() {
 }
 
 // ============================================================
-// 6. 3D 倾斜效果
+// 6. 3D 倾斜
 // ============================================================
 function bindTiltEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
@@ -549,21 +535,16 @@ function bindTiltEffects() {
     let rafId = null;
     let currentRotateX = 0, targetRotateX = 0;
     let currentRotateY = 0, targetRotateY = 0;
-    let currentScaleX = 1, targetScaleX = 1;
-    let currentScaleY = 1, targetScaleY = 1;
     
     function animate() {
       const ease = 0.10;
       currentRotateX += (targetRotateX - currentRotateX) * ease;
       currentRotateY += (targetRotateY - currentRotateY) * ease;
-      currentScaleX += (targetScaleX - currentScaleX) * ease;
-      currentScaleY += (targetScaleY - currentScaleY) * ease;
       
       card.style.transform = `
         perspective(900px) 
-        rotateX(${currentRotateX * 0.5}deg) 
-        rotateY(${currentRotateY * 0.5}deg) 
-        scale(${currentScaleX}, ${currentScaleY})
+        rotateX(${currentRotateX * 0.4}deg) 
+        rotateY(${currentRotateY * 0.4}deg)
       `;
       rafId = requestAnimationFrame(animate);
     }
@@ -573,26 +554,20 @@ function bindTiltEffects() {
       animate();
     }
     
-    function tiltHandler(e) {
+    card.addEventListener('mousemove', (e) => {
       const rect = card.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
       const dx = (x - 0.5) * 2;
       const dy = (y - 0.5) * 2;
-      
-      targetRotateX = -dy * 12;
-      targetRotateY = dx * 12;
-      targetScaleX = Math.max(0.94, Math.min(1.06, 1 + dx * 0.035));
-      targetScaleY = Math.max(0.94, Math.min(1.06, 1 + dy * 0.035));
-    }
+      targetRotateX = -dy * 10;
+      targetRotateY = dx * 10;
+    });
     
-    function resetHandler() {
-      targetRotateX = 0; targetRotateY = 0;
-      targetScaleX = 1; targetScaleY = 1;
-    }
-    
-    card.addEventListener('mousemove', tiltHandler);
-    card.addEventListener('mouseleave', resetHandler);
+    card.addEventListener('mouseleave', () => {
+      targetRotateX = 0;
+      targetRotateY = 0;
+    });
   });
 }
 
@@ -652,7 +627,7 @@ mask.onclick = () => {
 // ============================================================
 loadProjects();
 loadDownloads();
-console.log('🚀 作品集已启动（液态玻璃折射 + 3D倾斜）');
+console.log('🚀 作品集已启动（边缘折射 + 无阴影）');
 </script>
 </body>
 </html>

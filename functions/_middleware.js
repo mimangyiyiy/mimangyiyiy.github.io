@@ -15,6 +15,7 @@ export async function onRequest(context) {
     '/api/categories',
     '/api/downloads',
     '/api/health',
+    '/api/files',
     '/api/admin/login',
     '/cody/',        // 作品文件目录
     '/cody',         // 精确匹配

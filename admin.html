@@ -146,7 +146,7 @@ select option { background: #2a2a4e; }
   font-weight: bold;
   font-size: 13px;
   transition: all 0.2s;
-  min-width: 80px;
+  min-width: 70px;
 }
 .tab-btn.active {
   background: #4C97FF;
@@ -202,7 +202,7 @@ select option { background: #2a2a4e; }
 }
 #editModal .modal-content .btn-row .btn { flex: 1; }
 
-/* 上传文件管理表格 */
+/* 文件列表 */
 .file-item {
   display: flex;
   justify-content: space-between;
@@ -211,17 +211,39 @@ select option { background: #2a2a4e; }
   background: #2a2a4e;
   border-radius: 8px;
   margin-bottom: 6px;
+  gap: 10px;
 }
-.file-item .name {
-  font-size: 14px;
+.file-item .info { flex: 1; min-width: 0; }
+.file-item .info .name { font-size: 14px; word-break: break-all; }
+.file-item .info .sub { font-size: 12px; opacity: 0.6; }
+.file-item .actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.hint { font-size: 12px; color: #888; margin-top: 4px; }
+
+#imagePreview { display: none; margin-top: 8px; }
+#imagePreview img { max-height: 120px; border-radius: 8px; border: 1px solid #333; }
+
+#htmlUploadProgress, #uploadProgress {
+  display: none;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #4C97FF;
+}
+
+/* KV 内容弹窗 */
+.kv-content {
+  background: #0d0d20;
+  padding: 16px;
+  border-radius: 10px;
+  font-family: monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
   word-break: break-all;
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid #333;
+  margin-top: 10px;
 }
-.file-item .size {
-  font-size: 12px;
-  opacity: 0.5;
-  margin-left: 10px;
-}
-.file-item .actions { flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -250,6 +272,7 @@ select option { background: #2a2a4e; }
       <button class="tab-btn active" data-tab="tab-projects" onclick="switchTab('tab-projects')">📂 作品</button>
       <button class="tab-btn" data-tab="tab-downloads" onclick="switchTab('tab-downloads')">📦 下载</button>
       <button class="tab-btn" data-tab="tab-files" onclick="switchTab('tab-files')">📁 文件</button>
+      <button class="tab-btn" data-tab="tab-kv" onclick="switchTab('tab-kv')">🗄️ KV</button>
       <button class="tab-btn" data-tab="tab-categories" onclick="switchTab('tab-categories')">🏷️ 分类</button>
     </div>
     
@@ -263,9 +286,9 @@ select option { background: #2a2a4e; }
             <input type="file" id="newHtmlFile" accept=".html">
             <button class="btn btn-primary" onclick="uploadHtmlFile()">上传作品</button>
           </div>
-          <div id="htmlUploadProgress" style="display:none; margin-top:6px; font-size:13px; color:#4C97FF;">⏳ 上传中...</div>
+          <div id="htmlUploadProgress">⏳ 上传中...</div>
           <input id="newLink" placeholder="或手动输入作品链接 *" style="margin-top:8px;">
-          <div class="hint" style="font-size:12px; color:#888; margin-top:4px;">💡 上传 .html 文件后会自动填入链接</div>
+          <div class="hint">💡 上传 .html 文件后会自动填入链接</div>
         </div>
         
         <div style="margin-bottom:10px;">
@@ -274,12 +297,10 @@ select option { background: #2a2a4e; }
             <input type="file" id="newImageFile" accept="image/*">
             <button class="btn btn-primary" onclick="uploadImageToImgBB()">上传图片</button>
           </div>
-          <div id="uploadProgress" style="display:none; margin-top:6px; font-size:13px; color:#4C97FF;">⏳ 上传中...</div>
-          <div id="imagePreview" style="display:none; margin-top:8px;">
-            <img id="previewImg" src="" alt="预览" style="max-height:120px; border-radius:8px; border:1px solid #333;">
-          </div>
+          <div id="uploadProgress">⏳ 上传中...</div>
+          <div id="imagePreview"><img id="previewImg" src="" alt="预览"></div>
           <input id="newImage" placeholder="或手动输入图片URL" style="margin-top:8px;">
-          <div class="hint" style="font-size:12px; color:#888; margin-top:4px;">💡 支持 JPG / PNG / WebP / GIF，最大 32MB</div>
+          <div class="hint">💡 支持 JPG / PNG / WebP / GIF，最大 32MB</div>
         </div>
         
         <input id="newTitle" placeholder="标题 *">
@@ -294,7 +315,7 @@ select option { background: #2a2a4e; }
       </div>
     </div>
     
-    <!-- ===== Tab 2: 下载管理（含编辑） ===== -->
+    <!-- ===== Tab 2: 下载管理 ===== -->
     <div id="tab-downloads" class="tab-content">
       <div class="card">
         <h3>➕ 添加下载项</h3>
@@ -311,7 +332,7 @@ select option { background: #2a2a4e; }
       </div>
     </div>
     
-    <!-- ===== Tab 3: 文件管理（新增） ===== -->
+    <!-- ===== Tab 3: 文件管理 ===== -->
     <div id="tab-files" class="tab-content">
       <div class="card">
         <h3>📁 上传的文件</h3>
@@ -319,7 +340,19 @@ select option { background: #2a2a4e; }
       </div>
     </div>
     
-    <!-- ===== Tab 4: 分类管理 ===== -->
+    <!-- ===== Tab 4: KV 管理 ===== -->
+    <div id="tab-kv" class="tab-content">
+      <div class="card">
+        <h3>🗄️ KV 存储管理</h3>
+        <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="loadKV()">🔄 刷新</button>
+          <span id="kvCount" style="font-size:13px; color:#888;"></span>
+        </div>
+        <div id="kvList"><div class="empty-msg">点击刷新加载...</div></div>
+      </div>
+    </div>
+    
+    <!-- ===== Tab 5: 分类管理 ===== -->
     <div id="tab-categories" class="tab-content">
       <div class="card">
         <h3>🏷️ 管理分类</h3>
@@ -333,17 +366,26 @@ select option { background: #2a2a4e; }
   </div>
 </div>
 
-<!-- ===== 编辑弹窗（下载项 + 作品共用） ===== -->
+<!-- ===== 编辑弹窗 ===== -->
 <div id="editModal">
   <div class="modal-content">
     <h3 id="editModalTitle">✏️ 编辑</h3>
     <input id="editId" type="hidden">
-    <div id="editFields">
-      <!-- 动态填充 -->
-    </div>
+    <div id="editFields"></div>
     <div class="btn-row">
       <button class="btn btn-success" onclick="saveEdit()">保存修改</button>
       <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KV 查看弹窗 ===== -->
+<div id="kvModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99998; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+  <div style="background:#1a1a2e; padding:30px; border-radius:16px; max-width:700px; width:95%; max-height:90vh; border:1px solid #333; overflow-y:auto;">
+    <h3 id="kvModalTitle" style="margin-top:0;">📄 键值内容</h3>
+    <div id="kvModalBody" class="kv-content">加载中...</div>
+    <div style="margin-top:15px; text-align:right;">
+      <button class="btn btn-secondary" onclick="document.getElementById('kvModal').style.display='none'">关闭</button>
     </div>
   </div>
 </div>
@@ -390,9 +432,9 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
   document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
-  // 切换时刷新对应数据
   if (tabId === 'tab-files') loadAdminFiles();
   if (tabId === 'tab-downloads') loadAdminDownloads();
+  if (tabId === 'tab-kv') loadKV();
 }
 
 // ============================================================
@@ -401,19 +443,16 @@ function switchTab(tabId) {
 async function adminLogin() {
   const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value.trim();
-  
   if (!username || !password) {
     showStatus('请输入用户名和密码', 'error');
     return;
   }
-  
   try {
     const res = await fetch(`${API_BASE}/api/admin/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('adminToken', data.token);
@@ -477,10 +516,8 @@ async function loadCategoriesWithDelete() {
 async function addCategory() {
   const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
-  
   const name = document.getElementById('newCategoryName').value.trim();
   if (!name) { showStatus('请输入分类名称', 'error'); return; }
-  
   try {
     const res = await fetch(`${API_BASE}/api/admin/categories`, {
       method: 'POST',
@@ -490,7 +527,6 @@ async function addCategory() {
       },
       body: JSON.stringify({ name })
     });
-    
     if (res.ok) {
       showStatus('✅ 分类添加成功');
       document.getElementById('newCategoryName').value = '';
@@ -507,7 +543,6 @@ async function addCategory() {
 async function deleteCategoryWithCheck(categoryId) {
   const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
-  
   try {
     const res = await fetch(`${API_BASE}/api/admin/categories/${categoryId}`, {
       method: 'DELETE',
@@ -517,19 +552,10 @@ async function deleteCategoryWithCheck(categoryId) {
       },
       body: JSON.stringify({})
     });
-    
     const data = await res.json();
-    
     if (res.ok) {
       showStatus('✅ 分类已删除');
       await loadCategoriesWithDelete();
-      return;
-    }
-    
-    if (data.hasProjects) {
-      deletingCategoryId = categoryId;
-      // 简单处理：提示有作品
-      showStatus('❌ 该分类下还有作品，请先删除或转移作品', 'error');
     } else {
       showStatus('❌ ' + (data.error || '删除失败'), 'error');
     }
@@ -546,13 +572,11 @@ async function loadAdminProjects() {
     const res = await fetch(`${API_BASE}/api/projects`);
     if (!res.ok) throw new Error();
     const projects = await res.json();
-    
     const container = document.getElementById('projectListAdmin');
     if (projects.length === 0) {
       container.innerHTML = '<div class="empty-msg">暂无作品</div>';
       return;
     }
-    
     container.innerHTML = projects.map(p => `
       <div class="project-item">
         <div class="info">
@@ -573,16 +597,13 @@ async function loadAdminProjects() {
 async function addProject() {
   const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
-  
   const title = document.getElementById('newTitle').value.trim();
   const link = document.getElementById('newLink').value.trim();
   const categoryId = document.getElementById('newCategory').value;
-  
   if (!title || !link) {
     showStatus('标题和链接为必填项', 'error');
     return;
   }
-  
   const data = {
     title,
     description: document.getElementById('newDesc').value.trim(),
@@ -590,7 +611,6 @@ async function addProject() {
     link,
     category_id: parseInt(categoryId) || null
   };
-  
   try {
     const res = await fetch(`${API_BASE}/api/admin/projects`, {
       method: 'POST',
@@ -600,7 +620,6 @@ async function addProject() {
       },
       body: JSON.stringify(data)
     });
-    
     if (res.ok) {
       showStatus('✅ 添加成功！');
       document.getElementById('newTitle').value = '';
@@ -611,6 +630,7 @@ async function addProject() {
       document.getElementById('newImageFile').value = '';
       document.getElementById('newHtmlFile').value = '';
       loadAdminProjects();
+      loadAdminFiles();
     } else {
       const err = await res.json();
       showStatus('❌ ' + (err.error || '添加失败'), 'error');
@@ -631,6 +651,7 @@ async function deleteProject(id) {
     if (res.ok) {
       showStatus('✅ 已删除');
       loadAdminProjects();
+      loadAdminFiles();
     } else {
       showStatus('❌ 删除失败', 'error');
     }
@@ -640,20 +661,18 @@ async function deleteProject(id) {
 }
 
 // ============================================================
-// 6. 下载项管理（含编辑）
+// 6. 下载管理
 // ============================================================
 async function loadAdminDownloads() {
   try {
     const res = await fetch(`${API_BASE}/api/downloads`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const downloads = await res.json();
-    
     const container = document.getElementById('downloadListAdmin');
     if (downloads.length === 0) {
       container.innerHTML = '<div class="empty-msg">暂无下载项</div>';
       return;
     }
-    
     container.innerHTML = downloads.map(d => `
       <div class="project-item">
         <div class="info">
@@ -674,17 +693,14 @@ async function loadAdminDownloads() {
 async function addDownload() {
   const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
-  
   const title = document.getElementById('newDownloadTitle').value.trim();
   const link = document.getElementById('newDownloadLink').value.trim();
   const description = document.getElementById('newDownloadDesc').value.trim();
   const linkText = document.getElementById('newDownloadLinkText').value.trim() || '下载';
-  
   if (!title || !link) {
     showStatus('标题和链接为必填项', 'error');
     return;
   }
-  
   try {
     const res = await fetch(`${API_BASE}/api/admin/downloads`, {
       method: 'POST',
@@ -694,7 +710,6 @@ async function addDownload() {
       },
       body: JSON.stringify({ title, description, link, link_text: linkText })
     });
-    
     if (res.ok) {
       showStatus('✅ 下载项添加成功！');
       document.getElementById('newDownloadTitle').value = '';
@@ -731,30 +746,25 @@ async function deleteDownload(id) {
 }
 
 // ============================================================
-// 7. 文件管理（新增）
+// 7. 文件管理
 // ============================================================
 async function loadAdminFiles() {
   try {
     const res = await fetch(`${API_BASE}/api/files`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const files = await res.json();
-    
     const container = document.getElementById('fileListAdmin');
     if (!files || files.length === 0) {
       container.innerHTML = '<div class="empty-msg">暂无上传的文件</div>';
       return;
     }
-    
     container.innerHTML = files.map(f => `
-      <div class="file-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#2a2a4e; border-radius:8px; margin-bottom:6px;">
-        <div style="flex:1; min-width:0;">
-          <span style="font-size:14px;">📄 ${escapeHtml(f.filename)}</span>
-          <span style="font-size:12px; opacity:0.5; margin-left:10px;">${f.size ? (f.size / 1024).toFixed(1) + ' KB' : ''}</span>
-          <span style="font-size:12px; margin-left:10px; ${f.used ? 'color:#81C784;' : 'color:#888;'}">
-            ${f.status}
-          </span>
+      <div class="file-item">
+        <div class="info">
+          <span class="name">📄 ${escapeHtml(f.filename)}</span>
+          <span class="sub">${f.size ? (f.size / 1024).toFixed(1) + ' KB' : ''} · ${f.status || (f.used ? '✅ 使用中' : '📭 未使用')}</span>
         </div>
-        <div style="display:flex; gap:6px; flex-shrink:0;">
+        <div class="actions">
           <a href="${escapeHtml(f.url)}" target="_blank" class="btn btn-primary btn-sm">查看</a>
           ${f.used ? `<span style="font-size:11px; color:#888; padding:5px 8px;">🔗 被引用</span>` : `<button class="btn btn-danger btn-sm" onclick="deleteFile('${escapeHtml(f.filename)}')">删除</button>`}
         </div>
@@ -786,23 +796,101 @@ async function deleteFile(filename) {
 }
 
 // ============================================================
-// 8. 上传 .html 文件
+// 8. KV 管理
+// ============================================================
+async function loadKV() {
+  const container = document.getElementById('kvList');
+  const countEl = document.getElementById('kvCount');
+  container.innerHTML = '<div class="empty-msg">⏳ 加载中...</div>';
+  const token = getToken();
+  if (!token) {
+    container.innerHTML = '<div class="empty-msg">请先登录</div>';
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/kv/list`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    countEl.textContent = `共 ${data.total} 个键`;
+    if (data.keys.length === 0) {
+      container.innerHTML = '<div class="empty-msg">KV 中暂无数据</div>';
+      return;
+    }
+    container.innerHTML = data.keys.map(item => `
+      <div class="file-item">
+        <div class="info">
+          <span class="name">📄 ${escapeHtml(item.key)}</span>
+          <span class="sub">${item.sizeKB} · ${item.preview ? '预览: ' + escapeHtml(item.preview.slice(0, 60)) + (item.preview.length > 60 ? '...' : '') : '(空)'}</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary btn-sm" onclick="viewKV('${escapeHtml(item.key)}')">查看</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteKV('${escapeHtml(item.key)}')">删除</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
+  }
+}
+
+async function viewKV(key) {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/kv/${encodeURIComponent(key)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      showStatus('❌ ' + (err.error || '加载失败'), 'error');
+      return;
+    }
+    const data = await res.json();
+    document.getElementById('kvModalTitle').textContent = `📄 ${data.key} (${data.sizeKB})`;
+    document.getElementById('kvModalBody').textContent = data.value || '(空)';
+    document.getElementById('kvModal').style.display = 'flex';
+  } catch (e) {
+    showStatus('❌ 加载失败：' + e.message, 'error');
+  }
+}
+
+async function deleteKV(key) {
+  if (!confirm(`确定要删除 "${key}" 吗？此操作不可恢复！`)) return;
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/kv/${encodeURIComponent(key)}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      showStatus('✅ 已删除');
+      loadKV();
+    } else {
+      const err = await res.json();
+      showStatus('❌ ' + (err.error || '删除失败'), 'error');
+    }
+  } catch (e) {
+    showStatus('❌ 网络错误', 'error');
+  }
+}
+
+// ============================================================
+// 9. 上传 .html 文件
 // ============================================================
 async function uploadHtmlFile() {
   const fileInput = document.getElementById('newHtmlFile');
   const file = fileInput.files[0];
-  
   if (!file) { showStatus('请先选择 .html 文件', 'error'); return; }
   if (!file.name.endsWith('.html')) { showStatus('只支持 .html 文件', 'error'); return; }
   if (file.size > 10 * 1024 * 1024) { showStatus('文件大小不能超过 10MB', 'error'); return; }
-
   const token = getToken();
   if (!token) { showStatus('请先登录', 'error'); return; }
-
   const progressEl = document.getElementById('htmlUploadProgress');
   progressEl.style.display = 'block';
   progressEl.textContent = '⏳ 上传中...';
-
   try {
     const content = await file.text();
     const res = await fetch(`${API_BASE}/api/admin/upload-html`, {
@@ -813,7 +901,6 @@ async function uploadHtmlFile() {
       },
       body: JSON.stringify({ fileName: file.name, content })
     });
-
     const data = await res.json();
     if (res.ok && data.success) {
       document.getElementById('newLink').value = data.url;
@@ -832,28 +919,24 @@ async function uploadHtmlFile() {
 }
 
 // ============================================================
-// 9. 图片上传（ImgBB）
+// 10. 图片上传
 // ============================================================
 async function uploadImageToImgBB() {
   const fileInput = document.getElementById('newImageFile');
   const file = fileInput.files[0];
   if (!file) { showStatus('请先选择一张图片', 'error'); return; }
   if (file.size > 32 * 1024 * 1024) { showStatus('图片大小不能超过 32MB', 'error'); return; }
-
   const progressEl = document.getElementById('uploadProgress');
   progressEl.style.display = 'block';
   progressEl.textContent = '⏳ 上传到图床...';
-
   try {
     const base64 = await fileToBase64(file);
     const formData = new FormData();
     formData.append('key', IMGBB_API_KEY);
     formData.append('image', base64.split(',')[1]);
     formData.append('name', file.name);
-
     const response = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
     const data = await response.json();
-
     if (data.success) {
       document.getElementById('newImage').value = data.data.url;
       const preview = document.getElementById('imagePreview');
@@ -894,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// 10. 编辑弹窗（下载项编辑）
+// 11. 编辑弹窗
 // ============================================================
 let editType = '';
 let editId = null;
@@ -903,14 +986,11 @@ function openEditDownload(id) {
   editType = 'download';
   editId = id;
   document.getElementById('editModalTitle').textContent = '✏️ 编辑下载项';
-  
-  // 先从列表获取数据
   fetch(`${API_BASE}/api/downloads`)
     .then(r => r.json())
     .then(data => {
       const item = data.find(d => d.id === id);
       if (!item) { showStatus('未找到该下载项', 'error'); return; }
-      
       document.getElementById('editFields').innerHTML = `
         <input id="editDownloadTitle" value="${escapeHtml(item.title)}" placeholder="标题 *">
         <input id="editDownloadDesc" value="${escapeHtml(item.description || '')}" placeholder="描述（可选）">
@@ -926,20 +1006,27 @@ function openEditProject(id) {
   editType = 'project';
   editId = id;
   document.getElementById('editModalTitle').textContent = '✏️ 编辑作品';
-  
   fetch(`${API_BASE}/api/projects`)
     .then(r => r.json())
     .then(data => {
       const item = data.find(p => p.id === id);
       if (!item) { showStatus('未找到该作品', 'error'); return; }
-      
       document.getElementById('editFields').innerHTML = `
         <input id="editProjectTitle" value="${escapeHtml(item.title)}" placeholder="标题 *">
         <input id="editProjectDesc" value="${escapeHtml(item.description || '')}" placeholder="描述">
         <input id="editProjectLink" value="${escapeHtml(item.link)}" placeholder="链接 *">
         <input id="editProjectImage" value="${escapeHtml(item.image || '')}" placeholder="图片URL">
-        <input id="editProjectCategory" value="${escapeHtml(item.category_id || '')}" placeholder="分类ID">
+        <select id="editProjectCategory"></select>
       `;
+      // 填充分类下拉
+      fetch(`${API_BASE}/api/categories`)
+        .then(r => r.json())
+        .then(cats => {
+          const select = document.getElementById('editProjectCategory');
+          select.innerHTML = cats.map(c => 
+            `<option value="${c.id}" ${c.id === item.category_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+          ).join('');
+        });
       document.getElementById('editModal').style.display = 'flex';
     })
     .catch(() => showStatus('加载数据失败', 'error'));
@@ -953,14 +1040,12 @@ async function saveEdit() {
     const title = document.getElementById('editDownloadTitle').value.trim();
     const link = document.getElementById('editDownloadLink').value.trim();
     if (!title || !link) { showStatus('标题和链接为必填项', 'error'); return; }
-    
     const data = {
       title,
       description: document.getElementById('editDownloadDesc').value.trim(),
       link,
       link_text: document.getElementById('editDownloadLinkText').value.trim() || '下载'
     };
-    
     try {
       const res = await fetch(`${API_BASE}/api/admin/downloads/${editId}`, {
         method: 'PUT',
@@ -982,7 +1067,6 @@ async function saveEdit() {
     const title = document.getElementById('editProjectTitle').value.trim();
     const link = document.getElementById('editProjectLink').value.trim();
     if (!title || !link) { showStatus('标题和链接为必填项', 'error'); return; }
-    
     const data = {
       title,
       description: document.getElementById('editProjectDesc').value.trim(),
@@ -990,7 +1074,6 @@ async function saveEdit() {
       image: document.getElementById('editProjectImage').value.trim() || 'https://placehold.co/400x200?text=作品封面',
       category_id: parseInt(document.getElementById('editProjectCategory').value) || null
     };
-    
     try {
       const res = await fetch(`${API_BASE}/api/admin/projects/${editId}`, {
         method: 'PUT',
@@ -1001,6 +1084,7 @@ async function saveEdit() {
         showStatus('✅ 作品已更新');
         closeEditModal();
         loadAdminProjects();
+        loadAdminFiles();
       } else {
         const err = await res.json();
         showStatus('❌ ' + (err.error || '更新失败'), 'error');
@@ -1018,7 +1102,7 @@ function closeEditModal() {
 }
 
 // ============================================================
-// 11. 检查登录状态
+// 12. 检查登录状态
 // ============================================================
 function checkAuth() {
   const token = getToken();
@@ -1033,10 +1117,10 @@ function checkAuth() {
 }
 
 // ============================================================
-// 12. 页面启动
+// 13. 页面启动
 // ============================================================
 checkAuth();
-console.log('🔐 管理后台已加载（含文件管理 + 下载编辑）');
+console.log('🔐 管理后台已加载');
 </script>
 </body>
 </html>

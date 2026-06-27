@@ -32,7 +32,6 @@ h1, h2, h3 { margin-top: 0; }
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
 }
 
-/* 输入框 - 圆角 + 动画 */
 input, select, textarea {
   width: 100%;
   padding: 10px 14px;
@@ -55,7 +54,6 @@ input:focus, select:focus, textarea:focus {
 input::placeholder { color: #888; }
 select option { background: #2a2a4e; }
 
-/* 按钮 - 圆角 + 动画 */
 .btn {
   padding: 10px 22px;
   border: none;
@@ -90,7 +88,6 @@ select option { background: #2a2a4e; }
   animation: slideDown 0.4s ease both;
 }
 
-/* 列表项 - 圆角 + 动画 */
 .project-item {
   display: flex;
   justify-content: space-between;
@@ -134,7 +131,6 @@ select option { background: #2a2a4e; }
 #loginArea { display: block; }
 #adminArea { display: none; }
 
-/* 状态消息 - 动画 */
 .status-msg {
   padding: 10px 16px;
   margin-bottom: 10px;
@@ -166,7 +162,6 @@ select option { background: #2a2a4e; }
 .upload-area input[type="file"]:hover { border-color: #555; }
 .upload-area .btn { flex-shrink: 0; }
 
-/* Tab - 圆角 + 动画 */
 .tabs {
   display: flex;
   gap: 4px;
@@ -203,7 +198,6 @@ select option { background: #2a2a4e; }
 .tab-content { display: none; animation: fadeIn 0.3s ease both; }
 .tab-content.active { display: block; }
 
-/* 编辑弹窗 - 动画 */
 #editModal {
   display: none;
   position: fixed;
@@ -249,7 +243,6 @@ select option { background: #2a2a4e; }
 }
 #editModal .modal-content .btn-row .btn { flex: 1; }
 
-/* 文件列表 - 圆角 + 动画 */
 .file-item {
   display: flex;
   justify-content: space-between;
@@ -289,7 +282,6 @@ select option { background: #2a2a4e; }
   animation: fadeIn 0.3s ease both;
 }
 
-/* KV 内容弹窗 - 圆角 */
 .kv-content {
   background: #0d0d20;
   padding: 16px;
@@ -304,7 +296,6 @@ select option { background: #2a2a4e; }
   margin-top: 10px;
 }
 
-/* 进度条 - 圆角 */
 .progress-bar-wrap {
   background: #2a2a4e;
   overflow: hidden;
@@ -328,7 +319,6 @@ select option { background: #2a2a4e; }
   margin-bottom: 4px;
 }
 
-/* 文件加载进度条 - 圆角 */
 .file-load-progress {
   display: none;
   margin-top: 8px;
@@ -354,7 +344,6 @@ select option { background: #2a2a4e; }
   transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* KV查看弹窗 - 圆角 + 动画 */
 #kvModal {
   display: none;
   position: fixed;
@@ -379,38 +368,30 @@ select option { background: #2a2a4e; }
 }
 #kvModal .kv-modal-content h3 { margin-top: 0; }
 
-/* ===== 动画定义 ===== */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes modalPop {
   0% { opacity: 0; transform: scale(0.9) translateY(20px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
-
 @keyframes cardFadeIn {
   from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes listItemIn {
   from { opacity: 0; transform: translateX(-10px); }
   to { opacity: 1; transform: translateX(0); }
 }
-
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
-
-/* 按钮涟漪效果 */
 .btn::after {
   content: '';
   position: absolute;
@@ -423,8 +404,6 @@ select option { background: #2a2a4e; }
 .btn:hover::after {
   opacity: 1;
 }
-
-/* 滚动条美化 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -619,6 +598,10 @@ function showStatus(msg, type = 'success') {
 
 function getToken() {
   return localStorage.getItem('adminToken');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function switchTab(tabId) {
@@ -934,9 +917,8 @@ async function deleteDownload(id) {
 }
 
 // ============================================================
-// 7. 文件管理（KV）
+// 7. 文件管理（KV）- 真正的流式进度条
 // ============================================================
-// 加载文件列表（带真正进度条）
 async function loadFiles() {
   const container = document.getElementById('fileList');
   const countEl = document.getElementById('fileCount');
@@ -951,24 +933,27 @@ async function loadFiles() {
   progressBar.style.width = '5%';
   
   try {
+    const startTime = Date.now();
     const res = await fetch(`${API_BASE}/api/kv-list`);
     
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
-    // 获取数据大小
     const contentLength = res.headers.get('Content-Length');
     const totalSize = contentLength ? parseInt(contentLength) : 0;
     const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
     
-    progressText.textContent = totalSize > 0 ? 
-      `正在下载 (${totalSizeKB.toFixed(1)} KB)...` : 
-      '正在加载数据...';
-    progressBar.style.width = '15%';
+    progressText.textContent = totalSizeKnown ? 
+      `0.0 / ${totalSizeKB.toFixed(1)} KB · 0.0 KB/s` : 
+      '正在加载...';
+    progressBar.style.width = '10%';
     
-    // 读取流
     const reader = res.body.getReader();
     let receivedLength = 0;
     const chunks = [];
+    let lastUpdateTime = Date.now();
+    let lastReceivedLength = 0;
+    let currentSpeed = 0;
     
     while (true) {
       const { done, value } = await reader.read();
@@ -977,20 +962,32 @@ async function loadFiles() {
       chunks.push(value);
       receivedLength += value.length;
       
-      if (totalSize > 0) {
+      const now = Date.now();
+      const timeDelta = (now - lastUpdateTime) / 1000;
+      const bytesDelta = receivedLength - lastReceivedLength;
+      
+      if (timeDelta >= 0.5) {
+        currentSpeed = (bytesDelta / 1024) / timeDelta;
+        lastUpdateTime = now;
+        lastReceivedLength = receivedLength;
+      }
+      
+      const receivedKB = receivedLength / 1024;
+      const displayKB = receivedKB.toFixed(1);
+      const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : '?';
+      const speedText = currentSpeed > 0 ? currentSpeed.toFixed(1) + ' KB/s' : '计算中...';
+      
+      if (totalSizeKnown) {
         const percent = Math.min((receivedLength / totalSize) * 100, 100);
-        const displayPercent = Math.min(percent, 95);
+        const displayPercent = Math.min(percent, 99);
         progressBar.style.width = displayPercent + '%';
-        const downloadedKB = receivedLength / 1024;
-        progressText.textContent = `加载中... ${downloadedKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB`;
+        progressText.textContent = `${displayKB} / ${totalKB} KB · ${speedText}`;
       } else {
-        const downloadedKB = receivedLength / 1024;
-        progressText.textContent = `加载中... ${downloadedKB.toFixed(1)} KB`;
         progressBar.style.width = Math.min(10 + (receivedLength / 1024) * 2, 95) + '%';
+        progressText.textContent = `${displayKB} KB 已加载 · ${speedText}`;
       }
     }
     
-    // 合并数据
     const allChunks = new Uint8Array(receivedLength);
     let position = 0;
     for (const chunk of chunks) {
@@ -1002,8 +999,12 @@ async function loadFiles() {
     const text = decoder.decode(allChunks);
     const data = JSON.parse(text);
     
+    const finalKB = receivedLength / 1024;
+    const totalTime = (Date.now() - startTime) / 1000;
+    const avgSpeed = totalTime > 0 ? finalKB / totalTime : 0;
+    
     progressBar.style.width = '100%';
-    progressText.textContent = '加载完成';
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB · 平均 ${avgSpeed.toFixed(1)} KB/s`;
     setTimeout(() => {
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
@@ -1011,7 +1012,6 @@ async function loadFiles() {
     
     countEl.textContent = '共 ' + data.total + ' 个文件';
     
-    // 更新存储进度条
     let totalSizeKB_sum = 0;
     data.keys.forEach(item => { totalSizeKB_sum += (item.size || 0) / 1024; });
     const percent = Math.min((totalSizeKB_sum / KV_LIMIT_KB) * 100, 100);
@@ -1053,7 +1053,7 @@ async function loadFiles() {
   }
 }
 
-// 查看单个 KV（真正的进度条 - 基于数据流）
+// 查看单个 KV（真正的流式进度条）
 async function viewKVWithProgress(key) {
   const progressEl = document.getElementById('fileLoadProgress');
   const progressBar = document.getElementById('fileLoadBar');
@@ -1065,8 +1065,6 @@ async function viewKVWithProgress(key) {
   
   try {
     const startTime = Date.now();
-    
-    // 发起请求
     const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
     
     if (!res.ok) {
@@ -1077,48 +1075,56 @@ async function viewKVWithProgress(key) {
       return;
     }
     
-    // 获取文件大小
     const contentLength = res.headers.get('Content-Length');
     const totalSize = contentLength ? parseInt(contentLength) : 0;
     const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
     
-    progressText.textContent = `正在下载 (${totalSizeKB.toFixed(1)} KB)...`;
+    progressText.textContent = totalSizeKnown ? 
+      `0.0 / ${totalSizeKB.toFixed(1)} KB · 0.0 KB/s` : 
+      '正在下载...';
     progressBar.style.width = '10%';
     
-    // 读取响应体流
     const reader = res.body.getReader();
     let receivedLength = 0;
     const chunks = [];
+    let lastUpdateTime = Date.now();
+    let lastReceivedLength = 0;
+    let currentSpeed = 0;
     
     while (true) {
       const { done, value } = await reader.read();
-      
       if (done) break;
       
       chunks.push(value);
       receivedLength += value.length;
       
-      // 更新进度条
-      if (totalSize > 0) {
+      const now = Date.now();
+      const timeDelta = (now - lastUpdateTime) / 1000;
+      const bytesDelta = receivedLength - lastReceivedLength;
+      
+      if (timeDelta >= 0.5) {
+        currentSpeed = (bytesDelta / 1024) / timeDelta;
+        lastUpdateTime = now;
+        lastReceivedLength = receivedLength;
+      }
+      
+      const receivedKB = receivedLength / 1024;
+      const displayKB = receivedKB.toFixed(1);
+      const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : '?';
+      const speedText = currentSpeed > 0 ? currentSpeed.toFixed(1) + ' KB/s' : '计算中...';
+      
+      if (totalSizeKnown) {
         const percent = Math.min((receivedLength / totalSize) * 100, 100);
-        // 限制最大显示 95%，留 5% 给解析
-        const displayPercent = Math.min(percent, 95);
+        const displayPercent = Math.min(percent, 99);
         progressBar.style.width = displayPercent + '%';
-        
-        // 显示已下载大小
-        const downloadedKB = receivedLength / 1024;
-        progressText.textContent = `下载中... ${downloadedKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB (${displayPercent.toFixed(0)}%)`;
+        progressText.textContent = `${displayKB} / ${totalKB} KB · ${speedText}`;
       } else {
-        // 如果无法获取总大小，显示已下载大小
-        const downloadedKB = receivedLength / 1024;
-        progressText.textContent = `下载中... ${downloadedKB.toFixed(1)} KB`;
-        // 用动画效果显示进度
-        const animatedPercent = Math.min((receivedLength / 1024) * 2, 95);
-        progressBar.style.width = animatedPercent + '%';
+        progressBar.style.width = Math.min(10 + (receivedLength / 1024) * 2, 95) + '%';
+        progressText.textContent = `${displayKB} KB 已下载 · ${speedText}`;
       }
     }
     
-    // 合并所有数据块
     const allChunks = new Uint8Array(receivedLength);
     let position = 0;
     for (const chunk of chunks) {
@@ -1126,17 +1132,17 @@ async function viewKVWithProgress(key) {
       position += chunk.length;
     }
     
-    // 解码文本
     const decoder = new TextDecoder('utf-8');
     const text = decoder.decode(allChunks);
-    
-    // 解析 JSON
     const data = JSON.parse(text);
     
-    progressBar.style.width = '100%';
-    progressText.textContent = '加载完成';
+    const finalKB = receivedLength / 1024;
+    const totalTime = (Date.now() - startTime) / 1000;
+    const avgSpeed = totalTime > 0 ? finalKB / totalTime : 0;
     
-    // 显示弹窗
+    progressBar.style.width = '100%';
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB · 平均 ${avgSpeed.toFixed(1)} KB/s`;
+    
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
       document.getElementById('kvModalBody').textContent = data.value || '(空)';
@@ -1155,10 +1161,6 @@ async function viewKVWithProgress(key) {
   }
 }
 
-// 辅助函数：延迟
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 // 删除 KV 文件
 async function deleteFileKV(key) {
   if (!confirm('确定要删除 "' + key + '" 吗？此操作不可恢复！')) return;

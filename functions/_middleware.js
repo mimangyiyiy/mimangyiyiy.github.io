@@ -16,6 +16,7 @@ export async function onRequest(context) {
     '/api/downloads',
     '/api/admin/kv/',
     '/api/admin/kv',
+    '/api/admin/kv/list',
     '/api/files',
     '/api/health',
     '/api/admin/login',

@@ -975,7 +975,97 @@ async function loadFiles() {
 }
 
 // 查看单个 KV（从列表数据获取文件大小）
+// 右下角通知 + 系统通知
+function showFileNotification(title, body, progress = null) {
+  // 1. 右下角弹窗
+  let toast = document.getElementById('fileToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'fileToast';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 360px;
+      min-width: 200px;
+      z-index: 999999;
+      color: #fff;
+      font-size: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toast);
+  }
+  
+  // 更新内容
+  if (progress !== null) {
+    const progressBar = toast.querySelector('.toast-progress');
+    if (progressBar) {
+      progressBar.style.width = Math.min(progress, 100) + '%';
+    }
+  }
+  
+  toast.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-size:18px;">📄</span>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:bold; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(title)}</div>
+        <div style="font-size:12px; color:#aaa; margin-top:2px;">${escapeHtml(body)}</div>
+        <div style="margin-top:6px; background:#2a2a4e; border-radius:4px; overflow:hidden; height:4px;">
+          <div class="toast-progress" style="height:100%; background:linear-gradient(90deg,#4C97FF,#a855f7); width:${progress !== null ? Math.min(progress, 100) : 0}%; transition:width 0.3s ease; border-radius:4px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // 显示动画
+  requestAnimationFrame(() => {
+    toast.style.transform = 'translateY(0)';
+    toast.style.opacity = '1';
+  });
+  
+  // 自动隐藏（10秒后）
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.style.transform = 'translateY(20px)';
+    toast.style.opacity = '0';
+  }, 10000);
+  
+  // 2. 系统通知（需要用户授权）
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notif = new Notification('📄 文件加载', {
+        body: body,
+        icon: '📄',
+        silent: false
+      });
+      setTimeout(() => notif.close(), 5000);
+    } catch (e) {
+      // 忽略
+    }
+  }
+}
+
+// 请求通知权限
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+// 修改 viewKVWithProgress
 async function viewKVWithProgress(key) {
+  // 请求通知权限
+  requestNotificationPermission();
+  
   // 检查缓存
   if (fileCache.has(key)) {
     const data = fileCache.get(key);
@@ -983,6 +1073,7 @@ async function viewKVWithProgress(key) {
     document.getElementById('kvModalBody').textContent = data.value || '(空)';
     document.getElementById('kvModal').style.display = 'flex';
     showStatus('已从缓存加载', 'success');
+    showFileNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 100);
     return;
   }
   
@@ -995,7 +1086,7 @@ async function viewKVWithProgress(key) {
   progressBar.style.width = '5%';
   
   try {
-    // ✅ 先从文件列表获取该文件的大小
+    // 获取文件大小
     const listRes = await fetch(`${API_BASE}/api/kv-list`);
     const listData = await listRes.json();
     const fileInfo = listData.keys.find(item => item.key === key);
@@ -1003,7 +1094,6 @@ async function viewKVWithProgress(key) {
     const totalSizeKB = totalSize / 1024;
     const totalSizeKnown = totalSize > 0;
     
-    // ✅ 如果列表里没有该文件，直接下载
     if (!totalSizeKnown) {
       const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
       const data = await res.json();
@@ -1013,25 +1103,30 @@ async function viewKVWithProgress(key) {
       document.getElementById('kvModal').style.display = 'flex';
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
+      showFileNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 100);
       return;
     }
+    
+    // ✅ 显示通知：开始加载
+    showFileNotification('⏳ 正在加载', `${key} ${totalSizeKB.toFixed(1)} KB`, 0);
     
     progressText.textContent = `0.0 KB / ${totalSizeKB.toFixed(1)} KB`;
     progressBar.style.width = '10%';
     
-    // ✅ 开始下载
     const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
     if (!res.ok) {
       const err = await res.json();
       showStatus('加载失败：' + (err.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
+      showFileNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 100);
       return;
     }
     
     const reader = res.body.getReader();
     let receivedLength = 0;
     const chunks = [];
+    let lastNotify = Date.now();
     
     while (true) {
       const { done, value } = await reader.read();
@@ -1040,12 +1135,18 @@ async function viewKVWithProgress(key) {
       chunks.push(value);
       receivedLength += value.length;
       
-      // ✅ 进度 = 已下载 / 总大小 × 100%
       const percent = (receivedLength / totalSize) * 100;
       progressBar.style.width = Math.min(percent, 99) + '%';
       
       const displayKB = (receivedLength / 1024).toFixed(1);
       progressText.textContent = `${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`;
+      
+      // ✅ 每 500ms 更新一次通知
+      const now = Date.now();
+      if (now - lastNotify > 500) {
+        lastNotify = now;
+        showFileNotification('⏳ 正在加载', `${key} ${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`, percent);
+      }
     }
     
     const allChunks = new Uint8Array(receivedLength);
@@ -1065,6 +1166,9 @@ async function viewKVWithProgress(key) {
     const finalKB = receivedLength / 1024;
     progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
     
+    // ✅ 通知：加载完成
+    showFileNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 100);
+    
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
       document.getElementById('kvModalBody').textContent = data.value || '(空)';
@@ -1079,6 +1183,7 @@ async function viewKVWithProgress(key) {
     showStatus('加载失败：' + (e.message || '未知错误'), 'error');
     progressEl.style.display = 'none';
     progressBar.style.width = '0%';
+    showFileNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 100);
   }
 }
 

@@ -802,32 +802,36 @@ async function loadKV() {
   const container = document.getElementById('kvList');
   const countEl = document.getElementById('kvCount');
   container.innerHTML = '<div class="empty-msg">⏳ 加载中...</div>';
-  const token = getToken();
-  if (!token) {
-    container.innerHTML = '<div class="empty-msg">请先登录</div>';
-    return;
-  }
+  
   try {
-    const res = await fetch(`${API_BASE}/api/admin/kv/list?token=${token}`);
+    // ✅ 改用 /api/kv-list，不再需要 Token
+    const res = await fetch(`${API_BASE}/api/kv-list`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    
     countEl.textContent = `共 ${data.total} 个键`;
+    
     if (data.keys.length === 0) {
       container.innerHTML = '<div class="empty-msg">KV 中暂无数据</div>';
       return;
     }
+    
     container.innerHTML = data.keys.map(item => `
-      <div class="file-item">
-        <div class="info">
-          <span class="name">📄 ${escapeHtml(item.key)}</span>
-          <span class="sub">${item.sizeKB} · ${item.preview ? '预览: ' + escapeHtml(item.preview.slice(0, 60)) + (item.preview.length > 60 ? '...' : '') : '(空)'}</span>
+      <div class="file-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#2a2a4e; border-radius:8px; margin-bottom:6px;">
+        <div style="flex:1; min-width:0;">
+          <span style="font-size:14px; font-weight:bold;">📄 ${escapeHtml(item.key)}</span>
+          <span style="font-size:12px; opacity:0.5; margin-left:10px;">${item.sizeKB}</span>
+          <div style="font-size:12px; opacity:0.6; margin-top:4px; font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:300px;">
+            ${escapeHtml(item.preview)}
+          </div>
         </div>
-        <div class="actions">
+        <div style="display:flex; gap:6px; flex-shrink:0;">
           <button class="btn btn-primary btn-sm" onclick="viewKV('${escapeHtml(item.key)}')">查看</button>
           <button class="btn btn-danger btn-sm" onclick="deleteKV('${escapeHtml(item.key)}')">删除</button>
         </div>
       </div>
     `).join('');
+    
   } catch (e) {
     container.innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
   }

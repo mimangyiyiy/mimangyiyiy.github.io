@@ -656,28 +656,51 @@ function fileToBase64(file) {
 // ============================================================
 // 3. 系统通知（Windows/Android/iOS）
 // ============================================================
-function sendSystemNotification(title, body, tag) {
+// 系统通知（支持更新）
+function sendSystemNotification(title, body, tag, progress = null) {
   if (!('Notification' in window)) return;
   if (Notification.permission !== 'granted') {
-    console.log('通知权限未授权，当前状态:', Notification.permission);
+    console.log('通知权限未授权，跳过系统通知');
     return;
   }
   try {
+    // 使用 tag 复用通知，避免重复弹出
     const notification = new Notification('📄 ' + title, {
       body: body,
       icon: '📄',
-      silent: false,
-      requireInteraction: true,
+      silent: true,        // 静默更新，不发出提示音
+      requireInteraction: false,
       tag: tag || 'file-load-' + Date.now()
     });
     notification.onclick = function() {
       window.focus();
       notification.close();
     };
-    setTimeout(() => { try { notification.close(); } catch(e) {} }, 8000);
-    console.log('✅ 系统通知已发送:', title, body);
+    // 不自动关闭，让用户手动关闭或点击
   } catch (e) {
     console.log('❌ 系统通知发送失败:', e);
+  }
+}
+
+// 更新系统通知（用于进度更新）
+function updateSystemNotification(tag, title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    // 使用相同的 tag 创建新通知，旧通知会被替换
+    const notification = new Notification('📄 ' + title, {
+      body: body,
+      icon: '📄',
+      silent: true,        // 静默更新
+      requireInteraction: false,
+      tag: tag
+    });
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+    };
+  } catch (e) {
+    // 忽略错误
   }
 }
 
@@ -1138,10 +1161,14 @@ async function viewKVWithProgress(key) {
     }
 
     const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+    // 系统通知的 tag 用文件名
+    const notifTag = 'notif-' + key;
     loadingFiles.set(key, toastId);
 
     createFileToast(toastId, key, totalSizeKB);
-    sendSystemNotification('⏳ 正在加载', `${key} (${totalSizeKB.toFixed(1)} KB)`, 'start-' + key);
+    
+    // ✅ 发送初始系统通知
+    sendSystemNotification('⏳ 正在加载', `${key} 0.0 / ${totalSizeKB.toFixed(1)} KB`, notifTag);
 
     const progressEl = document.getElementById('fileLoadProgress');
     const progressBar = document.getElementById('fileLoadBar');
@@ -1158,7 +1185,7 @@ async function viewKVWithProgress(key) {
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
       updateToast(toastId, 0, totalSizeKB, 'error');
-      sendSystemNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 'error-' + key);
+      updateSystemNotification(notifTag, '❌ 加载失败', `${key} ${err.error || '未知错误'}`);
       loadingFiles.delete(key);
       setTimeout(() => removeToast(toastId), 3000);
       return;
@@ -1168,6 +1195,15 @@ async function viewKVWithProgress(key) {
     let receivedLength = 0;
     const chunks = [];
     let lastNotify = Date.now();
+
+    // ✅ 每秒更新一次系统通知的定时器
+    const notifInterval = setInterval(() => {
+      const displayKB = receivedLength / 1024;
+      const percent = Math.min((receivedLength / totalSize) * 100, 100);
+      const body = `${displayKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB (${percent.toFixed(0)}%)`;
+      // ✅ 静默更新系统通知，不发出新提示
+      updateSystemNotification(notifTag, '⏳ 正在加载', body);
+    }, 1000);
 
     while (true) {
       const { done, value } = await reader.read();
@@ -1187,6 +1223,9 @@ async function viewKVWithProgress(key) {
       }
     }
 
+    // ✅ 清除定时器
+    clearInterval(notifInterval);
+
     const allChunks = new Uint8Array(receivedLength);
     let position = 0;
     for (const chunk of chunks) {
@@ -1205,7 +1244,9 @@ async function viewKVWithProgress(key) {
     progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
 
     updateToast(toastId, finalKB, totalSizeKB, 'complete');
-    sendSystemNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 'complete-' + key);
+    
+    // ✅ 最终系统通知（完成）
+    updateSystemNotification(notifTag, '✅ 加载完成', `${key} (${finalKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB)`);
 
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
@@ -1226,7 +1267,8 @@ async function viewKVWithProgress(key) {
       setTimeout(() => removeToast(toastId), 3000);
     }
     loadingFiles.delete(key);
-    sendSystemNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 'error-' + key);
+    const notifTag = 'notif-' + key;
+    updateSystemNotification(notifTag, '❌ 加载失败', `${key} ${e.message || '未知错误'}`);
   }
 }
 

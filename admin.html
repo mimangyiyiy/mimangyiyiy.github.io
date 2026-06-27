@@ -348,6 +348,94 @@ select option { background: #2a2a4e; }
   animation: modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 #kvModal .kv-modal-content h3 { margin-top: 0; }
+
+/* 多文件通知容器 */
+#fileToastContainer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 380px;
+  width: 100%;
+  pointer-events: none;
+}
+.toast-item {
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+  font-size: 13px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: auto;
+  animation: toastIn 0.3s ease forwards;
+}
+.toast-item .toast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.toast-item .toast-title {
+  font-weight: bold;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.toast-item .toast-close {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.toast-item .toast-close:hover { color: #fff; }
+.toast-item .toast-body {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
+}
+.toast-item .toast-progress-wrap {
+  margin-top: 6px;
+  background: #2a2a4e;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 4px;
+}
+.toast-item .toast-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4C97FF, #a855f7);
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.toast-item.complete .toast-progress-fill {
+  background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+.toast-item.error .toast-progress-fill {
+  background: #FF6B6B;
+}
+@keyframes toastIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes toastOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(20px); opacity: 0; }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -509,6 +597,8 @@ select option { background: #2a2a4e; }
     </div>
   </div>
 </div>
+<!-- 通知容器 -->
+<div id="fileToastContainer"></div>
 
 <script>
 // ============================================================
@@ -560,451 +650,169 @@ function fileToBase64(file) {
 }
 
 // ============================================================
-// 3. 登录 / 退出
+// 3. ✅ 系统级通知（Windows/Android/iOS）
 // ============================================================
-async function adminLogin() {
-  const username = document.getElementById('loginUser').value.trim();
-  const password = document.getElementById('loginPass').value.trim();
-  if (!username || !password) {
-    showStatus('请输入用户名和密码', 'error');
-    return;
-  }
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if (res.ok && data.token) {
-      localStorage.setItem('adminToken', data.token);
-      document.getElementById('loginArea').style.display = 'none';
-      document.getElementById('adminArea').style.display = 'block';
-      await Promise.all([
-        loadCategoriesWithDelete(),
-        loadAdminProjects(),
-        loadAdminDownloads()
-      ]);
-      showStatus('登录成功');
-    } else {
-      showStatus('登录失败：' + (data.error || '用户名或密码错误'), 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
+let toastIdCounter = 0;
 
-function logout() {
-  localStorage.removeItem('adminToken');
-  document.getElementById('loginArea').style.display = 'block';
-  document.getElementById('adminArea').style.display = 'none';
-  showStatus('已退出');
-}
-
-// ============================================================
-// 4. 分类管理
-// ============================================================
-async function loadCategoriesWithDelete() {
-  try {
-    const res = await fetch(`${API_BASE}/api/categories`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const categories = await res.json();
-    const select = document.getElementById('newCategory');
-    select.innerHTML = categories.map(c =>
-      `<option value="${c.id}">${escapeHtml(c.name)}</option>`
-    ).join('');
-    const container = document.getElementById('categoryList');
-    if (categories.length === 0) {
-      container.innerHTML = '<div class="empty-msg">暂无分类，请添加</div>';
-      return;
-    }
-    container.innerHTML = categories.map(c => `
-      <div class="project-item">
-        <span>${escapeHtml(c.name)}</span>
-        <button class="btn btn-danger btn-sm" onclick="deleteCategoryWithCheck(${c.id})">删除</button>
-      </div>
-    `).join('');
-  } catch (e) {
-    document.getElementById('categoryList').innerHTML = `<div class="empty-msg">加载失败</div>`;
-  }
-}
-
-async function addCategory() {
-  const token = getToken();
-  if (!token) { showStatus('请先登录', 'error'); return; }
-  const name = document.getElementById('newCategoryName').value.trim();
-  if (!name) { showStatus('请输入分类名称', 'error'); return; }
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/categories`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ name })
-    });
-    if (res.ok) {
-      showStatus('分类添加成功');
-      document.getElementById('newCategoryName').value = '';
-      await loadCategoriesWithDelete();
-    } else {
-      const err = await res.json();
-      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-async function deleteCategoryWithCheck(categoryId) {
-  const token = getToken();
-  if (!token) { showStatus('请先登录', 'error'); return; }
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/categories/${categoryId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({})
-    });
-    const data = await res.json();
-    if (res.ok) {
-      showStatus('分类已删除');
-      await loadCategoriesWithDelete();
-    } else {
-      showStatus('删除失败：' + (data.error || '未知错误'), 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-// ============================================================
-// 5. 作品管理
-// ============================================================
-async function loadAdminProjects() {
-  try {
-    const res = await fetch(`${API_BASE}/api/projects`);
-    if (!res.ok) throw new Error();
-    const projects = await res.json();
-    const container = document.getElementById('projectListAdmin');
-    if (projects.length === 0) {
-      container.innerHTML = '<div class="empty-msg">暂无作品</div>';
-      return;
-    }
-    container.innerHTML = projects.map(p => `
-      <div class="project-item">
-        <div class="info">
-          <span class="title">${escapeHtml(p.title)}</span>
-          <span class="sub">${escapeHtml(p.category_name || '未分类')} · ${escapeHtml(p.link || '无链接')}</span>
-        </div>
-        <div class="actions">
-          <button class="btn btn-warning btn-sm" onclick="openEditProject(${p.id})">编辑</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">删除</button>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    document.getElementById('projectListAdmin').innerHTML = '<div class="empty-msg">加载失败</div>';
-  }
-}
-
-async function addProject() {
-  const token = getToken();
-  if (!token) { showStatus('请先登录', 'error'); return; }
-  const title = document.getElementById('newTitle').value.trim();
-  const link = document.getElementById('newLink').value.trim();
-  const categoryId = document.getElementById('newCategory').value;
-  if (!title || !link) {
-    showStatus('标题和链接为必填项', 'error');
-    return;
-  }
-  const data = {
-    title,
-    description: document.getElementById('newDesc').value.trim(),
-    image: document.getElementById('newImage').value.trim() || 'https://placehold.co/400x200?text=作品封面',
-    link,
-    category_id: parseInt(categoryId) || null
-  };
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/projects`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data)
-    });
-    if (res.ok) {
-      showStatus('添加成功');
-      document.getElementById('newTitle').value = '';
-      document.getElementById('newDesc').value = '';
-      document.getElementById('newImage').value = '';
-      document.getElementById('newLink').value = '';
-      document.getElementById('imagePreview').style.display = 'none';
-      document.getElementById('newImageFile').value = '';
-      document.getElementById('newHtmlFile').value = '';
-      loadAdminProjects();
-    } else {
-      const err = await res.json();
-      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-async function deleteProject(id) {
-  if (!confirm('确定要删除这个作品吗？')) return;
-  const token = getToken();
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/projects/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      showStatus('已删除');
-      loadAdminProjects();
-    } else {
-      showStatus('删除失败', 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-// ============================================================
-// 6. 下载管理
-// ============================================================
-async function loadAdminDownloads() {
-  try {
-    const res = await fetch(`${API_BASE}/api/downloads`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const downloads = await res.json();
-    const container = document.getElementById('downloadListAdmin');
-    if (downloads.length === 0) {
-      container.innerHTML = '<div class="empty-msg">暂无下载项</div>';
-      return;
-    }
-    container.innerHTML = downloads.map(d => `
-      <div class="project-item">
-        <div class="info">
-          <span class="title">${escapeHtml(d.title)}</span>
-          <span class="sub">${escapeHtml(d.link)}${d.description ? ' · ' + escapeHtml(d.description) : ''}</span>
-        </div>
-        <div class="actions">
-          <button class="btn btn-warning btn-sm" onclick="openEditDownload(${d.id})">编辑</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDownload(${d.id})">删除</button>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    document.getElementById('downloadListAdmin').innerHTML = '<div class="empty-msg">加载失败</div>';
-  }
-}
-
-async function addDownload() {
-  const token = getToken();
-  if (!token) { showStatus('请先登录', 'error'); return; }
-  const title = document.getElementById('newDownloadTitle').value.trim();
-  const link = document.getElementById('newDownloadLink').value.trim();
-  const description = document.getElementById('newDownloadDesc').value.trim();
-  const linkText = document.getElementById('newDownloadLinkText').value.trim() || '下载';
-  if (!title || !link) {
-    showStatus('标题和链接为必填项', 'error');
-    return;
-  }
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/downloads`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ title, description, link, link_text: linkText })
-    });
-    if (res.ok) {
-      showStatus('下载项添加成功');
-      document.getElementById('newDownloadTitle').value = '';
-      document.getElementById('newDownloadDesc').value = '';
-      document.getElementById('newDownloadLink').value = '';
-      document.getElementById('newDownloadLinkText').value = '下载';
-      loadAdminDownloads();
-    } else {
-      const err = await res.json();
-      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-async function deleteDownload(id) {
-  if (!confirm('确定要删除这个下载项吗？')) return;
-  const token = getToken();
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/downloads/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      showStatus('已删除');
-      loadAdminDownloads();
-    } else {
-      showStatus('删除失败', 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-// ============================================================
-// 7. ✅ 通知函数
-// ============================================================
-function closeFileToast() {
-  const toast = document.getElementById('fileToast');
-  if (toast) {
-    toast.style.transform = 'translateY(20px)';
-    toast.style.opacity = '0';
-    clearTimeout(toast._hideTimer);
-  }
-}
-
-function sendSystemNotification(title, body) {
+function sendSystemNotification(title, body, tag) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  
   try {
     const notification = new Notification('📄 ' + title, {
       body: body,
       icon: '📄',
       silent: false,
       requireInteraction: true,
-      tag: Date.now().toString()
+      tag: tag || 'file-load-' + Date.now()
     });
     notification.onclick = function() {
       window.focus();
       notification.close();
     };
-    setTimeout(() => { notification.close(); }, 10000);
+    setTimeout(() => { notification.close(); }, 8000);
   } catch (e) {
     console.log('系统通知发送失败:', e);
   }
 }
 
-function showFileNotification(title, body, progress = null) {
-  let toast = document.getElementById('fileToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'fileToast';
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #1a1a2e;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 16px 20px;
-      max-width: 380px;
-      min-width: 240px;
-      z-index: 999999;
-      color: #fff;
-      font-size: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      backdrop-filter: blur(12px);
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      transform: translateY(20px);
-      opacity: 0;
-      pointer-events: auto;
-    `;
-    document.body.appendChild(toast);
-  }
+function createFileToast(id, title, totalSizeKB) {
+  const container = document.getElementById('fileToastContainer');
+  if (!container) return null;
   
-  const progressBar = toast.querySelector('.toast-progress');
-  if (progressBar && progress !== null) {
-    progressBar.style.width = Math.min(progress, 100) + '%';
-  }
-  
+  const toast = document.createElement('div');
+  toast.className = 'toast-item';
+  toast.dataset.id = id;
   toast.innerHTML = `
-    <div style="display:flex; align-items:flex-start; gap:10px;">
-      <span style="font-size:18px; flex-shrink:0;">📄</span>
-      <div style="flex:1; min-width:0;">
-        <div style="font-weight:bold; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(title)}</div>
-        <div style="font-size:12px; color:#aaa; margin-top:2px;">${escapeHtml(body)}</div>
-        <div style="margin-top:6px; background:#2a2a4e; border-radius:4px; overflow:hidden; height:4px;">
-          <div class="toast-progress" style="height:100%; background:linear-gradient(90deg,#4C97FF,#a855f7); width:${progress !== null ? Math.min(progress, 100) : 0}%; transition:width 0.3s ease; border-radius:4px;"></div>
-        </div>
-      </div>
-      <button onclick="closeFileToast()" style="background:transparent; border:none; color:#888; cursor:pointer; font-size:16px; padding:0 4px; flex-shrink:0; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">✕</button>
+    <div class="toast-header">
+      <span class="toast-title">📄 ${escapeHtml(title)}</span>
+      <button class="toast-close" onclick="closeToast('${id}')">✕</button>
+    </div>
+    <div class="toast-body">0.0 KB / ${totalSizeKB.toFixed(1)} KB</div>
+    <div class="toast-progress-wrap">
+      <div class="toast-progress-fill" style="width:0%"></div>
     </div>
   `;
+  container.appendChild(toast);
+  return toast;
+}
+
+function updateToast(id, loadedKB, totalKB, status = 'loading') {
+  const container = document.getElementById('fileToastContainer');
+  if (!container) return;
+  const toast = container.querySelector(`.toast-item[data-id="${id}"]`);
+  if (!toast) return;
   
-  requestAnimationFrame(() => {
-    toast.style.transform = 'translateY(0)';
-    toast.style.opacity = '1';
-  });
+  const body = toast.querySelector('.toast-body');
+  const fill = toast.querySelector('.toast-progress-fill');
   
-  clearTimeout(toast._hideTimer);
-  toast._hideTimer = setTimeout(() => { closeFileToast(); }, 15000);
-  
-  // 系统通知
-  if ('Notification' in window) {
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().then(perm => {
-        if (perm === 'granted') sendSystemNotification(title, body);
-      });
-    } else if (Notification.permission === 'granted') {
-      sendSystemNotification(title, body);
+  if (body) {
+    if (status === 'complete') {
+      body.textContent = `✅ 完成 · ${loadedKB.toFixed(1)} KB / ${totalKB.toFixed(1)} KB`;
+    } else if (status === 'error') {
+      body.textContent = `❌ 加载失败`;
+    } else {
+      const percent = Math.min((loadedKB / totalKB) * 100, 100);
+      body.textContent = `${loadedKB.toFixed(1)} KB / ${totalKB.toFixed(1)} KB (${percent.toFixed(0)}%)`;
+    }
+  }
+  if (fill) {
+    if (status === 'complete') {
+      fill.style.width = '100%';
+      toast.classList.add('complete');
+    } else if (status === 'error') {
+      toast.classList.add('error');
+    } else {
+      const percent = Math.min((loadedKB / totalKB) * 100, 100);
+      fill.style.width = percent + '%';
     }
   }
 }
 
+function closeToast(id) {
+  const container = document.getElementById('fileToastContainer');
+  if (!container) return;
+  const toast = container.querySelector(`.toast-item[data-id="${id}"]`);
+  if (toast) {
+    toast.style.animation = 'toastOut 0.3s ease forwards';
+    setTimeout(() => { toast.remove(); }, 300);
+  }
+}
+
+function removeToast(id) {
+  const container = document.getElementById('fileToastContainer');
+  if (!container) return;
+  const toast = container.querySelector(`.toast-item[data-id="${id}"]`);
+  if (toast) {
+    toast.style.animation = 'toastOut 0.3s ease forwards';
+    setTimeout(() => { toast.remove(); }, 300);
+  }
+}
+
 // ============================================================
-// 8. ✅ viewKVWithProgress（必须在 loadFiles 之前）
+// 4. ✅ viewKVWithProgress（多文件加载 + 系统级通知）
 // ============================================================
+const loadingFiles = new Map();
+
 async function viewKVWithProgress(key) {
+  // 请求通知权限
   if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
+    await Notification.requestPermission();
   }
   
+  // 如果正在加载中，不重复加载
+  if (loadingFiles.has(key)) {
+    showStatus('文件正在加载中...', 'success');
+    return;
+  }
+  
+  // 检查缓存
   if (fileCache.has(key)) {
     const data = fileCache.get(key);
     document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
     document.getElementById('kvModalBody').textContent = data.value || '(空)';
     document.getElementById('kvModal').style.display = 'flex';
     showStatus('已从缓存加载', 'success');
-    showFileNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 100);
+    // 系统通知：缓存加载
+    sendSystemNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 'cache-' + key);
     return;
   }
   
-  const progressEl = document.getElementById('fileLoadProgress');
-  const progressBar = document.getElementById('fileLoadBar');
-  const progressText = document.getElementById('fileLoadText');
-  
-  progressEl.style.display = 'block';
-  progressText.textContent = '正在连接...';
-  progressBar.style.width = '5%';
-  
   try {
+    // 获取文件大小
     const listRes = await fetch(`${API_BASE}/api/kv-list`);
     const listData = await listRes.json();
     const fileInfo = listData.keys.find(item => item.key === key);
     const totalSize = fileInfo ? fileInfo.size : 0;
     const totalSizeKB = totalSize / 1024;
-    const totalSizeKnown = totalSize > 0;
     
-    if (!totalSizeKnown) {
+    if (totalSize === 0) {
       const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
       const data = await res.json();
       fileCache.set(key, data);
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
       document.getElementById('kvModalBody').textContent = data.value || '(空)';
       document.getElementById('kvModal').style.display = 'flex';
-      progressEl.style.display = 'none';
-      progressBar.style.width = '0%';
-      showFileNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 100);
+      showStatus('加载完成', 'success');
+      sendSystemNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 'complete-' + key);
       return;
     }
     
-    showFileNotification('⏳ 正在加载', `${key} ${totalSizeKB.toFixed(1)} KB`, 0);
+    // 生成唯一ID
+    const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+    loadingFiles.set(key, toastId);
+    
+    // 创建右下角通知
+    const toast = createFileToast(toastId, key, totalSizeKB);
+    
+    // 系统通知：开始加载
+    sendSystemNotification('⏳ 正在加载', `${key} (${totalSizeKB.toFixed(1)} KB)`, 'start-' + key);
+    
+    const progressEl = document.getElementById('fileLoadProgress');
+    const progressBar = document.getElementById('fileLoadBar');
+    const progressText = document.getElementById('fileLoadText');
+    
+    progressEl.style.display = 'block';
     progressText.textContent = `0.0 KB / ${totalSizeKB.toFixed(1)} KB`;
     progressBar.style.width = '10%';
     
@@ -1014,7 +822,10 @@ async function viewKVWithProgress(key) {
       showStatus('加载失败：' + (err.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
-      showFileNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 100);
+      updateToast(toastId, 0, totalSizeKB, 'error');
+      sendSystemNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 'error-' + key);
+      loadingFiles.delete(key);
+      setTimeout(() => removeToast(toastId), 3000);
       return;
     }
     
@@ -1031,13 +842,14 @@ async function viewKVWithProgress(key) {
       
       const percent = (receivedLength / totalSize) * 100;
       progressBar.style.width = Math.min(percent, 99) + '%';
-      const displayKB = (receivedLength / 1024).toFixed(1);
-      progressText.textContent = `${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`;
+      const displayKB = receivedLength / 1024;
+      progressText.textContent = `${displayKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
       
+      // 更新右下角通知（每500ms）
       const now = Date.now();
       if (now - lastNotify > 500) {
         lastNotify = now;
-        showFileNotification('⏳ 正在加载', `${key} ${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`, percent);
+        updateToast(toastId, displayKB, totalSizeKB);
       }
     }
     
@@ -1052,11 +864,17 @@ async function viewKVWithProgress(key) {
     const text = decoder.decode(allChunks);
     const data = JSON.parse(text);
     fileCache.set(key, data);
+    loadingFiles.delete(key);
     
     progressBar.style.width = '100%';
     const finalKB = receivedLength / 1024;
     progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
-    showFileNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 100);
+    
+    // 更新右下角通知为完成
+    updateToast(toastId, finalKB, totalSizeKB, 'complete');
+    
+    // 系统通知：加载完成
+    sendSystemNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 'complete-' + key);
     
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
@@ -1065,19 +883,24 @@ async function viewKVWithProgress(key) {
       setTimeout(() => {
         progressEl.style.display = 'none';
         progressBar.style.width = '0%';
-      }, 300);
+        removeToast(toastId);
+      }, 500);
     }, 200);
     
   } catch (e) {
     showStatus('加载失败：' + (e.message || '未知错误'), 'error');
-    progressEl.style.display = 'none';
-    progressBar.style.width = '0%';
-    showFileNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 100);
+    loadingFiles.delete(key);
+    const toastId = loadingFiles.get(key);
+    if (toastId) {
+      updateToast(toastId, 0, 0, 'error');
+      setTimeout(() => removeToast(toastId), 3000);
+    }
+    sendSystemNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 'error-' + key);
   }
 }
 
 // ============================================================
-// 9. loadFiles（使用 viewKVWithProgress）
+// 5. loadFiles
 // ============================================================
 async function loadFiles() {
   const container = document.getElementById('fileList');
@@ -1092,7 +915,6 @@ async function loadFiles() {
   progressBar.style.width = '5%';
   
   try {
-    const startTime = Date.now();
     const res = await fetch(`${API_BASE}/api/kv-list`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
@@ -1109,7 +931,6 @@ async function loadFiles() {
     const reader = res.body.getReader();
     let receivedLength = 0;
     const chunks = [];
-    let lastUpdate = Date.now();
     
     while (true) {
       const { done, value } = await reader.read();
@@ -1189,7 +1010,7 @@ async function loadFiles() {
 }
 
 // ============================================================
-// 10. 删除 KV 文件
+// 6. 删除 KV 文件
 // ============================================================
 async function deleteFileKV(key) {
   if (!confirm('确定要删除 "' + key + '" 吗？此操作不可恢复！')) return;
@@ -1199,11 +1020,311 @@ async function deleteFileKV(key) {
       method: 'DELETE'
     });
     if (res.ok) {
-      showStatus('已删除');
+      showStatus('已删除', 'success');
       loadFiles();
     } else {
       const err = await res.json();
       showStatus('删除失败：' + (err.error || '未知错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+// ============================================================
+// 7. 登录 / 退出
+// ============================================================
+async function adminLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  if (!username || !password) {
+    showStatus('请输入用户名和密码', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem('adminToken', data.token);
+      document.getElementById('loginArea').style.display = 'none';
+      document.getElementById('adminArea').style.display = 'block';
+      await Promise.all([
+        loadCategoriesWithDelete(),
+        loadAdminProjects(),
+        loadAdminDownloads()
+      ]);
+      showStatus('登录成功', 'success');
+    } else {
+      showStatus('登录失败：' + (data.error || '用户名或密码错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('adminToken');
+  document.getElementById('loginArea').style.display = 'block';
+  document.getElementById('adminArea').style.display = 'none';
+  showStatus('已退出', 'success');
+}
+
+// ============================================================
+// 8. 分类管理
+// ============================================================
+async function loadCategoriesWithDelete() {
+  try {
+    const res = await fetch(`${API_BASE}/api/categories`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const categories = await res.json();
+    const select = document.getElementById('newCategory');
+    select.innerHTML = categories.map(c =>
+      `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+    ).join('');
+    const container = document.getElementById('categoryList');
+    if (categories.length === 0) {
+      container.innerHTML = '<div class="empty-msg">暂无分类，请添加</div>';
+      return;
+    }
+    container.innerHTML = categories.map(c => `
+      <div class="project-item">
+        <span>${escapeHtml(c.name)}</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteCategoryWithCheck(${c.id})">删除</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('categoryList').innerHTML = `<div class="empty-msg">加载失败</div>`;
+  }
+}
+
+async function addCategory() {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  const name = document.getElementById('newCategoryName').value.trim();
+  if (!name) { showStatus('请输入分类名称', 'error'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name })
+    });
+    if (res.ok) {
+      showStatus('分类添加成功', 'success');
+      document.getElementById('newCategoryName').value = '';
+      await loadCategoriesWithDelete();
+    } else {
+      const err = await res.json();
+      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+async function deleteCategoryWithCheck(categoryId) {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/categories/${categoryId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showStatus('分类已删除', 'success');
+      await loadCategoriesWithDelete();
+    } else {
+      showStatus('删除失败：' + (data.error || '未知错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+// ============================================================
+// 9. 作品管理
+// ============================================================
+async function loadAdminProjects() {
+  try {
+    const res = await fetch(`${API_BASE}/api/projects`);
+    if (!res.ok) throw new Error();
+    const projects = await res.json();
+    const container = document.getElementById('projectListAdmin');
+    if (projects.length === 0) {
+      container.innerHTML = '<div class="empty-msg">暂无作品</div>';
+      return;
+    }
+    container.innerHTML = projects.map(p => `
+      <div class="project-item">
+        <div class="info">
+          <span class="title">${escapeHtml(p.title)}</span>
+          <span class="sub">${escapeHtml(p.category_name || '未分类')} · ${escapeHtml(p.link || '无链接')}</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-warning btn-sm" onclick="openEditProject(${p.id})">编辑</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">删除</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('projectListAdmin').innerHTML = '<div class="empty-msg">加载失败</div>';
+  }
+}
+
+async function addProject() {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  const title = document.getElementById('newTitle').value.trim();
+  const link = document.getElementById('newLink').value.trim();
+  const categoryId = document.getElementById('newCategory').value;
+  if (!title || !link) {
+    showStatus('标题和链接为必填项', 'error');
+    return;
+  }
+  const data = {
+    title,
+    description: document.getElementById('newDesc').value.trim(),
+    image: document.getElementById('newImage').value.trim() || 'https://placehold.co/400x200?text=作品封面',
+    link,
+    category_id: parseInt(categoryId) || null
+  };
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      showStatus('添加成功', 'success');
+      document.getElementById('newTitle').value = '';
+      document.getElementById('newDesc').value = '';
+      document.getElementById('newImage').value = '';
+      document.getElementById('newLink').value = '';
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('newImageFile').value = '';
+      document.getElementById('newHtmlFile').value = '';
+      loadAdminProjects();
+    } else {
+      const err = await res.json();
+      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+async function deleteProject(id) {
+  if (!confirm('确定要删除这个作品吗？')) return;
+  const token = getToken();
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/projects/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      showStatus('已删除', 'success');
+      loadAdminProjects();
+    } else {
+      showStatus('删除失败', 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+// ============================================================
+// 10. 下载管理
+// ============================================================
+async function loadAdminDownloads() {
+  try {
+    const res = await fetch(`${API_BASE}/api/downloads`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const downloads = await res.json();
+    const container = document.getElementById('downloadListAdmin');
+    if (downloads.length === 0) {
+      container.innerHTML = '<div class="empty-msg">暂无下载项</div>';
+      return;
+    }
+    container.innerHTML = downloads.map(d => `
+      <div class="project-item">
+        <div class="info">
+          <span class="title">${escapeHtml(d.title)}</span>
+          <span class="sub">${escapeHtml(d.link)}${d.description ? ' · ' + escapeHtml(d.description) : ''}</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-warning btn-sm" onclick="openEditDownload(${d.id})">编辑</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDownload(${d.id})">删除</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('downloadListAdmin').innerHTML = '<div class="empty-msg">加载失败</div>';
+  }
+}
+
+async function addDownload() {
+  const token = getToken();
+  if (!token) { showStatus('请先登录', 'error'); return; }
+  const title = document.getElementById('newDownloadTitle').value.trim();
+  const link = document.getElementById('newDownloadLink').value.trim();
+  const description = document.getElementById('newDownloadDesc').value.trim();
+  const linkText = document.getElementById('newDownloadLinkText').value.trim() || '下载';
+  if (!title || !link) {
+    showStatus('标题和链接为必填项', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/downloads`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ title, description, link, link_text: linkText })
+    });
+    if (res.ok) {
+      showStatus('下载项添加成功', 'success');
+      document.getElementById('newDownloadTitle').value = '';
+      document.getElementById('newDownloadDesc').value = '';
+      document.getElementById('newDownloadLink').value = '';
+      document.getElementById('newDownloadLinkText').value = '下载';
+      loadAdminDownloads();
+    } else {
+      const err = await res.json();
+      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+async function deleteDownload(id) {
+  if (!confirm('确定要删除这个下载项吗？')) return;
+  const token = getToken();
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/downloads/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      showStatus('已删除', 'success');
+      loadAdminDownloads();
+    } else {
+      showStatus('删除失败', 'error');
     }
   } catch (e) {
     showStatus('网络错误', 'error');
@@ -1237,7 +1358,7 @@ async function uploadHtmlFile() {
     const data = await res.json();
     if (res.ok && data.success) {
       document.getElementById('newLink').value = data.url;
-      showStatus('作品文件上传成功');
+      showStatus('作品文件上传成功', 'success');
       progressEl.textContent = '上传完成';
     } else {
       showStatus('上传失败：' + (data.error || '未知错误'), 'error');
@@ -1291,7 +1412,7 @@ async function uploadImageToKV() {
       const previewImg = document.getElementById('previewImg');
       previewImg.src = imageUrl;
       preview.style.display = 'block';
-      showStatus('图片上传成功');
+      showStatus('图片上传成功', 'success');
       progressEl.textContent = '上传完成';
     } else {
       showStatus('上传失败：' + (data.error || '未知错误'), 'error');
@@ -1395,7 +1516,7 @@ async function saveEdit() {
         body: JSON.stringify(data)
       });
       if (res.ok) {
-        showStatus('下载项已更新');
+        showStatus('下载项已更新', 'success');
         closeEditModal();
         loadAdminDownloads();
       } else {
@@ -1423,7 +1544,7 @@ async function saveEdit() {
         body: JSON.stringify(data)
       });
       if (res.ok) {
-        showStatus('作品已更新');
+        showStatus('作品已更新', 'success');
         closeEditModal();
         loadAdminProjects();
       } else {
@@ -1461,11 +1582,12 @@ function checkAuth() {
 // ============================================================
 checkAuth();
 
+// 请求通知权限
 if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
 
-console.log('管理后台已加载');
+console.log('管理后台已加载（多文件加载 + 系统级通知）');
 </script>
 </body>
 </html>

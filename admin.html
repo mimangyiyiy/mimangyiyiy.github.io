@@ -996,77 +996,118 @@ function loadFiles() {
 }
 
 // 查看单个 KV
-function viewKVWithProgress(key) {
+async function viewKVWithProgress(key) {
   const progressEl = document.getElementById('fileLoadProgress');
   const progressBar = document.getElementById('fileLoadBar');
   const progressText = document.getElementById('fileLoadText');
   
   progressEl.style.display = 'block';
-  progressText.textContent = '正在下载...';
+  progressText.textContent = '正在连接...';
   progressBar.style.width = '5%';
   
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', `${API_BASE}/api/kv-get/${encodeURIComponent(key)}`, true);
-  
-  let totalSize = 0;
-  let receivedLength = 0;
-  const startTime = Date.now();
-  
-  // ✅ 监听进度事件（这是真正的下载进度）
-  xhr.onprogress = function(event) {
-    if (event.total > 0) {
-      totalSize = event.total;
-      receivedLength = event.loaded;
-      
-      const percent = (event.loaded / event.total) * 100;
-      progressBar.style.width = Math.min(percent, 99) + '%';
-      
-      const elapsed = (Date.now() - startTime) / 1000;
-      const speed = elapsed > 0 ? (event.loaded / 1024) / elapsed : 0;
-      const remaining = speed > 0 ? (event.total - event.loaded) / 1024 / speed : 0;
-      
-      const loadedKB = event.loaded / 1024;
-      const totalKB = event.total / 1024;
-      
-      progressText.textContent = 
-        `${loadedKB.toFixed(1)} / ${totalKB.toFixed(1)} KB · ` +
-        `${speed.toFixed(1)} KB/s · 剩余 ${remaining.toFixed(1)}s`;
-    } else {
-      // 如果服务器没有返回 Content-Length，用已下载量模拟
-      progressBar.style.width = Math.min(10 + (event.loaded / 1024) * 2, 95) + '%';
-      progressText.textContent = `${(event.loaded / 1024).toFixed(1)} KB 已下载`;
-    }
-  };
-  
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      const data = JSON.parse(xhr.responseText);
-      progressBar.style.width = '100%';
-      progressText.textContent = '加载完成';
-      
-      setTimeout(() => {
-        document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
-        document.getElementById('kvModalBody').textContent = data.value || '(空)';
-        document.getElementById('kvModal').style.display = 'flex';
-        setTimeout(() => {
-          progressEl.style.display = 'none';
-          progressBar.style.width = '0%';
-        }, 300);
-      }, 200);
-    } else {
-      showStatus('加载失败：HTTP ' + xhr.status, 'error');
+  try {
+    const startTime = Date.now();
+    const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+    
+    if (!res.ok) {
+      const err = await res.json();
+      showStatus('加载失败：' + (err.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
+      return;
     }
-  };
-  
-  xhr.onerror = function() {
-    showStatus('网络错误', 'error');
+    
+    // 获取文件大小
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
+    
+    progressText.textContent = totalSizeKnown ? 
+      `0.0 / ${totalSizeKB.toFixed(1)} KB · 0.0 KB/s` : 
+      '正在下载...';
+    progressBar.style.width = '10%';
+    
+    // ✅ 核心：用 ReadableStream 逐块读取
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    let lastUpdateTime = Date.now();
+    let lastReceivedLength = 0;
+    let currentSpeed = 0;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) break;
+      
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      // ✅ 每读一块就更新进度条
+      const now = Date.now();
+      const timeDelta = (now - lastUpdateTime) / 1000;
+      const bytesDelta = receivedLength - lastReceivedLength;
+      
+      if (timeDelta >= 0.1) {
+        currentSpeed = (bytesDelta / 1024) / timeDelta;
+        lastUpdateTime = now;
+        lastReceivedLength = receivedLength;
+      }
+      
+      const receivedKB = receivedLength / 1024;
+      const displayKB = receivedKB.toFixed(1);
+      
+      if (totalSizeKnown) {
+        const percent = (receivedLength / totalSize) * 100;
+        progressBar.style.width = Math.min(percent, 99) + '%';
+        
+        const remainingBytes = totalSize - receivedLength;
+        const remainingSeconds = currentSpeed > 0 ? remainingBytes / 1024 / currentSpeed : 0;
+        const speedText = currentSpeed > 0 ? currentSpeed.toFixed(1) + ' KB/s' : '计算中...';
+        const remainingText = remainingSeconds > 0 ? `剩余 ${remainingSeconds.toFixed(1)}s` : '计算中...';
+        
+        progressText.textContent = `${displayKB} / ${totalSizeKB.toFixed(1)} KB · ${speedText} · ${remainingText}`;
+      } else {
+        progressBar.style.width = Math.min(10 + (receivedLength / 1024) * 2, 95) + '%';
+        progressText.textContent = `${displayKB} KB 已下载`;
+      }
+    }
+    
+    // 合并所有数据块
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
+    
+    const finalKB = receivedLength / 1024;
+    const totalTime = (Date.now() - startTime) / 1000;
+    const avgSpeed = totalTime > 0 ? finalKB / totalTime : 0;
+    
+    progressBar.style.width = '100%';
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB · 平均 ${avgSpeed.toFixed(1)} KB/s`;
+    
+    setTimeout(() => {
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      setTimeout(() => {
+        progressEl.style.display = 'none';
+        progressBar.style.width = '0%';
+      }, 300);
+    }, 200);
+    
+  } catch (e) {
+    showStatus('加载失败：' + e.message, 'error');
     progressEl.style.display = 'none';
     progressBar.style.width = '0%';
-  };
-  
-  xhr.send();
+  }
 }
 
 async function deleteFileKV(key) {

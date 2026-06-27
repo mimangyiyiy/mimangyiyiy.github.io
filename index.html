@@ -27,7 +27,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.25);
   pointer-events: none;
   z-index: 0;
 }
@@ -66,65 +66,98 @@ body.glass-off .download-panel h4,
 body.glass-off .download-item { color: #000 !important; }
 body.glass-off .download-trigger svg,
 body.glass-off .glass-toggle svg { fill: #000 !important; }
-body.glass-off .liquid-glass-svg { display: none !important; }
+body.glass-off .project-card::after { display: none !important; }
 
 /* ===== 毛玻璃 ===== */
 .glass {
-  background: rgba(30,35,65,0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(30,35,65,0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.04);
   box-shadow: none;
 }
 
-/* ===== 卡片 ===== */
+/* ===== 卡片：光学边缘反射 ===== */
 .project-card {
   position: relative;
   padding: 1.5rem;
   text-align: center;
   border-radius: 24px;
-  background: rgba(25,30,55,0.15);
-  backdrop-filter: blur(8px) saturate(1.05);
-  -webkit-backdrop-filter: blur(8px) saturate(1.05);
+  background: rgba(25,30,55,0.12);
+  backdrop-filter: blur(10px) saturate(1.05);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
   border: 1px solid rgba(255,255,255,0.04);
   color: #fff;
-  transition: none;
   transform-style: preserve-3d;
   will-change: transform;
   cursor: default;
   overflow: visible !important;
   isolation: isolate;
   box-shadow: none !important;
+  transition: none;
 }
-.project-card:hover { box-shadow: none !important; }
 
-/* ✅ 液态玻璃容器 - 只有边缘折射，无阴影 */
-.project-card .liquid-container {
+/* ✅ 边缘反射层 - 静态光学反射和折射 */
+.project-card::after {
+  content: '';
   position: absolute;
   inset: -4px;
   border-radius: 28px;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
+  /* 边缘反射光晕 + 折射色散 */
+  background: 
+    /* 左上角反射光 - 模拟光源 */
+    radial-gradient(ellipse at 18% 20%, 
+      rgba(255, 255, 255, 0.10) 0%, 
+      transparent 55%
+    ),
+    /* 右下角反射光 - 模拟环境光 */
+    radial-gradient(ellipse at 82% 80%, 
+      rgba(200, 220, 255, 0.06) 0%, 
+      transparent 55%
+    ),
+    /* 边缘折射色散 - 彩虹色偏移 */
+    conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(120, 180, 255, 0.03) 0deg,
+      rgba(180, 120, 255, 0.02) 90deg,
+      rgba(255, 200, 100, 0.01) 180deg,
+      rgba(120, 180, 255, 0.03) 270deg,
+      rgba(120, 180, 255, 0.03) 360deg
+    );
   backdrop-filter: blur(0.5px) contrast(1.02) brightness(1.01);
   -webkit-backdrop-filter: blur(0.5px) contrast(1.02) brightness(1.01);
-  transition: backdrop-filter 0.1s ease;
   box-shadow: none !important;
+  transition: none;
 }
-.project-card .liquid-container svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-.project-card .liquid-container .displacement-image {
-  display: none;
+
+/* 卡片悬停时反射略微增强 */
+.project-card:hover::after {
+  background: 
+    radial-gradient(ellipse at 18% 20%, 
+      rgba(255, 255, 255, 0.16) 0%, 
+      transparent 55%
+    ),
+    radial-gradient(ellipse at 82% 80%, 
+      rgba(200, 220, 255, 0.10) 0%, 
+      transparent 55%
+    ),
+    conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(120, 180, 255, 0.05) 0deg,
+      rgba(180, 120, 255, 0.03) 90deg,
+      rgba(255, 200, 100, 0.02) 180deg,
+      rgba(120, 180, 255, 0.05) 270deg,
+      rgba(120, 180, 255, 0.05) 360deg
+    );
+  backdrop-filter: blur(1px) contrast(1.04) brightness(1.02);
+  -webkit-backdrop-filter: blur(1px) contrast(1.04) brightness(1.02);
 }
 
 /* 卡片内容 */
-.project-card > *:not(.liquid-container) {
+.project-card > * {
   position: relative;
   z-index: 2;
 }
@@ -142,7 +175,7 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   transition: transform 0.4s ease;
   pointer-events: none;
 }
-.project-card:hover .project-image img { transform: scale(1.03); }
+.project-card:hover .project-image img { transform: scale(1.02); }
 
 .project-card h3 {
   margin: 0.5rem 0 0.2rem;
@@ -153,7 +186,7 @@ body.glass-off .liquid-glass-svg { display: none !important; }
 .project-card p {
   margin: 0.2rem 0 0.8rem;
   font-size: 0.85rem;
-  opacity: 0.65;
+  opacity: 0.6;
   transform: translateZ(8px);
   line-height: 1.4;
 }
@@ -175,16 +208,16 @@ body.glass-off .liquid-glass-svg { display: none !important; }
 }
 .project-card .btn:hover {
   background: #4C97FF;
-  transform: translateZ(20px) scale(1.03);
-  border-color: rgba(255,255,255,0.12);
+  transform: translateZ(20px) scale(1.02);
+  border-color: rgba(255,255,255,0.1);
 }
 
 /* ===== 控件 ===== */
 .glass-toggle {
   position: fixed; top: 16px; right: 16px; z-index: 9999;
   width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(30,35,65,0.25); backdrop-filter: blur(10px);
-  cursor: pointer; border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(30,35,65,0.2); backdrop-filter: blur(12px);
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.04);
   display: flex; align-items: center; justify-content: center;
   box-shadow: none;
 }
@@ -196,8 +229,8 @@ body.glass-off .liquid-glass-svg { display: none !important; }
 .download-trigger {
   width: 56px; height: 56px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(30,35,65,0.25); backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.06); cursor: pointer;
+  background: rgba(30,35,65,0.2); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.04); cursor: pointer;
   box-shadow: none;
 }
 .download-trigger svg { width: 24px; height: 24px; fill: #fff; }
@@ -205,8 +238,8 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   position: absolute; right: 0; bottom: 70px;
   width: 280px; padding: 16px; display: none;
   backdrop-filter: blur(16px);
-  background: rgba(25,30,55,0.5);
-  border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
+  background: rgba(25,30,55,0.4);
+  border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);
   max-height: 400px; overflow-y: auto;
   box-shadow: none;
 }
@@ -225,19 +258,19 @@ body.glass-off .liquid-glass-svg { display: none !important; }
   flex-shrink: 0; margin-left: 8px;
 }
 .download-mask {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+  position: fixed; inset: 0; background: rgba(0,0,0,0.15);
   z-index: 9998; display: none;
 }
 
 header {
   text-align: center; padding: 2rem 1rem;
-  background: linear-gradient(135deg, rgba(50,80,180,0.2), rgba(80,60,140,0.2));
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(135deg, rgba(50,80,180,0.15), rgba(80,60,140,0.15));
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
   box-shadow: none;
 }
 header h1 {
-  color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.1);
+  color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.08);
   margin: 0; font-size: 1.8rem; font-weight: 500;
 }
 
@@ -293,9 +326,6 @@ header h1 {
 // ============================================================
 const API_BASE = '';
 
-// ============================================================
-// 2. 工具函数
-// ============================================================
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');
@@ -304,132 +334,7 @@ function escapeHtml(text) {
 }
 
 // ============================================================
-// 3. 液态玻璃核心（边缘折射，无阴影）
-// ============================================================
-function createLiquidGlassForCard(cardElement) {
-  const container = cardElement.querySelector('.liquid-container');
-  if (!container) return null;
-
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '100%');
-  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
-
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-  const filterId = 'liquid-filter-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
-  filter.setAttribute('id', filterId);
-  filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  filter.setAttribute('colorInterpolationFilters', 'sRGB');
-  filter.setAttribute('x', '-10%');
-  filter.setAttribute('y', '-10%');
-  filter.setAttribute('width', '120%');
-  filter.setAttribute('height', '120%');
-
-  const feImage = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
-  const imgId = 'displacement-map-' + Date.now();
-  feImage.setAttribute('id', imgId);
-  feImage.setAttribute('width', '100%');
-  feImage.setAttribute('height', '100%');
-
-  const feDisplacement = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
-  feDisplacement.setAttribute('in', 'SourceGraphic');
-  feDisplacement.setAttribute('in2', imgId);
-  feDisplacement.setAttribute('xChannelSelector', 'R');
-  feDisplacement.setAttribute('yChannelSelector', 'G');
-  feDisplacement.setAttribute('scale', '6');
-
-  filter.appendChild(feImage);
-  filter.appendChild(feDisplacement);
-  defs.appendChild(filter);
-  svg.appendChild(defs);
-
-  container.appendChild(svg);
-
-  // 位移图 canvas
-  const canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 150;
-  const ctx = canvas.getContext('2d');
-
-  function smoothStep(a, b, t) {
-    t = Math.max(0, Math.min(1, (t - a) / (b - a)));
-    return t * t * (3 - 2 * t);
-  }
-  function length(x, y) { return Math.sqrt(x * x + y * y); }
-  function roundedRectSDF(x, y, w, h, r) {
-    const qx = Math.abs(x) - w + r;
-    const qy = Math.abs(y) - h + r;
-    return Math.min(Math.max(qx, qy), 0) + length(Math.max(qx, 0), Math.max(qy, 0)) - r;
-  }
-
-  function updateDisplacementMap(mouseX, mouseY) {
-    const w = canvas.width;
-    const h = canvas.height;
-    const data = new Uint8ClampedArray(w * h * 4);
-    const mx = mouseX !== undefined ? mouseX : 0.5;
-    const my = mouseY !== undefined ? mouseY : 0.5;
-
-    let maxScale = 0;
-    const rawValues = [];
-
-    for (let i = 0; i < data.length; i += 4) {
-      const x = (i / 4) % w;
-      const y = Math.floor(i / 4 / w);
-      const ux = x / w;
-      const uy = y / h;
-
-      // 边缘折射：只有边缘附近产生位移
-      const ix = ux - 0.5;
-      const iy = uy - 0.5;
-      const distToEdge = roundedRectSDF(ix, iy, 0.35, 0.25, 0.55);
-      const displacement = smoothStep(0.85, 0, distToEdge - 0.12);
-      const scaled = smoothStep(0, 1, displacement);
-      
-      // 鼠标影响：朝鼠标方向偏移
-      const dx = (ux - mx) * 0.08 * scaled;
-      const dy = (uy - my) * 0.08 * scaled;
-      
-      const outX = ux + dx;
-      const outY = uy + dy;
-      
-      const rawDx = outX * w - x;
-      const rawDy = outY * h - y;
-      maxScale = Math.max(maxScale, Math.abs(rawDx), Math.abs(rawDy));
-      rawValues.push(rawDx, rawDy);
-    }
-
-    maxScale = Math.max(maxScale, 0.1);
-
-    let idx = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      const r = rawValues[idx++] / maxScale + 0.5;
-      const g = rawValues[idx++] / maxScale + 0.5;
-      data[i] = Math.min(255, Math.max(0, r * 255));
-      data[i + 1] = Math.min(255, Math.max(0, g * 255));
-      data[i + 2] = 128;
-      data[i + 3] = 255;
-    }
-
-    ctx.putImageData(new ImageData(data, w, h), 0, 0);
-
-    const img = svg.querySelector('feImage');
-    if (img) {
-      img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', canvas.toDataURL());
-    }
-  }
-
-  updateDisplacementMap(0.5, 0.5);
-
-  return {
-    update: updateDisplacementMap,
-    destroy: () => { svg.remove(); canvas.remove(); }
-  };
-}
-
-// ============================================================
-// 4. 加载并渲染作品
+// 2. 加载并渲染作品
 // ============================================================
 async function loadProjects() {
   const container = document.getElementById('projectContainer');
@@ -480,7 +385,6 @@ function renderProjects(projects, container) {
     list.className = 'project-list';
     list.innerHTML = projectsInCat.map(p => `
       <div class="project-card" data-tilt>
-        <div class="liquid-container"></div>
         <div class="project-image">
           <img src="${p.image || 'https://placehold.co/400x200?text=No+Image'}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x200?text=加载失败'">
         </div>
@@ -494,39 +398,11 @@ function renderProjects(projects, container) {
     container.appendChild(section);
   });
 
-  bindLiquidGlass();
   bindTiltEffects();
 }
 
 // ============================================================
-// 5. 绑定液态玻璃
-// ============================================================
-const liquidInstances = [];
-
-function bindLiquidGlass() {
-  const cards = document.querySelectorAll('.project-card[data-tilt]');
-  
-  cards.forEach((card) => {
-    const instance = createLiquidGlassForCard(card);
-    if (instance) {
-      liquidInstances.push({ card, instance });
-      
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        instance.update(x, y);
-      });
-      
-      card.addEventListener('mouseleave', () => {
-        instance.update(0.5, 0.5);
-      });
-    }
-  });
-}
-
-// ============================================================
-// 6. 3D 倾斜
+// 3. 3D 倾斜（保留交互，但不影响反射）
 // ============================================================
 function bindTiltEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
@@ -572,7 +448,7 @@ function bindTiltEffects() {
 }
 
 // ============================================================
-// 7. 下载加载
+// 4. 下载加载
 // ============================================================
 async function loadDownloads() {
   const container = document.getElementById('downloadList');
@@ -600,7 +476,7 @@ async function loadDownloads() {
 }
 
 // ============================================================
-// 8. 控件
+// 5. 控件
 // ============================================================
 document.getElementById('glassToggle').onclick = () => {
   document.body.classList.toggle('glass-on');
@@ -623,11 +499,11 @@ mask.onclick = () => {
 };
 
 // ============================================================
-// 9. 启动
+// 6. 启动
 // ============================================================
 loadProjects();
 loadDownloads();
-console.log('🚀 作品集已启动（边缘折射 + 无阴影）');
+console.log('🚀 作品集已启动（光学边缘反射 + 无阴影）');
 </script>
 </body>
 </html>

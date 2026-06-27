@@ -808,9 +808,7 @@ async function loadKV() {
     return;
   }
   try {
-    const res = await fetch(`${API_BASE}/api/admin/kv/list`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const res = await fetch(`${API_BASE}/api/admin/kv/list?token=${token}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     countEl.textContent = `共 ${data.total} 个键`;

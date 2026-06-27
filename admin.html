@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理后台</title>
-<!-- 引入 axios -->
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js">
-</script>
 <style>
 * { box-sizing: border-box; }
 body {
@@ -522,6 +519,9 @@ const KV_LIMIT_KB = 1024 * 1024;
 let editType = '';
 let editId = null;
 
+// ✅ 文件缓存：已加载的文件内容存这里，避免重复加载
+const fileCache = new Map();
+
 // ============================================================
 // 2. 工具函数
 // ============================================================
@@ -854,7 +854,7 @@ async function deleteDownload(id) {
 }
 
 // ============================================================
-// 7. ✅ 文件管理（真正的 axios 进度条）
+// 7. ✅ 文件管理（进度条显示 [当前进度]/[文件大小] + 缓存）
 // ============================================================
 async function loadFiles() {
   const container = document.getElementById('fileList');
@@ -870,39 +870,72 @@ async function loadFiles() {
   
   try {
     const startTime = Date.now();
+    const res = await fetch(`${API_BASE}/api/kv-list`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
-    const response = await axios({
-      method: 'get',
-      url: `${API_BASE}/api/kv-list`,
-      responseType: 'json',
-      onDownloadProgress: function(progressEvent) {
-        const total = progressEvent.total || 0;
-        const loaded = progressEvent.loaded || 0;
-        
-        if (total > 0) {
-          const percent = Math.min((loaded / total) * 100, 100);
-          progressBar.style.width = Math.min(percent, 99) + '%';
-          
-          const elapsed = (Date.now() - startTime) / 1000;
-          const speed = elapsed > 0 ? (loaded / 1024) / elapsed : 0;
-          
-          // ✅ 显示 [当前进度]/[文件大小]
-          const loadedKB = (loaded / 1024).toFixed(1);
-          const totalKB = (total / 1024).toFixed(1);
-          progressText.textContent = `${loadedKB} KB / ${totalKB} KB · ${speed.toFixed(1)} KB/s`;
-        } else {
-          // 如果无法获取总大小，显示已下载量
-          const loadedKB = (loaded / 1024).toFixed(1);
-          progressText.textContent = `${loadedKB} KB 已加载`;
-          progressBar.style.width = Math.min(10 + (loaded / 1024) * 2, 95) + '%';
-        }
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
+    
+    progressText.textContent = totalSizeKnown ? 
+      `0.0 KB / ${totalSizeKB.toFixed(1)} KB` : 
+      '正在加载...';
+    progressBar.style.width = '10%';
+    
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    
+    // ✅ 模拟平滑进度
+    let lastUpdate = Date.now();
+    let targetPercent = 0;
+    let currentPercent = 10;
+    
+    const progressInterval = setInterval(() => {
+      if (currentPercent < targetPercent) {
+        currentPercent += Math.max(0.5, (targetPercent - currentPercent) * 0.3);
+        progressBar.style.width = Math.min(currentPercent, 99) + '%';
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : '?';
+        progressText.textContent = `${displayKB} KB / ${totalKB} KB`;
       }
-    });
+    }, 50);
     
-    const data = response.data;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      if (totalSizeKnown) {
+        targetPercent = (receivedLength / totalSize) * 100;
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        const totalKB = totalSizeKB.toFixed(1);
+        progressText.textContent = `${displayKB} KB / ${totalKB} KB`;
+      } else {
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        progressText.textContent = `${displayKB} KB / ? KB`;
+      }
+    }
+    
+    clearInterval(progressInterval);
+    
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
     
     progressBar.style.width = '100%';
-    progressText.textContent = '加载完成';
+    const finalKB = receivedLength / 1024;
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
     setTimeout(() => {
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
@@ -951,8 +984,18 @@ async function loadFiles() {
   }
 }
 
-// 查看单个 KV（真正的 axios 进度条）
+// ✅ 查看单个 KV（带缓存 + [当前进度]/[文件大小]）
 async function viewKVWithProgress(key) {
+  // ✅ 检查缓存
+  if (fileCache.has(key)) {
+    const data = fileCache.get(key);
+    document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+    document.getElementById('kvModalBody').textContent = data.value || '(空)';
+    document.getElementById('kvModal').style.display = 'flex';
+    showStatus('✅ 已从缓存加载', 'success');
+    return;
+  }
+  
   const progressEl = document.getElementById('fileLoadProgress');
   const progressBar = document.getElementById('fileLoadBar');
   const progressText = document.getElementById('fileLoadText');
@@ -963,38 +1006,83 @@ async function viewKVWithProgress(key) {
   
   try {
     const startTime = Date.now();
+    const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
     
-    const response = await axios({
-      method: 'get',
-      url: `${API_BASE}/api/kv-get/${encodeURIComponent(key)}`,
-      responseType: 'json',
-      onDownloadProgress: function(progressEvent) {
-        const total = progressEvent.total || 0;
-        const loaded = progressEvent.loaded || 0;
-        
-        if (total > 0) {
-          const percent = Math.min((loaded / total) * 100, 100);
-          progressBar.style.width = Math.min(percent, 99) + '%';
-          
-          const elapsed = (Date.now() - startTime) / 1000;
-          const speed = elapsed > 0 ? (loaded / 1024) / elapsed : 0;
-          
-          // ✅ 显示 [当前进度]/[文件大小]
-          const loadedKB = (loaded / 1024).toFixed(1);
-          const totalKB = (total / 1024).toFixed(1);
-          progressText.textContent = `${loadedKB} KB / ${totalKB} KB · ${speed.toFixed(1)} KB/s`;
-        } else {
-          const loadedKB = (loaded / 1024).toFixed(1);
-          progressText.textContent = `${loadedKB} KB 已下载`;
-          progressBar.style.width = Math.min(10 + (loaded / 1024) * 2, 95) + '%';
-        }
+    if (!res.ok) {
+      const err = await res.json();
+      showStatus('加载失败：' + (err.error || '未知错误'), 'error');
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+      return;
+    }
+    
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
+    
+    progressText.textContent = totalSizeKnown ? 
+      `0.0 KB / ${totalSizeKB.toFixed(1)} KB` : 
+      '正在下载...';
+    progressBar.style.width = '10%';
+    
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    
+    // ✅ 模拟平滑进度
+    let lastUpdate = Date.now();
+    let targetPercent = 0;
+    let currentPercent = 10;
+    
+    const progressInterval = setInterval(() => {
+      if (currentPercent < targetPercent) {
+        currentPercent += Math.max(0.5, (targetPercent - currentPercent) * 0.3);
+        progressBar.style.width = Math.min(currentPercent, 99) + '%';
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : '?';
+        progressText.textContent = `${displayKB} KB / ${totalKB} KB`;
       }
-    });
+    }, 50);
     
-    const data = response.data;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      if (totalSizeKnown) {
+        targetPercent = (receivedLength / totalSize) * 100;
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        const totalKB = totalSizeKB.toFixed(1);
+        progressText.textContent = `${displayKB} KB / ${totalKB} KB`;
+      } else {
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        progressText.textContent = `${displayKB} KB / ? KB`;
+      }
+    }
     
+    clearInterval(progressInterval);
+    
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
+    
+    // ✅ 存入缓存
+    fileCache.set(key, data);
+    
+    const finalKB = receivedLength / 1024;
+    const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : '?';
     progressBar.style.width = '100%';
-    progressText.textContent = '加载完成';
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalKB} KB`;
     
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
@@ -1007,7 +1095,7 @@ async function viewKVWithProgress(key) {
     }, 200);
     
   } catch (e) {
-    showStatus('加载失败：' + (e.response?.data?.error || e.message), 'error');
+    showStatus('加载失败：' + (e.message || '未知错误'), 'error');
     progressEl.style.display = 'none';
     progressBar.style.width = '0%';
   }
@@ -1015,6 +1103,8 @@ async function viewKVWithProgress(key) {
 
 async function deleteFileKV(key) {
   if (!confirm('确定要删除 "' + key + '" 吗？此操作不可恢复！')) return;
+  // ✅ 删除缓存
+  fileCache.delete(key);
   try {
     const res = await fetch(`${API_BASE}/api/kv-delete/${encodeURIComponent(key)}`, {
       method: 'DELETE'
@@ -1281,7 +1371,7 @@ function checkAuth() {
 // 11. 页面启动
 // ============================================================
 checkAuth();
-console.log('管理后台已加载（axios 真进度条）');
+console.log('管理后台已加载（[当前进度]/[文件大小] + 缓存）');
 </script>
 </body>
 </html>

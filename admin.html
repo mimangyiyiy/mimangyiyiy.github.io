@@ -936,6 +936,7 @@ async function deleteDownload(id) {
 // ============================================================
 // 7. 文件管理（KV）
 // ============================================================
+// 加载文件列表（带真正进度条）
 async function loadFiles() {
   const container = document.getElementById('fileList');
   const countEl = document.getElementById('fileCount');
@@ -945,19 +946,61 @@ async function loadFiles() {
   
   container.innerHTML = '<div class="empty-msg">加载中...</div>';
   
-  // 显示加载进度条
   progressEl.style.display = 'block';
-  progressText.textContent = '正在加载文件列表...';
-  progressBar.style.width = '30%';
+  progressText.textContent = '正在连接...';
+  progressBar.style.width = '5%';
   
   try {
     const res = await fetch(`${API_BASE}/api/kv-list`);
+    
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
-    progressBar.style.width = '70%';
-    progressText.textContent = '正在解析数据...';
+    // 获取数据大小
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
     
-    const data = await res.json();
+    progressText.textContent = totalSize > 0 ? 
+      `正在下载 (${totalSizeKB.toFixed(1)} KB)...` : 
+      '正在加载数据...';
+    progressBar.style.width = '15%';
+    
+    // 读取流
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      if (totalSize > 0) {
+        const percent = Math.min((receivedLength / totalSize) * 100, 100);
+        const displayPercent = Math.min(percent, 95);
+        progressBar.style.width = displayPercent + '%';
+        const downloadedKB = receivedLength / 1024;
+        progressText.textContent = `加载中... ${downloadedKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB`;
+      } else {
+        const downloadedKB = receivedLength / 1024;
+        progressText.textContent = `加载中... ${downloadedKB.toFixed(1)} KB`;
+        progressBar.style.width = Math.min(10 + (receivedLength / 1024) * 2, 95) + '%';
+      }
+    }
+    
+    // 合并数据
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
     
     progressBar.style.width = '100%';
     progressText.textContent = '加载完成';
@@ -968,12 +1011,12 @@ async function loadFiles() {
     
     countEl.textContent = '共 ' + data.total + ' 个文件';
     
-    // 更新存储进度条（KB级别）
-    let totalSizeKB = 0;
-    data.keys.forEach(item => { totalSizeKB += (item.size || 0) / 1024; });
-    const percent = Math.min((totalSizeKB / KV_LIMIT_KB) * 100, 100);
+    // 更新存储进度条
+    let totalSizeKB_sum = 0;
+    data.keys.forEach(item => { totalSizeKB_sum += (item.size || 0) / 1024; });
+    const percent = Math.min((totalSizeKB_sum / KV_LIMIT_KB) * 100, 100);
     
-    document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB.toFixed(1) + ' KB';
+    document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB_sum.toFixed(1) + ' KB';
     document.getElementById('kvPercent').textContent = percent.toFixed(1) + '%';
     document.getElementById('kvProgress').style.width = percent + '%';
     
@@ -988,8 +1031,6 @@ async function loadFiles() {
       const icon = isImage ? '🖼️' : '📄';
       const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
       const sizeKB = ((item.size || 0) / 1024).toFixed(1);
-      
-      // 延迟动画
       const delay = index * 40;
       
       return `
@@ -1012,41 +1053,20 @@ async function loadFiles() {
   }
 }
 
-// 查看单个 KV（智能进度条 - 基于文件大小预估时间）
+// 查看单个 KV（真正的进度条 - 基于数据流）
 async function viewKVWithProgress(key) {
   const progressEl = document.getElementById('fileLoadProgress');
   const progressBar = document.getElementById('fileLoadBar');
   const progressText = document.getElementById('fileLoadText');
   
   progressEl.style.display = 'block';
-  progressText.textContent = '正在加载文件: ' + key;
+  progressText.textContent = '正在连接...';
   progressBar.style.width = '5%';
   
   try {
     const startTime = Date.now();
     
-    // 先获取文件大小（HEAD 请求）
-    const headRes = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`, {
-      method: 'HEAD'
-    });
-    
-    if (!headRes.ok) {
-      throw new Error(`HTTP ${headRes.status}`);
-    }
-    
-    // 获取文件大小（从 Content-Length 头）
-    const contentLength = headRes.headers.get('Content-Length');
-    const fileSizeKB = contentLength ? parseInt(contentLength) / 1024 : 0;
-    
-    // 预估下载速度（根据网络情况动态调整）
-    // 初始假设 500 KB/s，后面根据实际速度调整
-    let estimatedSpeed = 500; // KB/s
-    let totalSizeKB = fileSizeKB || 50; // 如果无法获取，假设 50KB
-    
-    progressText.textContent = `正在加载 (${totalSizeKB.toFixed(1)} KB)...`;
-    progressBar.style.width = '10%';
-    
-    // 实际请求文件内容
+    // 发起请求
     const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
     
     if (!res.ok) {
@@ -1057,38 +1077,61 @@ async function viewKVWithProgress(key) {
       return;
     }
     
-    const data = await res.json();
+    // 获取文件大小
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
     
-    // 计算实际耗时和速度
-    const elapsed = (Date.now() - startTime) / 1000; // 秒
-    const actualSizeKB = data.value ? data.value.length / 1024 : 0;
-    const actualSpeed = actualSizeKB / elapsed; // KB/s
+    progressText.textContent = `正在下载 (${totalSizeKB.toFixed(1)} KB)...`;
+    progressBar.style.width = '10%';
     
-    // 用实际速度更新预估（加权平均，避免波动太大）
-    if (actualSpeed > 0 && actualSpeed < 10000) {
-      estimatedSpeed = (estimatedSpeed + actualSpeed) / 2;
+    // 读取响应体流
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) break;
+      
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      // 更新进度条
+      if (totalSize > 0) {
+        const percent = Math.min((receivedLength / totalSize) * 100, 100);
+        // 限制最大显示 95%，留 5% 给解析
+        const displayPercent = Math.min(percent, 95);
+        progressBar.style.width = displayPercent + '%';
+        
+        // 显示已下载大小
+        const downloadedKB = receivedLength / 1024;
+        progressText.textContent = `下载中... ${downloadedKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB (${displayPercent.toFixed(0)}%)`;
+      } else {
+        // 如果无法获取总大小，显示已下载大小
+        const downloadedKB = receivedLength / 1024;
+        progressText.textContent = `下载中... ${downloadedKB.toFixed(1)} KB`;
+        // 用动画效果显示进度
+        const animatedPercent = Math.min((receivedLength / 1024) * 2, 95);
+        progressBar.style.width = animatedPercent + '%';
+      }
     }
     
-    // 根据文件大小计算进度条步进
-    const totalSteps = 20;
-    const stepSize = Math.max(1, Math.min(10, actualSizeKB / 20));
-    
-    for (let i = 0; i < totalSteps; i++) {
-      const progress = 10 + (i / totalSteps) * 85;
-      progressBar.style.width = progress + '%';
-      
-      // 根据文件大小调整步进间隔
-      const delay = Math.max(5, Math.min(80, 100 / (actualSizeKB / 10 + 1)));
-      await sleep(delay);
-      
-      // 更新进度文本
-      const loadedKB = (actualSizeKB * (i / totalSteps)).toFixed(1);
-      progressText.textContent = `加载中... ${loadedKB} / ${actualSizeKB.toFixed(1)} KB`;
+    // 合并所有数据块
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
     }
     
-    progressBar.style.width = '95%';
-    progressText.textContent = '解析数据...';
-    await sleep(50);
+    // 解码文本
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    
+    // 解析 JSON
+    const data = JSON.parse(text);
     
     progressBar.style.width = '100%';
     progressText.textContent = '加载完成';

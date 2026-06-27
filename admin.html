@@ -974,6 +974,7 @@ async function loadFiles() {
   }
 }
 
+// 查看单个 KV（从列表数据获取文件大小）
 async function viewKVWithProgress(key) {
   // 检查缓存
   if (fileCache.has(key)) {
@@ -990,39 +991,29 @@ async function viewKVWithProgress(key) {
   const progressText = document.getElementById('fileLoadText');
   
   progressEl.style.display = 'block';
-  progressText.textContent = '正在获取文件大小...';
+  progressText.textContent = '正在连接...';
   progressBar.style.width = '5%';
   
   try {
-    // ✅ 先用 HEAD 请求获取文件大小
-    const headRes = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`, {
-      method: 'HEAD'
-    });
+    // ✅ 先从文件列表获取该文件的大小
+    const listRes = await fetch(`${API_BASE}/api/kv-list`);
+    const listData = await listRes.json();
+    const fileInfo = listData.keys.find(item => item.key === key);
+    const totalSize = fileInfo ? fileInfo.size : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
     
-    let totalSize = parseInt(headRes.headers.get('Content-Length') || '0');
-    let totalSizeKB = totalSize / 1024;
-    let totalSizeKnown = totalSize > 0;
-    
-    // 如果 HEAD 获取不到，尝试用 GET 请求获取
+    // ✅ 如果列表里没有该文件，直接下载
     if (!totalSizeKnown) {
-      const getRes = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
-      totalSize = parseInt(getRes.headers.get('Content-Length') || '0');
-      totalSizeKB = totalSize / 1024;
-      totalSizeKnown = totalSize > 0;
-      // 如果还是获取不到，用最终数据大小
-      if (!totalSizeKnown) {
-        const data = await getRes.json();
-        totalSize = data.value ? data.value.length : 0;
-        totalSizeKB = totalSize / 1024;
-        totalSizeKnown = true;
-        fileCache.set(key, data);
-        document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
-        document.getElementById('kvModalBody').textContent = data.value || '(空)';
-        document.getElementById('kvModal').style.display = 'flex';
-        progressEl.style.display = 'none';
-        progressBar.style.width = '0%';
-        return;
-      }
+      const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+      const data = await res.json();
+      fileCache.set(key, data);
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+      return;
     }
     
     progressText.textContent = `0.0 KB / ${totalSizeKB.toFixed(1)} KB`;
@@ -1049,7 +1040,7 @@ async function viewKVWithProgress(key) {
       chunks.push(value);
       receivedLength += value.length;
       
-      // ✅ 进度 = 已下载 / 总大小
+      // ✅ 进度 = 已下载 / 总大小 × 100%
       const percent = (receivedLength / totalSize) * 100;
       progressBar.style.width = Math.min(percent, 99) + '%';
       

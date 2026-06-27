@@ -746,14 +746,17 @@ async function loadAdminFiles() {
     }
     
     container.innerHTML = files.map(f => `
-      <div class="file-item">
-        <div>
-          <span class="name">📄 ${escapeHtml(f.filename)}</span>
-          <span class="size">${f.size ? (f.size / 1024).toFixed(1) + ' KB' : ''}</span>
+      <div class="file-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#2a2a4e; border-radius:8px; margin-bottom:6px;">
+        <div style="flex:1; min-width:0;">
+          <span style="font-size:14px;">📄 ${escapeHtml(f.filename)}</span>
+          <span style="font-size:12px; opacity:0.5; margin-left:10px;">${f.size ? (f.size / 1024).toFixed(1) + ' KB' : ''}</span>
+          <span style="font-size:12px; margin-left:10px; ${f.used ? 'color:#81C784;' : 'color:#888;'}">
+            ${f.status}
+          </span>
         </div>
-        <div class="actions">
+        <div style="display:flex; gap:6px; flex-shrink:0;">
           <a href="${escapeHtml(f.url)}" target="_blank" class="btn btn-primary btn-sm">查看</a>
-          <button class="btn btn-danger btn-sm" onclick="deleteFile('${escapeHtml(f.filename)}')">删除</button>
+          ${f.used ? `<span style="font-size:11px; color:#888; padding:5px 8px;">🔗 被引用</span>` : `<button class="btn btn-danger btn-sm" onclick="deleteFile('${escapeHtml(f.filename)}')">删除</button>`}
         </div>
       </div>
     `).join('');

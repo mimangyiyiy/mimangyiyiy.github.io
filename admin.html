@@ -16,50 +16,70 @@ body {
 }
 .container { max-width: 1000px; margin: 0 auto; }
 h1, h2, h3 { margin-top: 0; }
+
+/* 卡片 - 圆角 + 动画 */
 .card {
   background: #1a1a2e;
   padding: 24px;
   margin-bottom: 20px;
   border: 1px solid rgba(255,255,255,0.06);
-  transition: background 0.3s ease;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: cardFadeIn 0.4s ease both;
 }
+.card:hover {
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+/* 输入框 - 圆角 + 动画 */
 input, select, textarea {
   width: 100%;
   padding: 10px 14px;
   margin-bottom: 10px;
   border: 1px solid #333;
+  border-radius: 8px;
   background: #2a2a4e;
   color: #fff;
   font-size: 14px;
   box-sizing: border-box;
-  transition: border-color 0.3s ease, background 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 input:focus, select:focus, textarea:focus {
   border-color: #4C97FF;
   outline: none;
   background: #33335a;
+  box-shadow: 0 0 0 3px rgba(76, 151, 255, 0.15);
+  transform: scale(1.002);
 }
 input::placeholder { color: #888; }
 select option { background: #2a2a4e; }
+
+/* 按钮 - 圆角 + 动画 */
 .btn {
   padding: 10px 22px;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
   font-size: 14px;
-  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
 }
+.btn:active { transform: scale(0.96); }
 .btn-primary { background: #4C97FF; color: #fff; }
-.btn-primary:hover { background: #3a7be0; transform: translateY(-1px); }
+.btn-primary:hover { background: #3a7be0; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(76,151,255,0.3); }
 .btn-success { background: #4CAF50; color: #fff; }
-.btn-success:hover { background: #3d8b40; transform: translateY(-1px); }
+.btn-success:hover { background: #3d8b40; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(76,175,80,0.3); }
 .btn-warning { background: #FFAB19; color: #222; }
-.btn-warning:hover { background: #e89a0f; transform: translateY(-1px); }
+.btn-warning:hover { background: #e89a0f; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,171,25,0.3); }
 .btn-danger { background: #FF6B6B; color: #fff; }
-.btn-danger:hover { background: #e55a5a; transform: translateY(-1px); }
+.btn-danger:hover { background: #e55a5a; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,107,0.3); }
 .btn-secondary { background: #555; color: #fff; }
-.btn-secondary:hover { background: #444; transform: translateY(-1px); }
+.btn-secondary:hover { background: #444; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(85,85,85,0.3); }
 .btn-sm { padding: 5px 12px; font-size: 12px; }
+
 .header-bar {
   display: flex;
   justify-content: space-between;
@@ -67,7 +87,10 @@ select option { background: #2a2a4e; }
   margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 10px;
+  animation: slideDown 0.4s ease both;
 }
+
+/* 列表项 - 圆角 + 动画 */
 .project-item {
   display: flex;
   justify-content: space-between;
@@ -76,9 +99,15 @@ select option { background: #2a2a4e; }
   background: #2a2a4e;
   margin-bottom: 8px;
   gap: 10px;
-  transition: background 0.3s ease;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: listItemIn 0.3s ease both;
 }
-.project-item:hover { background: #33335a; }
+.project-item:hover {
+  background: #33335a;
+  transform: translateX(4px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
 .project-item .info {
   flex: 1;
   min-width: 0;
@@ -104,11 +133,14 @@ select option { background: #2a2a4e; }
 }
 #loginArea { display: block; }
 #adminArea { display: none; }
+
+/* 状态消息 - 动画 */
 .status-msg {
-  padding: 10px;
+  padding: 10px 16px;
   margin-bottom: 10px;
+  border-radius: 8px;
   display: none;
-  transition: opacity 0.3s ease;
+  animation: slideDown 0.3s ease both;
 }
 .status-msg.success { background: rgba(76, 175, 80, 0.2); color: #81C784; display: block; }
 .status-msg.error { background: rgba(255, 107, 107, 0.2); color: #FF6B6B; display: block; }
@@ -124,47 +156,54 @@ select option { background: #2a2a4e; }
   flex: 1;
   min-width: 150px;
   padding: 8px;
+  border-radius: 8px;
   background: #2a2a4e;
   border: 1px solid #333;
   color: #fff;
   margin-bottom: 0;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 .upload-area input[type="file"]:hover { border-color: #555; }
 .upload-area .btn { flex-shrink: 0; }
 
+/* Tab - 圆角 + 动画 */
 .tabs {
   display: flex;
-  gap: 0;
+  gap: 4px;
   margin-bottom: 20px;
-  border: 1px solid #333;
   flex-wrap: wrap;
-  overflow: hidden;
+  border-radius: 10px;
+  background: #12121f;
+  padding: 4px;
 }
 .tab-btn {
   flex: 1;
   padding: 12px 16px;
-  background: #1a1a2e;
+  background: transparent;
   border: none;
+  border-radius: 8px;
   color: #888;
   cursor: pointer;
   font-weight: bold;
   font-size: 13px;
-  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   min-width: 70px;
 }
 .tab-btn.active {
   background: #4C97FF;
   color: #fff;
+  box-shadow: 0 4px 16px rgba(76,151,255,0.25);
+  transform: scale(1.02);
 }
 .tab-btn:hover:not(.active) {
   background: #2a2a4e;
   color: #fff;
+  transform: translateY(-1px);
 }
-.tab-content { display: none; }
+.tab-content { display: none; animation: fadeIn 0.3s ease both; }
 .tab-content.active { display: block; }
 
-/* 编辑弹窗 */
+/* 编辑弹窗 - 动画 */
 #editModal {
   display: none;
   position: fixed;
@@ -173,7 +212,7 @@ select option { background: #2a2a4e; }
   z-index: 99999;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
   animation: fadeIn 0.25s ease;
 }
 #editModal .modal-content {
@@ -183,8 +222,9 @@ select option { background: #2a2a4e; }
   width: 95%;
   max-height: 90vh;
   overflow-y: auto;
+  border-radius: 16px;
   border: 1px solid #333;
-  animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 #editModal .modal-content h3 { margin-top: 0; }
 #editModal .modal-content input,
@@ -193,12 +233,13 @@ select option { background: #2a2a4e; }
   width: 100%;
   padding: 10px 14px;
   margin-bottom: 10px;
+  border-radius: 8px;
   border: 1px solid #333;
   background: #2a2a4e;
   color: #fff;
   font-size: 14px;
   box-sizing: border-box;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 #editModal .modal-content textarea { resize: vertical; min-height: 60px; }
 #editModal .modal-content .btn-row {
@@ -208,7 +249,7 @@ select option { background: #2a2a4e; }
 }
 #editModal .modal-content .btn-row .btn { flex: 1; }
 
-/* 文件列表 */
+/* 文件列表 - 圆角 + 动画 */
 .file-item {
   display: flex;
   justify-content: space-between;
@@ -217,9 +258,15 @@ select option { background: #2a2a4e; }
   background: #2a2a4e;
   margin-bottom: 6px;
   gap: 10px;
-  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: listItemIn 0.3s ease both;
 }
-.file-item:hover { background: #33335a; transform: translateX(2px); }
+.file-item:hover {
+  background: #33335a;
+  transform: translateX(4px) scale(1.003);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+}
 .file-item .info { flex: 1; min-width: 0; }
 .file-item .info .name { font-size: 14px; word-break: break-all; }
 .file-item .info .sub { font-size: 12px; opacity: 0.6; }
@@ -227,21 +274,26 @@ select option { background: #2a2a4e; }
 
 .hint { font-size: 12px; color: #888; margin-top: 4px; }
 
-#imagePreview { display: none; margin-top: 8px; }
-#imagePreview img { max-height: 120px; border: 1px solid #333; }
+#imagePreview {
+  display: none;
+  margin-top: 8px;
+  animation: fadeIn 0.3s ease both;
+}
+#imagePreview img { max-height: 120px; border-radius: 8px; border: 1px solid #333; }
 
 #htmlUploadProgress, #uploadProgress {
   display: none;
   margin-top: 6px;
   font-size: 13px;
   color: #4C97FF;
-  transition: opacity 0.3s ease;
+  animation: fadeIn 0.3s ease both;
 }
 
-/* KV 内容弹窗 */
+/* KV 内容弹窗 - 圆角 */
 .kv-content {
   background: #0d0d20;
   padding: 16px;
+  border-radius: 10px;
   font-family: monospace;
   font-size: 13px;
   white-space: pre-wrap;
@@ -252,18 +304,21 @@ select option { background: #2a2a4e; }
   margin-top: 10px;
 }
 
-/* 进度条 */
+/* 进度条 - 圆角 */
 .progress-bar-wrap {
   background: #2a2a4e;
   overflow: hidden;
   height: 8px;
   margin: 8px 0 4px;
+  border-radius: 4px;
 }
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4C97FF, #6C5CE7);
+  background: linear-gradient(90deg, #4C97FF, #6C5CE7, #a855f7);
   width: 0%;
-  transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: shimmer 1.5s ease infinite;
 }
 .kv-stats {
   display: flex;
@@ -273,37 +328,117 @@ select option { background: #2a2a4e; }
   margin-bottom: 4px;
 }
 
-/* 文件加载进度条（查看文件时） */
+/* 文件加载进度条 - 圆角 */
 .file-load-progress {
   display: none;
   margin-top: 8px;
   padding: 8px 12px;
   background: #2a2a4e;
+  border-radius: 8px;
   font-size: 13px;
   color: #4C97FF;
-  transition: opacity 0.3s ease;
+  animation: fadeIn 0.3s ease both;
 }
 .file-load-progress .bar-wrap {
   background: #1a1a2e;
   overflow: hidden;
   height: 4px;
   margin-top: 6px;
+  border-radius: 2px;
 }
 .file-load-progress .bar-wrap .bar-fill {
   height: 100%;
-  background: #4C97FF;
+  background: linear-gradient(90deg, #4C97FF, #a855f7);
   width: 0%;
-  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* 动画 */
+/* KV查看弹窗 - 圆角 + 动画 */
+#kvModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 99998;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.25s ease;
+}
+#kvModal .kv-modal-content {
+  background: #1a1a2e;
+  padding: 30px;
+  max-width: 700px;
+  width: 95%;
+  max-height: 90vh;
+  border-radius: 16px;
+  border: 1px solid #333;
+  overflow-y: auto;
+  animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+#kvModal .kv-modal-content h3 { margin-top: 0; }
+
+/* ===== 动画定义 ===== */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modalPop {
+  0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes listItemIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 按钮涟漪效果 */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.btn:hover::after {
+  opacity: 1;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: #4C97FF;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a7be0;
 }
 </style>
 </head>
@@ -448,9 +583,9 @@ select option { background: #2a2a4e; }
 </div>
 
 <!-- KV 查看弹窗 -->
-<div id="kvModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99998; justify-content:center; align-items:center; backdrop-filter:blur(5px); animation:fadeIn 0.25s ease;">
-  <div style="background:#1a1a2e; padding:30px; max-width:700px; width:95%; max-height:90vh; border:1px solid #333; overflow-y:auto; animation:slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);">
-    <h3 id="kvModalTitle" style="margin-top:0;">文件内容</h3>
+<div id="kvModal">
+  <div class="kv-modal-content">
+    <h3 id="kvModalTitle">文件内容</h3>
     <div id="kvModalBody" class="kv-content">加载中...</div>
     <div style="margin-top:15px; text-align:right;">
       <button class="btn btn-secondary" onclick="document.getElementById('kvModal').style.display='none'">关闭</button>
@@ -847,15 +982,18 @@ async function loadFiles() {
       return;
     }
     
-    container.innerHTML = data.keys.map(item => {
+    container.innerHTML = data.keys.map((item, index) => {
       const ext = item.key.split('.').pop().toLowerCase();
       const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
       const icon = isImage ? '🖼️' : '📄';
       const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
       const sizeKB = ((item.size || 0) / 1024).toFixed(1);
       
+      // 延迟动画
+      const delay = index * 40;
+      
       return `
-      <div class="file-item">
+      <div class="file-item" style="animation-delay:${delay}ms">
         <div class="info">
           <span class="name">${icon} ${escapeHtml(item.key)}</span>
           <span class="sub">${sizeKB} KB · ${isImage ? '图片' : '文件'}</span>
@@ -874,7 +1012,7 @@ async function loadFiles() {
   }
 }
 
-// 查看单个 KV（带进度条）
+// 查看单个 KV（带进度条 + 弹窗）
 async function viewKVWithProgress(key) {
   const progressEl = document.getElementById('fileLoadProgress');
   const progressBar = document.getElementById('fileLoadBar');
@@ -882,11 +1020,11 @@ async function viewKVWithProgress(key) {
   
   progressEl.style.display = 'block';
   progressText.textContent = '正在加载文件: ' + key;
-  progressBar.style.width = '30%';
+  progressBar.style.width = '20%';
   
   try {
     const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
-    progressBar.style.width = '70%';
+    progressBar.style.width = '60%';
     
     if (!res.ok) {
       const err = await res.json();
@@ -896,19 +1034,25 @@ async function viewKVWithProgress(key) {
       return;
     }
     
-    progressBar.style.width = '90%';
+    progressBar.style.width = '85%';
     const data = await res.json();
     
     progressBar.style.width = '100%';
     progressText.textContent = '加载完成';
-    setTimeout(() => {
-      progressEl.style.display = 'none';
-      progressBar.style.width = '0%';
-    }, 400);
     
-    document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
-    document.getElementById('kvModalBody').textContent = data.value || '(空)';
-    document.getElementById('kvModal').style.display = 'flex';
+    // ✅ 关键修复：延迟一小段时间后显示弹窗，让进度条走完
+    setTimeout(() => {
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      
+      // 隐藏进度条
+      setTimeout(() => {
+        progressEl.style.display = 'none';
+        progressBar.style.width = '0%';
+      }, 300);
+    }, 300);
+    
   } catch (e) {
     showStatus('加载失败：' + e.message, 'error');
     progressEl.style.display = 'none';

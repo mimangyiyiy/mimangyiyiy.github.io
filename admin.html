@@ -19,42 +19,46 @@ h1, h2, h3 { margin-top: 0; }
 .card {
   background: #1a1a2e;
   padding: 24px;
-  border-radius: 16px;
   margin-bottom: 20px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.3s ease;
 }
 input, select, textarea {
   width: 100%;
   padding: 10px 14px;
   margin-bottom: 10px;
-  border-radius: 10px;
   border: 1px solid #333;
   background: #2a2a4e;
   color: #fff;
   font-size: 14px;
   box-sizing: border-box;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #4C97FF;
+  outline: none;
+  background: #33335a;
 }
 input::placeholder { color: #888; }
 select option { background: #2a2a4e; }
 .btn {
   padding: 10px 22px;
-  border-radius: 10px;
   border: none;
   cursor: pointer;
   font-weight: bold;
   font-size: 14px;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .btn-primary { background: #4C97FF; color: #fff; }
-.btn-primary:hover { background: #3a7be0; }
+.btn-primary:hover { background: #3a7be0; transform: translateY(-1px); }
 .btn-success { background: #4CAF50; color: #fff; }
-.btn-success:hover { background: #3d8b40; }
+.btn-success:hover { background: #3d8b40; transform: translateY(-1px); }
 .btn-warning { background: #FFAB19; color: #222; }
-.btn-warning:hover { background: #e89a0f; }
+.btn-warning:hover { background: #e89a0f; transform: translateY(-1px); }
 .btn-danger { background: #FF6B6B; color: #fff; }
-.btn-danger:hover { background: #e55a5a; }
+.btn-danger:hover { background: #e55a5a; transform: translateY(-1px); }
 .btn-secondary { background: #555; color: #fff; }
-.btn-secondary:hover { background: #444; }
+.btn-secondary:hover { background: #444; transform: translateY(-1px); }
 .btn-sm { padding: 5px 12px; font-size: 12px; }
 .header-bar {
   display: flex;
@@ -70,10 +74,11 @@ select option { background: #2a2a4e; }
   align-items: center;
   padding: 12px 16px;
   background: #2a2a4e;
-  border-radius: 10px;
   margin-bottom: 8px;
   gap: 10px;
+  transition: background 0.3s ease;
 }
+.project-item:hover { background: #33335a; }
 .project-item .info {
   flex: 1;
   min-width: 0;
@@ -101,9 +106,9 @@ select option { background: #2a2a4e; }
 #adminArea { display: none; }
 .status-msg {
   padding: 10px;
-  border-radius: 8px;
   margin-bottom: 10px;
   display: none;
+  transition: opacity 0.3s ease;
 }
 .status-msg.success { background: rgba(76, 175, 80, 0.2); color: #81C784; display: block; }
 .status-msg.error { background: rgba(255, 107, 107, 0.2); color: #FF6B6B; display: block; }
@@ -120,21 +125,21 @@ select option { background: #2a2a4e; }
   min-width: 150px;
   padding: 8px;
   background: #2a2a4e;
-  border-radius: 8px;
   border: 1px solid #333;
   color: #fff;
   margin-bottom: 0;
+  transition: border-color 0.3s ease;
 }
+.upload-area input[type="file"]:hover { border-color: #555; }
 .upload-area .btn { flex-shrink: 0; }
 
 .tabs {
   display: flex;
   gap: 0;
   margin-bottom: 20px;
-  border-radius: 12px;
-  overflow: hidden;
   border: 1px solid #333;
   flex-wrap: wrap;
+  overflow: hidden;
 }
 .tab-btn {
   flex: 1;
@@ -145,7 +150,7 @@ select option { background: #2a2a4e; }
   cursor: pointer;
   font-weight: bold;
   font-size: 13px;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   min-width: 70px;
 }
 .tab-btn.active {
@@ -169,16 +174,17 @@ select option { background: #2a2a4e; }
   justify-content: center;
   align-items: center;
   backdrop-filter: blur(5px);
+  animation: fadeIn 0.25s ease;
 }
 #editModal .modal-content {
   background: #1a1a2e;
   padding: 30px;
-  border-radius: 16px;
   max-width: 500px;
   width: 95%;
   max-height: 90vh;
   overflow-y: auto;
   border: 1px solid #333;
+  animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 #editModal .modal-content h3 { margin-top: 0; }
 #editModal .modal-content input,
@@ -187,12 +193,12 @@ select option { background: #2a2a4e; }
   width: 100%;
   padding: 10px 14px;
   margin-bottom: 10px;
-  border-radius: 10px;
   border: 1px solid #333;
   background: #2a2a4e;
   color: #fff;
   font-size: 14px;
   box-sizing: border-box;
+  transition: border-color 0.3s ease;
 }
 #editModal .modal-content textarea { resize: vertical; min-height: 60px; }
 #editModal .modal-content .btn-row {
@@ -209,10 +215,11 @@ select option { background: #2a2a4e; }
   align-items: center;
   padding: 10px 14px;
   background: #2a2a4e;
-  border-radius: 8px;
   margin-bottom: 6px;
   gap: 10px;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+.file-item:hover { background: #33335a; transform: translateX(2px); }
 .file-item .info { flex: 1; min-width: 0; }
 .file-item .info .name { font-size: 14px; word-break: break-all; }
 .file-item .info .sub { font-size: 12px; opacity: 0.6; }
@@ -221,20 +228,20 @@ select option { background: #2a2a4e; }
 .hint { font-size: 12px; color: #888; margin-top: 4px; }
 
 #imagePreview { display: none; margin-top: 8px; }
-#imagePreview img { max-height: 120px; border-radius: 8px; border: 1px solid #333; }
+#imagePreview img { max-height: 120px; border: 1px solid #333; }
 
 #htmlUploadProgress, #uploadProgress {
   display: none;
   margin-top: 6px;
   font-size: 13px;
   color: #4C97FF;
+  transition: opacity 0.3s ease;
 }
 
 /* KV 内容弹窗 */
 .kv-content {
   background: #0d0d20;
   padding: 16px;
-  border-radius: 10px;
   font-family: monospace;
   font-size: 13px;
   white-space: pre-wrap;
@@ -245,10 +252,9 @@ select option { background: #2a2a4e; }
   margin-top: 10px;
 }
 
-/* ===== 进度条 ===== */
+/* 进度条 */
 .progress-bar-wrap {
   background: #2a2a4e;
-  border-radius: 10px;
   overflow: hidden;
   height: 8px;
   margin: 8px 0 4px;
@@ -256,9 +262,8 @@ select option { background: #2a2a4e; }
 .progress-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #4C97FF, #6C5CE7);
-  border-radius: 10px;
-  transition: width 0.4s ease;
   width: 0%;
+  transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kv-stats {
   display: flex;
@@ -267,62 +272,95 @@ select option { background: #2a2a4e; }
   color: #888;
   margin-bottom: 4px;
 }
+
+/* 文件加载进度条（查看文件时） */
+.file-load-progress {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #2a2a4e;
+  font-size: 13px;
+  color: #4C97FF;
+  transition: opacity 0.3s ease;
+}
+.file-load-progress .bar-wrap {
+  background: #1a1a2e;
+  overflow: hidden;
+  height: 4px;
+  margin-top: 6px;
+}
+.file-load-progress .bar-wrap .bar-fill {
+  height: 100%;
+  background: #4C97FF;
+  width: 0%;
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>📝 管理后台</h1>
+  <h1>管理后台</h1>
   
   <div id="statusMsg" class="status-msg"></div>
   
-  <!-- ===== 登录区域 ===== -->
+  <!-- 登录区域 -->
   <div id="loginArea" class="card">
-    <h2>🔐 管理员登录</h2>
+    <h2>管理员登录</h2>
     <input id="loginUser" placeholder="用户名" autocomplete="username">
     <input id="loginPass" type="password" placeholder="密码" autocomplete="current-password">
     <button class="btn btn-primary" onclick="adminLogin()" style="width:100%;">登录</button>
   </div>
   
-  <!-- ===== 管理区域 ===== -->
+  <!-- 管理区域 -->
   <div id="adminArea">
     <div class="header-bar">
-      <h2 style="margin:0;">📋 管理</h2>
+      <h2 style="margin:0;">管理</h2>
       <button class="btn btn-danger" onclick="logout()">退出</button>
     </div>
     
     <div class="tabs">
-      <button class="tab-btn active" data-tab="tab-projects" onclick="switchTab('tab-projects')">📂 作品</button>
-      <button class="tab-btn" data-tab="tab-downloads" onclick="switchTab('tab-downloads')">📦 下载</button>
-      <button class="tab-btn" data-tab="tab-files" onclick="switchTab('tab-files')">📁 文件</button>
-      <button class="tab-btn" data-tab="tab-categories" onclick="switchTab('tab-categories')">🏷️ 分类</button>
+      <button class="tab-btn active" data-tab="tab-projects" onclick="switchTab('tab-projects')">作品</button>
+      <button class="tab-btn" data-tab="tab-downloads" onclick="switchTab('tab-downloads')">下载</button>
+      <button class="tab-btn" data-tab="tab-files" onclick="switchTab('tab-files')">文件</button>
+      <button class="tab-btn" data-tab="tab-categories" onclick="switchTab('tab-categories')">分类</button>
     </div>
     
-    <!-- ===== Tab 1: 作品管理 ===== -->
+    <!-- Tab 1: 作品管理 -->
     <div id="tab-projects" class="tab-content active">
       <div class="card">
-        <h3>➕ 添加作品</h3>
+        <h3>添加作品</h3>
         <div style="margin-bottom:10px;">
-          <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">📄 作品文件 (.html)</label>
+          <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">作品文件 (.html)</label>
           <div class="upload-area">
             <input type="file" id="newHtmlFile" accept=".html">
             <button class="btn btn-primary" onclick="uploadHtmlFile()">上传作品</button>
           </div>
-          <div id="htmlUploadProgress">⏳ 上传中...</div>
+          <div id="htmlUploadProgress">上传中...</div>
           <input id="newLink" placeholder="或手动输入作品链接 *" style="margin-top:8px;">
-          <div class="hint">💡 上传 .html 文件后会自动填入链接</div>
+          <div class="hint">上传 .html 文件后会自动填入链接</div>
         </div>
         
         <div style="margin-bottom:10px;">
-          <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">📷 作品封面图片</label>
+          <label style="display:block; margin-bottom:4px; font-size:14px; color:#aaa;">作品封面图片</label>
           <div class="upload-area">
             <input type="file" id="newImageFile" accept="image/*">
             <button class="btn btn-primary" onclick="uploadImageToKV()">上传图片到KV</button>
           </div>
-          <div id="uploadProgress">⏳ 上传中...</div>
+          <div id="uploadProgress">上传中...</div>
           <div id="imagePreview"><img id="previewImg" src="" alt="预览"></div>
           <input id="newImage" placeholder="或手动输入图片URL" style="margin-top:8px;">
-          <div class="hint">💡 支持 JPG / PNG / WebP / GIF，上传后自动填入 /images/xxx.jpg</div>
+          <div class="hint">支持 JPG / PNG / WebP / GIF，上传后自动填入 /api/kv-get/xxx</div>
         </div>
         
         <input id="newTitle" placeholder="标题 *">
@@ -332,15 +370,15 @@ select option { background: #2a2a4e; }
       </div>
       
       <div class="card">
-        <h3>📋 所有作品</h3>
+        <h3>所有作品</h3>
         <div id="projectListAdmin"><div class="empty-msg">加载中...</div></div>
       </div>
     </div>
     
-    <!-- ===== Tab 2: 下载管理 ===== -->
+    <!-- Tab 2: 下载管理 -->
     <div id="tab-downloads" class="tab-content">
       <div class="card">
-        <h3>➕ 添加下载项</h3>
+        <h3>添加下载项</h3>
         <input id="newDownloadTitle" placeholder="标题 *">
         <input id="newDownloadDesc" placeholder="描述（可选）">
         <input id="newDownloadLink" placeholder="链接 *">
@@ -349,36 +387,43 @@ select option { background: #2a2a4e; }
       </div>
       
       <div class="card">
-        <h3>📋 所有下载项</h3>
+        <h3>所有下载项</h3>
         <div id="downloadListAdmin"><div class="empty-msg">加载中...</div></div>
       </div>
     </div>
     
-    <!-- ===== Tab 3: 文件管理（KV） ===== -->
+    <!-- Tab 3: 文件管理（KV） -->
     <div id="tab-files" class="tab-content">
       <div class="card">
-        <h3>📁 KV 文件管理</h3>
+        <h3>KV 文件管理</h3>
         <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="loadFiles()">🔄 刷新</button>
+          <button class="btn btn-primary" onclick="loadFiles()">刷新</button>
           <span id="fileCount" style="font-size:13px; color:#888;"></span>
         </div>
-        <!-- 进度条 -->
+        <!-- 存储进度条（KB级别） -->
         <div class="kv-stats">
           <span id="kvUsed">已用: 0 KB</span>
-          <span id="kvTotal">总量: 1 GB</span>
+          <span id="kvTotal">总量: 1024000 KB</span>
           <span id="kvPercent">0%</span>
         </div>
         <div class="progress-bar-wrap">
           <div class="progress-bar-fill" id="kvProgress"></div>
         </div>
+        <!-- 文件加载进度条 -->
+        <div class="file-load-progress" id="fileLoadProgress">
+          <span id="fileLoadText">加载文件中...</span>
+          <div class="bar-wrap">
+            <div class="bar-fill" id="fileLoadBar"></div>
+          </div>
+        </div>
         <div id="fileList" style="margin-top:12px;"><div class="empty-msg">点击刷新加载...</div></div>
       </div>
     </div>
     
-    <!-- ===== Tab 4: 分类管理 ===== -->
+    <!-- Tab 4: 分类管理 -->
     <div id="tab-categories" class="tab-content">
       <div class="card">
-        <h3>🏷️ 管理分类</h3>
+        <h3>管理分类</h3>
         <div style="display:flex; gap:10px; margin-bottom:15px;">
           <input id="newCategoryName" placeholder="新分类名称" style="flex:1; margin-bottom:0;">
           <button class="btn btn-success" onclick="addCategory()" style="flex-shrink:0;">添加</button>
@@ -389,10 +434,10 @@ select option { background: #2a2a4e; }
   </div>
 </div>
 
-<!-- ===== 编辑弹窗 ===== -->
+<!-- 编辑弹窗 -->
 <div id="editModal">
   <div class="modal-content">
-    <h3 id="editModalTitle">✏️ 编辑</h3>
+    <h3 id="editModalTitle">编辑</h3>
     <input id="editId" type="hidden">
     <div id="editFields"></div>
     <div class="btn-row">
@@ -402,10 +447,10 @@ select option { background: #2a2a4e; }
   </div>
 </div>
 
-<!-- ===== KV 查看弹窗 ===== -->
-<div id="kvModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99998; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
-  <div style="background:#1a1a2e; padding:30px; border-radius:16px; max-width:700px; width:95%; max-height:90vh; border:1px solid #333; overflow-y:auto;">
-    <h3 id="kvModalTitle" style="margin-top:0;">📄 文件内容</h3>
+<!-- KV 查看弹窗 -->
+<div id="kvModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99998; justify-content:center; align-items:center; backdrop-filter:blur(5px); animation:fadeIn 0.25s ease;">
+  <div style="background:#1a1a2e; padding:30px; max-width:700px; width:95%; max-height:90vh; border:1px solid #333; overflow-y:auto; animation:slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);">
+    <h3 id="kvModalTitle" style="margin-top:0;">文件内容</h3>
     <div id="kvModalBody" class="kv-content">加载中...</div>
     <div style="margin-top:15px; text-align:right;">
       <button class="btn btn-secondary" onclick="document.getElementById('kvModal').style.display='none'">关闭</button>
@@ -418,7 +463,7 @@ select option { background: #2a2a4e; }
 // 1. 配置
 // ============================================================
 const API_BASE = '';
-const KV_LIMIT = 1024 * 1024 * 1024; // 1 GB
+const KV_LIMIT_KB = 1024 * 1024; // 1 GB = 1,048,576 KB
 
 // ============================================================
 // 2. 工具函数
@@ -476,12 +521,12 @@ async function adminLogin() {
         loadAdminProjects(),
         loadAdminDownloads()
       ]);
-      showStatus('✅ 登录成功');
+      showStatus('登录成功');
     } else {
-      showStatus('❌ ' + (data.error || '用户名或密码错误'), 'error');
+      showStatus('登录失败：' + (data.error || '用户名或密码错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -519,7 +564,7 @@ async function loadCategoriesWithDelete() {
       </div>
     `).join('');
   } catch (e) {
-    document.getElementById('categoryList').innerHTML = `<div class="empty-msg">❌ 加载失败</div>`;
+    document.getElementById('categoryList').innerHTML = `<div class="empty-msg">加载失败</div>`;
   }
 }
 
@@ -538,15 +583,15 @@ async function addCategory() {
       body: JSON.stringify({ name })
     });
     if (res.ok) {
-      showStatus('✅ 分类添加成功');
+      showStatus('分类添加成功');
       document.getElementById('newCategoryName').value = '';
       await loadCategoriesWithDelete();
     } else {
       const err = await res.json();
-      showStatus('❌ ' + (err.error || '添加失败'), 'error');
+      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -564,13 +609,13 @@ async function deleteCategoryWithCheck(categoryId) {
     });
     const data = await res.json();
     if (res.ok) {
-      showStatus('✅ 分类已删除');
+      showStatus('分类已删除');
       await loadCategoriesWithDelete();
     } else {
-      showStatus('❌ ' + (data.error || '删除失败'), 'error');
+      showStatus('删除失败：' + (data.error || '未知错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -594,13 +639,13 @@ async function loadAdminProjects() {
           <span class="sub">${escapeHtml(p.category_name || '未分类')} · ${escapeHtml(p.link || '无链接')}</span>
         </div>
         <div class="actions">
-          <button class="btn btn-warning btn-sm" onclick="openEditProject(${p.id})">✏️ 编辑</button>
+          <button class="btn btn-warning btn-sm" onclick="openEditProject(${p.id})">编辑</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProject(${p.id})">删除</button>
         </div>
       </div>
     `).join('');
   } catch (e) {
-    document.getElementById('projectListAdmin').innerHTML = '<div class="empty-msg">❌ 加载失败</div>';
+    document.getElementById('projectListAdmin').innerHTML = '<div class="empty-msg">加载失败</div>';
   }
 }
 
@@ -631,7 +676,7 @@ async function addProject() {
       body: JSON.stringify(data)
     });
     if (res.ok) {
-      showStatus('✅ 添加成功！');
+      showStatus('添加成功');
       document.getElementById('newTitle').value = '';
       document.getElementById('newDesc').value = '';
       document.getElementById('newImage').value = '';
@@ -642,10 +687,10 @@ async function addProject() {
       loadAdminProjects();
     } else {
       const err = await res.json();
-      showStatus('❌ ' + (err.error || '添加失败'), 'error');
+      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -658,13 +703,13 @@ async function deleteProject(id) {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      showStatus('✅ 已删除');
+      showStatus('已删除');
       loadAdminProjects();
     } else {
-      showStatus('❌ 删除失败', 'error');
+      showStatus('删除失败', 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -688,13 +733,13 @@ async function loadAdminDownloads() {
           <span class="sub">${escapeHtml(d.link)}${d.description ? ' · ' + escapeHtml(d.description) : ''}</span>
         </div>
         <div class="actions">
-          <button class="btn btn-warning btn-sm" onclick="openEditDownload(${d.id})">✏️ 编辑</button>
+          <button class="btn btn-warning btn-sm" onclick="openEditDownload(${d.id})">编辑</button>
           <button class="btn btn-danger btn-sm" onclick="deleteDownload(${d.id})">删除</button>
         </div>
       </div>
     `).join('');
   } catch (e) {
-    document.getElementById('downloadListAdmin').innerHTML = '<div class="empty-msg">❌ 加载失败</div>';
+    document.getElementById('downloadListAdmin').innerHTML = '<div class="empty-msg">加载失败</div>';
   }
 }
 
@@ -719,7 +764,7 @@ async function addDownload() {
       body: JSON.stringify({ title, description, link, link_text: linkText })
     });
     if (res.ok) {
-      showStatus('✅ 下载项添加成功！');
+      showStatus('下载项添加成功');
       document.getElementById('newDownloadTitle').value = '';
       document.getElementById('newDownloadDesc').value = '';
       document.getElementById('newDownloadLink').value = '';
@@ -727,10 +772,10 @@ async function addDownload() {
       loadAdminDownloads();
     } else {
       const err = await res.json();
-      showStatus('❌ ' + (err.error || '添加失败'), 'error');
+      showStatus('添加失败：' + (err.error || '未知错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -743,13 +788,13 @@ async function deleteDownload(id) {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      showStatus('✅ 已删除');
+      showStatus('已删除');
       loadAdminDownloads();
     } else {
-      showStatus('❌ 删除失败', 'error');
+      showStatus('删除失败', 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -759,22 +804,41 @@ async function deleteDownload(id) {
 async function loadFiles() {
   const container = document.getElementById('fileList');
   const countEl = document.getElementById('fileCount');
-  container.innerHTML = '<div class="empty-msg">⏳ 加载中...</div>';
+  const progressEl = document.getElementById('fileLoadProgress');
+  const progressBar = document.getElementById('fileLoadBar');
+  const progressText = document.getElementById('fileLoadText');
+  
+  container.innerHTML = '<div class="empty-msg">加载中...</div>';
+  
+  // 显示加载进度条
+  progressEl.style.display = 'block';
+  progressText.textContent = '正在加载文件列表...';
+  progressBar.style.width = '30%';
   
   try {
     const res = await fetch(`${API_BASE}/api/kv-list`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
+    progressBar.style.width = '70%';
+    progressText.textContent = '正在解析数据...';
+    
     const data = await res.json();
     
-    countEl.textContent = `共 ${data.total} 个文件`;
+    progressBar.style.width = '100%';
+    progressText.textContent = '加载完成';
+    setTimeout(() => {
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+    }, 500);
     
-    // 更新进度条
-    let totalSize = 0;
-    data.keys.forEach(item => { totalSize += item.size || 0; });
-    const usedMB = (totalSize / 1024 / 1024).toFixed(2);
-    const percent = Math.min((totalSize / KV_LIMIT) * 100, 100);
+    countEl.textContent = '共 ' + data.total + ' 个文件';
     
-    document.getElementById('kvUsed').textContent = `已用: ${usedMB} MB`;
+    // 更新存储进度条（KB级别）
+    let totalSizeKB = 0;
+    data.keys.forEach(item => { totalSizeKB += (item.size || 0) / 1024; });
+    const percent = Math.min((totalSizeKB / KV_LIMIT_KB) * 100, 100);
+    
+    document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB.toFixed(1) + ' KB';
     document.getElementById('kvPercent').textContent = percent.toFixed(1) + '%';
     document.getElementById('kvProgress').style.width = percent + '%';
     
@@ -787,61 +851,87 @@ async function loadFiles() {
       const ext = item.key.split('.').pop().toLowerCase();
       const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
       const icon = isImage ? '🖼️' : '📄';
-      const url = `/api/kv-get/${encodeURIComponent(item.key)}`;
       const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
+      const sizeKB = ((item.size || 0) / 1024).toFixed(1);
       
       return `
       <div class="file-item">
         <div class="info">
           <span class="name">${icon} ${escapeHtml(item.key)}</span>
-          <span class="sub">${item.sizeKB} · ${isImage ? '图片' : '文件'}</span>
+          <span class="sub">${sizeKB} KB · ${isImage ? '图片' : '文件'}</span>
         </div>
         <div class="actions">
-          ${isImage ? `<a href="${previewUrl}" target="_blank" class="btn btn-primary btn-sm">查看</a>` : `<button class="btn btn-primary btn-sm" onclick="viewKV('${escapeHtml(item.key)}')">查看</button>`}
+          ${isImage ? `<a href="${previewUrl}" target="_blank" class="btn btn-primary btn-sm">查看</a>` : `<button class="btn btn-primary btn-sm" onclick="viewKVWithProgress('${escapeHtml(item.key)}')">查看</button>`}
           <button class="btn btn-danger btn-sm" onclick="deleteFileKV('${escapeHtml(item.key)}')">删除</button>
         </div>
       </div>
     `}).join('');
     
   } catch (e) {
-    container.innerHTML = `<div class="empty-msg">❌ 加载失败：${e.message}</div>`;
+    container.innerHTML = '<div class="empty-msg">加载失败：' + e.message + '</div>';
+    progressEl.style.display = 'none';
+    progressBar.style.width = '0%';
   }
 }
 
-// 查看单个 KV
-async function viewKV(key) {
+// 查看单个 KV（带进度条）
+async function viewKVWithProgress(key) {
+  const progressEl = document.getElementById('fileLoadProgress');
+  const progressBar = document.getElementById('fileLoadBar');
+  const progressText = document.getElementById('fileLoadText');
+  
+  progressEl.style.display = 'block';
+  progressText.textContent = '正在加载文件: ' + key;
+  progressBar.style.width = '30%';
+  
   try {
     const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+    progressBar.style.width = '70%';
+    
     if (!res.ok) {
       const err = await res.json();
-      showStatus('❌ ' + (err.error || '加载失败'), 'error');
+      showStatus('加载失败：' + (err.error || '未知错误'), 'error');
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
       return;
     }
+    
+    progressBar.style.width = '90%';
     const data = await res.json();
-    document.getElementById('kvModalTitle').textContent = `📄 ${data.key} (${data.sizeKB})`;
+    
+    progressBar.style.width = '100%';
+    progressText.textContent = '加载完成';
+    setTimeout(() => {
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+    }, 400);
+    
+    document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
     document.getElementById('kvModalBody').textContent = data.value || '(空)';
     document.getElementById('kvModal').style.display = 'flex';
   } catch (e) {
-    showStatus('❌ 加载失败：' + e.message, 'error');
+    showStatus('加载失败：' + e.message, 'error');
+    progressEl.style.display = 'none';
+    progressBar.style.width = '0%';
   }
 }
 
 // 删除 KV 文件
 async function deleteFileKV(key) {
-  if (!confirm(`确定要删除 "${key}" 吗？此操作不可恢复！`)) return;
+  if (!confirm('确定要删除 "' + key + '" 吗？此操作不可恢复！')) return;
   try {
     const res = await fetch(`${API_BASE}/api/kv-delete/${encodeURIComponent(key)}`, {
       method: 'DELETE'
     });
     if (res.ok) {
-      showStatus('✅ 已删除');
+      showStatus('已删除');
       loadFiles();
     } else {
       const err = await res.json();
-      showStatus('❌ ' + (err.error || '删除失败'), 'error');
+      showStatus('删除失败：' + (err.error || '未知错误'), 'error');
     }
   } catch (e) {
-    showStatus('❌ 网络错误', 'error');
+    showStatus('网络错误', 'error');
   }
 }
 
@@ -858,7 +948,7 @@ async function uploadHtmlFile() {
   if (!token) { showStatus('请先登录', 'error'); return; }
   const progressEl = document.getElementById('htmlUploadProgress');
   progressEl.style.display = 'block';
-  progressEl.textContent = '⏳ 上传中...';
+  progressEl.textContent = '上传中...';
   try {
     const content = await file.text();
     const res = await fetch(`${API_BASE}/api/admin/upload-html`, {
@@ -872,14 +962,14 @@ async function uploadHtmlFile() {
     const data = await res.json();
     if (res.ok && data.success) {
       document.getElementById('newLink').value = data.url;
-      showStatus('✅ 作品文件上传成功！');
-      progressEl.textContent = '✅ 上传完成';
+      showStatus('作品文件上传成功');
+      progressEl.textContent = '上传完成';
     } else {
-      showStatus('❌ ' + (data.error || '上传失败'), 'error');
+      showStatus('上传失败：' + (data.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
     }
   } catch (e) {
-    showStatus('❌ 上传失败：' + e.message, 'error');
+    showStatus('上传失败：' + e.message, 'error');
     progressEl.style.display = 'none';
   }
   setTimeout(() => { progressEl.style.display = 'none'; }, 3000);
@@ -905,15 +995,14 @@ async function uploadImageToKV() {
 
   const progressEl = document.getElementById('uploadProgress');
   progressEl.style.display = 'block';
-  progressEl.textContent = '⏳ 上传到 KV...';
+  progressEl.textContent = '上传到 KV...';
 
   try {
     const base64 = await fileToBase64(file);
-    // 提取纯 base64 数据
     const base64Data = base64.split(',')[1];
     const timestamp = Date.now();
     const ext = file.name.split('.').pop();
-    const fileName = `${timestamp}.${ext}`;
+    const fileName = timestamp + '.' + ext;
     
     const res = await fetch(`${API_BASE}/api/admin/upload-image`, {
       method: 'POST',
@@ -930,23 +1019,32 @@ async function uploadImageToKV() {
 
     const data = await res.json();
     if (res.ok && data.success) {
-      const imageUrl = `/api/kv-get/${data.fileName}`;
+      const imageUrl = '/api/kv-get/' + data.fileName;
       document.getElementById('newImage').value = imageUrl;
       const preview = document.getElementById('imagePreview');
       const previewImg = document.getElementById('previewImg');
       previewImg.src = imageUrl;
       preview.style.display = 'block';
-      showStatus('✅ 图片上传到 KV 成功！');
-      progressEl.textContent = '✅ 上传完成';
+      showStatus('图片上传成功');
+      progressEl.textContent = '上传完成';
     } else {
-      showStatus('❌ ' + (data.error || '上传失败'), 'error');
+      showStatus('上传失败：' + (data.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
     }
   } catch (e) {
-    showStatus('❌ 上传失败：' + e.message, 'error');
+    showStatus('上传失败：' + e.message, 'error');
     progressEl.style.display = 'none';
   }
   setTimeout(() => { progressEl.style.display = 'none'; }, 3000);
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 // 图片预览
@@ -978,7 +1076,7 @@ let editId = null;
 function openEditDownload(id) {
   editType = 'download';
   editId = id;
-  document.getElementById('editModalTitle').textContent = '✏️ 编辑下载项';
+  document.getElementById('editModalTitle').textContent = '编辑下载项';
   fetch(`${API_BASE}/api/downloads`)
     .then(r => r.json())
     .then(data => {
@@ -998,7 +1096,7 @@ function openEditDownload(id) {
 function openEditProject(id) {
   editType = 'project';
   editId = id;
-  document.getElementById('editModalTitle').textContent = '✏️ 编辑作品';
+  document.getElementById('editModalTitle').textContent = '编辑作品';
   fetch(`${API_BASE}/api/projects`)
     .then(r => r.json())
     .then(data => {
@@ -1016,7 +1114,7 @@ function openEditProject(id) {
         .then(cats => {
           const select = document.getElementById('editProjectCategory');
           select.innerHTML = cats.map(c => 
-            `<option value="${c.id}" ${c.id === item.category_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+            '<option value="' + c.id + '" ' + (c.id === item.category_id ? 'selected' : '') + '>' + escapeHtml(c.name) + '</option>'
           ).join('');
         });
       document.getElementById('editModal').style.display = 'flex';
@@ -1045,15 +1143,15 @@ async function saveEdit() {
         body: JSON.stringify(data)
       });
       if (res.ok) {
-        showStatus('✅ 下载项已更新');
+        showStatus('下载项已更新');
         closeEditModal();
         loadAdminDownloads();
       } else {
         const err = await res.json();
-        showStatus('❌ ' + (err.error || '更新失败'), 'error');
+        showStatus('更新失败：' + (err.error || '未知错误'), 'error');
       }
     } catch (e) {
-      showStatus('❌ 网络错误', 'error');
+      showStatus('网络错误', 'error');
     }
   } else if (editType === 'project') {
     const title = document.getElementById('editProjectTitle').value.trim();
@@ -1073,15 +1171,15 @@ async function saveEdit() {
         body: JSON.stringify(data)
       });
       if (res.ok) {
-        showStatus('✅ 作品已更新');
+        showStatus('作品已更新');
         closeEditModal();
         loadAdminProjects();
       } else {
         const err = await res.json();
-        showStatus('❌ ' + (err.error || '更新失败'), 'error');
+        showStatus('更新失败：' + (err.error || '未知错误'), 'error');
       }
     } catch (e) {
-      showStatus('❌ 网络错误', 'error');
+      showStatus('网络错误', 'error');
     }
   }
 }
@@ -1110,7 +1208,7 @@ function checkAuth() {
 // 12. 页面启动
 // ============================================================
 checkAuth();
-console.log('🔐 管理后台已加载（KV文件管理）');
+console.log('管理后台已加载');
 </script>
 </body>
 </html>

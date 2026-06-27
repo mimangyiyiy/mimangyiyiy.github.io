@@ -1451,7 +1451,14 @@ function checkAuth() {
     loadAdminProjects();
     loadAdminDownloads();
   }
+  
+  // ✅ 页面加载时请求通知权限（无论是否登录）
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
 }
+
+
 
 // ============================================================
 // 11. 页面启动

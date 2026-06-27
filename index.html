@@ -29,7 +29,6 @@ body {
   background-repeat: no-repeat;
 }
 
-/* 深色遮罩层 */
 body::before {
   content: '';
   position: fixed;
@@ -37,7 +36,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   pointer-events: none;
   z-index: 0;
 }
@@ -53,9 +52,7 @@ body.glass-off {
   background-image: none !important;
   background-color: #f5f5f7 !important;
 }
-body.glass-off::before {
-  display: none !important;
-}
+body.glass-off::before { display: none !important; }
 body.glass-off .glass,
 body.glass-off .project-card,
 body.glass-off .download-panel,
@@ -64,67 +61,45 @@ body.glass-off .glass-toggle,
 body.glass-off header {
   background: #ffffff !important;
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
   border: 1px solid #e0e0e0 !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
   color: #000 !important;
 }
 body.glass-off .project-card h3,
 body.glass-off .project-card p,
-body.glass-off .project-card .btn {
-  color: #000 !important;
-}
-body.glass-off .project-card .btn {
-  background: #4C97FF !important;
-  color: #fff !important;
-}
+body.glass-off .project-card .btn { color: #000 !important; }
+body.glass-off .project-card .btn { background: #4C97FF !important; color: #fff !important; }
 body.glass-off .section-title,
-body.glass-off .section-desc,
 body.glass-off header h1,
-body.glass-off header p {
-  color: #000 !important;
-  text-shadow: none !important;
-}
+body.glass-off header p { color: #000 !important; text-shadow: none !important; }
 body.glass-off .download-panel h4,
-body.glass-off .download-item,
-body.glass-off .download-item .info .title,
-body.glass-off .download-item .info .desc {
-  color: #000 !important;
-}
+body.glass-off .download-item { color: #000 !important; }
 body.glass-off .download-trigger svg,
-body.glass-off .glass-toggle svg {
-  fill: #000 !important;
-}
-body.glass-off .project-card .glass-glow,
-body.glass-off .project-card .refraction-layer {
-  display: none !important;
-}
-body.glass-off .ripple {
-  display: none !important;
-}
+body.glass-off .glass-toggle svg { fill: #000 !important; }
+body.glass-off .refraction-edge { display: none !important; }
+body.glass-off .ripple { display: none !important; }
 
-/* ================= 毛玻璃风格 ================= */
+/* ================= 毛玻璃 ================= */
 .glass {
-  background: rgba(30, 35, 65, 0.40);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(30, 35, 65, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: inherit;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* ===== 卡片样式（光学折射 + 边缘突起） ===== */
+/* ===== 卡片：光学边缘折射 ===== */
 .project-card {
   position: relative;
   padding: 1.5rem;
   text-align: center;
   border-radius: 24px;
-  background: rgba(25, 30, 55, 0.25);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  background: rgba(25, 30, 55, 0.2);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   color: white;
   transition: box-shadow 0.3s ease;
   transform-style: preserve-3d;
@@ -134,66 +109,64 @@ body.glass-off .ripple {
   isolation: isolate;
 }
 
-/* 卡片悬停时阴影增强 */
 .project-card:hover {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
 }
 
-/* ===== 光学折射层（核心） ===== */
-.project-card .refraction-layer {
+/* ===== 边缘折射层 ===== */
+.project-card .refraction-edge {
   position: absolute;
-  inset: -8px;
-  border-radius: 28px;
-  pointer-events: none;
-  z-index: -1;
-  background: transparent;
-  backdrop-filter: blur(0px);
-  -webkit-backdrop-filter: blur(0px);
-  transition: backdrop-filter 0.15s ease;
-  will-change: transform, backdrop-filter;
-  /* 模拟光学折射的偏移 */
-  transform: translateZ(-10px);
-}
-
-/* 鼠标悬浮时的折射效果 */
-.project-card.refracting .refraction-layer {
-  backdrop-filter: blur(4px) brightness(1.05);
-  -webkit-backdrop-filter: blur(4px) brightness(1.05);
-}
-
-/* ===== 边缘突起光晕 ===== */
-.project-card .edge-glow {
-  position: absolute;
-  inset: -4px;
+  inset: -6px;
   border-radius: 28px;
   pointer-events: none;
   z-index: 0;
   background: transparent;
-  transition: all 0.15s ease;
-  will-change: transform;
+  backdrop-filter: blur(2px) brightness(1.02);
+  -webkit-backdrop-filter: blur(2px) brightness(1.02);
+  transition: backdrop-filter 0.15s ease;
+  will-change: transform, backdrop-filter;
+  /* 边缘折射光晕 */
+  box-shadow: 
+    inset 0 0 30px rgba(255, 255, 255, 0.02),
+    0 0 20px rgba(100, 150, 255, 0.01);
 }
 
-/* 边缘突起效果 - 使用 box-shadow 模拟凸起 */
-.project-card .edge-glow::before {
+/* 鼠标悬浮时折射增强 */
+.project-card.refracting .refraction-edge {
+  backdrop-filter: blur(3px) brightness(1.04) hue-rotate(2deg);
+  -webkit-backdrop-filter: blur(3px) brightness(1.04) hue-rotate(2deg);
+  box-shadow: 
+    inset 0 0 40px rgba(255, 255, 255, 0.04),
+    0 0 30px rgba(100, 150, 255, 0.03);
+}
+
+/* 边缘折射光晕 - 彩色偏移 */
+.project-card .refraction-edge::before {
   content: '';
   position: absolute;
-  inset: -6px;
+  inset: -4px;
   border-radius: 30px;
-  background: transparent;
-  box-shadow: 
-    inset 0 0 30px rgba(255, 255, 255, 0.03),
-    0 0 40px rgba(100, 150, 255, 0.02);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(120, 180, 255, 0.02) 0%,
+    rgba(180, 120, 255, 0.01) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
   transition: all 0.2s ease;
 }
 
-.project-card.refracting .edge-glow::before {
-  box-shadow: 
-    inset 0 0 40px rgba(255, 255, 255, 0.08),
-    0 0 60px rgba(100, 150, 255, 0.06),
-    inset 0 -4px 20px rgba(255, 255, 255, 0.05);
+.project-card.refracting .refraction-edge::before {
+  background: radial-gradient(
+    ellipse at var(--rx, 50%) var(--ry, 50%),
+    rgba(120, 200, 255, 0.06) 0%,
+    rgba(180, 120, 255, 0.04) 30%,
+    rgba(255, 200, 100, 0.02) 60%,
+    transparent 80%
+  );
 }
 
-/* ===== 液态玻璃光晕 ===== */
+/* ===== 液态光晕 ===== */
 .project-card .glass-glow {
   position: absolute;
   inset: 0;
@@ -201,26 +174,23 @@ body.glass-off .ripple {
   pointer-events: none;
   z-index: 1;
   background: radial-gradient(circle at 50% 50%, 
-    rgba(255, 255, 255, 0.06) 0%, 
+    rgba(255, 255, 255, 0.04) 0%, 
     transparent 60%
   );
   transition: background 0.1s ease;
 }
 
-/* 卡片内容在光晕之上 */
-.project-card > *:not(.glass-glow):not(.refraction-layer):not(.edge-glow) {
+.project-card > *:not(.refraction-edge):not(.glass-glow) {
   position: relative;
   z-index: 2;
 }
 
-/* 图片 */
 .project-image {
   height: 150px;
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  transition: transform 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   transform: translateZ(8px);
 }
 
@@ -233,51 +203,47 @@ body.glass-off .ripple {
 }
 
 .project-card:hover .project-image img {
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
-/* 文字 */
 .project-card h3 {
   margin: 0.5rem 0 0.2rem;
   font-size: 1.2rem;
   transform: translateZ(12px);
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-weight: 500;
 }
 
 .project-card p {
   margin: 0.2rem 0 0.8rem;
-  font-size: 0.9rem;
-  opacity: 0.8;
+  font-size: 0.85rem;
+  opacity: 0.7;
   transform: translateZ(8px);
   line-height: 1.4;
 }
 
 .project-card .btn {
   display: inline-block;
-  padding: 0.6rem 1.6rem;
+  padding: 0.5rem 1.4rem;
   border-radius: 50px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
-  background: rgba(76, 151, 255, 0.85);
+  background: rgba(76, 151, 255, 0.8);
   backdrop-filter: blur(4px);
   color: white;
   transition: all 0.25s ease;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   font-size: 0.85rem;
   transform: translateZ(16px);
-  box-shadow: 0 4px 16px rgba(76, 151, 255, 0.2);
 }
 
 .project-card .btn:hover {
   background: #4C97FF;
-  box-shadow: 0 8px 30px rgba(76, 151, 255, 0.35);
   transform: translateZ(20px) scale(1.03);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* ===== 按钮和下载 ===== */
+/* ===== 控件 ===== */
 .glass-toggle {
   position: fixed;
   top: 16px;
@@ -286,19 +252,15 @@ body.glass-off .ripple {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(30, 35, 65, 0.5);
-  backdrop-filter: blur(14px);
+  background: rgba(30, 35, 65, 0.4);
+  backdrop-filter: blur(12px);
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.glass-toggle svg {
-  width: 22px;
-  height: 22px;
-  fill: white;
-}
+.glass-toggle svg { width: 22px; height: 22px; fill: white; }
 
 .download-float {
   position: fixed;
@@ -313,16 +275,13 @@ body.glass-off .ripple {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(30, 35, 65, 0.5);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(30, 35, 65, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
   cursor: pointer;
 }
-.download-trigger svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
-}
+.download-trigger svg { width: 24px; height: 24px; fill: white; }
+
 .download-panel {
   position: absolute;
   right: 0;
@@ -330,10 +289,10 @@ body.glass-off .ripple {
   width: 280px;
   padding: 16px;
   display: none;
-  backdrop-filter: blur(24px);
-  background: rgba(25, 30, 55, 0.8);
+  backdrop-filter: blur(20px);
+  background: rgba(25, 30, 55, 0.7);
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.06);
   max-height: 400px;
   overflow-y: auto;
 }
@@ -341,6 +300,7 @@ body.glass-off .ripple {
   margin-top: 0;
   margin-bottom: 12px;
   color: white;
+  font-weight: 400;
 }
 .download-item {
   display: flex;
@@ -351,22 +311,11 @@ body.glass-off .ripple {
   font-size: 14px;
   margin-bottom: 6px;
   color: white;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.03);
 }
-.download-item .info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-.download-item .info .title {
-  font-weight: 600;
-  font-size: 13px;
-}
-.download-item .info .desc {
-  font-size: 11px;
-  opacity: 0.6;
-}
+.download-item .info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.download-item .info .title { font-weight: 500; font-size: 13px; }
+.download-item .info .desc { font-size: 11px; opacity: 0.5; }
 .download-item a {
   padding: 4px 14px;
   background: var(--blue);
@@ -387,23 +336,22 @@ body.glass-off .ripple {
 
 header {
   text-align: center;
-  padding: 2.5rem 1rem;
-  background: linear-gradient(135deg, rgba(50, 80, 180, 0.35), rgba(80, 60, 140, 0.35));
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, rgba(50, 80, 180, 0.3), rgba(80, 60, 140, 0.3));
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 header h1 {
   color: white;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.2);
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 1.8rem;
+  font-weight: 500;
 }
 header p {
-  color: rgba(255,255,255,0.6);
-  margin: 0.3rem 0 0;
-  font-size: 0.9rem;
+  color: rgba(255,255,255,0.4);
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
 }
 
 #projectContainer {
@@ -412,26 +360,26 @@ header p {
   padding: 0 1rem;
 }
 .section-title {
-  font-size: 1.5rem;
-  border-left: 4px solid var(--orange);
+  font-size: 1.3rem;
+  border-left: 3px solid var(--orange);
   padding-left: 12px;
   margin-bottom: 0.4rem;
   color: white;
-  text-shadow: 0 1px 20px rgba(0,0,0,0.2);
-  font-weight: 500;
+  font-weight: 400;
+  text-shadow: 0 1px 20px rgba(0,0,0,0.1);
 }
 .project-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
+  gap: 1.8rem;
   perspective: 1200px;
   margin-bottom: 2rem;
 }
 .loading-placeholder {
   text-align: center;
   padding: 40px;
-  color: rgba(255,255,255,0.4);
-  font-size: 18px;
+  color: rgba(255,255,255,0.3);
+  font-size: 16px;
 }
 
 .ripple {
@@ -442,9 +390,7 @@ header p {
   transform: translate(-50%, -50%);
   animation: rippleAnim 1s ease-out forwards;
 }
-body.glass-on .ripple {
-  border: 2px solid rgba(100, 150, 255, 0.5);
-}
+body.glass-on .ripple { border: 2px solid rgba(100, 150, 255, 0.3); }
 @keyframes rippleAnim {
   from { width: 32px; height: 32px; opacity: 1; }
   to { width: 140px; height: 140px; opacity: 0; }
@@ -453,7 +399,7 @@ body.glass-on .ripple {
 @media (max-width: 768px) {
   .project-list { gap: 1.25rem; }
   .download-panel { width: 240px; right: 0; }
-  header h1 { font-size: 1.5rem; }
+  header h1 { font-size: 1.4rem; }
   .project-card { padding: 1rem; }
 }
 </style>
@@ -466,12 +412,11 @@ body.glass-on .ripple {
 </div>
 
 <header class="glass">
-  <h1>我的作品集</h1>
-  <p>✨ 光学折射 · 液态玻璃 · 动态分类 ✨</p>
+  <h1>作品集</h1>
 </header>
 
 <div id="projectContainer">
-  <div class="loading-placeholder">⏳ 加载作品中...</div>
+  <div class="loading-placeholder">⏳ 加载中...</div>
 </div>
 
 <div class="download-mask" id="mask"></div>
@@ -480,8 +425,8 @@ body.glass-on .ripple {
     <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
   </button>
   <div class="download-panel glass" id="panel">
-    <h4>📦 资源下载</h4>
-    <div id="downloadList"><div style="color:rgba(255,255,255,0.4); text-align:center; padding:10px;">加载中...</div></div>
+    <h4>下载</h4>
+    <div id="downloadList"><div style="color:rgba(255,255,255,0.3); text-align:center; padding:10px;">加载中...</div></div>
   </div>
 </div>
 
@@ -507,7 +452,7 @@ function escapeHtml(text) {
 async function loadProjects() {
   const container = document.getElementById('projectContainer');
   if (!container) return;
-  container.innerHTML = '<div class="loading-placeholder">⏳ 加载作品中...</div>';
+  container.innerHTML = '<div class="loading-placeholder">⏳ 加载中...</div>';
   
   try {
     const res = await fetch(`${API_BASE}/api/projects`);
@@ -516,7 +461,7 @@ async function loadProjects() {
     renderProjects(projects, container);
   } catch (e) {
     console.error('加载作品失败:', e);
-    container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:40px;">⚠️ 加载失败，请刷新重试</div>`;
+    container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:40px;">⚠️ 加载失败</div>`;
   }
 }
 
@@ -532,7 +477,7 @@ function renderProjects(projects, container) {
   container.innerHTML = '';
 
   if (categoryNames.length === 0) {
-    container.innerHTML = `<div style="color:rgba(255,255,255,0.4); text-align:center; padding:40px;">暂无作品</div>`;
+    container.innerHTML = `<div style="color:rgba(255,255,255,0.3); text-align:center; padding:40px;">暂无作品</div>`;
     return;
   }
 
@@ -553,15 +498,14 @@ function renderProjects(projects, container) {
     list.className = 'project-list';
     list.innerHTML = projectsInCat.map(p => `
       <div class="project-card" data-tilt>
-        <div class="edge-glow"></div>
-        <div class="refraction-layer"></div>
+        <div class="refraction-edge"></div>
         <div class="glass-glow"></div>
         <div class="project-image">
           <img src="${p.image || 'https://placehold.co/400x200?text=No+Image'}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x200?text=加载失败'">
         </div>
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.description || '')}</p>
-        <a href="${escapeHtml(p.link)}" class="btn" target="_blank">查看作品</a>
+        <a href="${escapeHtml(p.link)}" class="btn" target="_blank">查看</a>
       </div>
     `).join('');
     
@@ -573,18 +517,15 @@ function renderProjects(projects, container) {
 }
 
 // ============================================================
-// 4. ✨ 光学折射 + 边缘突起 + 液态玻璃效果
+// 4. ✨ 光学边缘折射 + 液态玻璃
 // ============================================================
 function bindCardEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
   
   cards.forEach(card => {
-    // ---- 获取子元素 ----
-    const refractionLayer = card.querySelector('.refraction-layer');
-    const edgeGlow = card.querySelector('.edge-glow');
+    const refractionEdge = card.querySelector('.refraction-edge');
     const glassGlow = card.querySelector('.glass-glow');
     
-    // ---- 状态变量 ----
     let rafId = null;
     let currentRotateX = 0, targetRotateX = 0;
     let currentRotateY = 0, targetRotateY = 0;
@@ -592,152 +533,98 @@ function bindCardEffects() {
     let currentScaleY = 1, targetScaleY = 1;
     let currentTranslateX = 0, targetTranslateX = 0;
     let currentTranslateY = 0, targetTranslateY = 0;
-    let currentRefractionX = 0, targetRefractionX = 0;
-    let currentRefractionY = 0, targetRefractionY = 0;
-    let currentEdgeX = 0, targetEdgeX = 0;
-    let currentEdgeY = 0, targetEdgeY = 0;
+    let currentRefX = 0, targetRefX = 0;
+    let currentRefY = 0, targetRefY = 0;
     
-    // ---- 主循环 ----
     function animate() {
       const ease = 0.10;
       
-      // 平滑更新所有值
       currentRotateX += (targetRotateX - currentRotateX) * ease;
       currentRotateY += (targetRotateY - currentRotateY) * ease;
       currentScaleX += (targetScaleX - currentScaleX) * ease;
       currentScaleY += (targetScaleY - currentScaleY) * ease;
       currentTranslateX += (targetTranslateX - currentTranslateX) * ease;
       currentTranslateY += (targetTranslateY - currentTranslateY) * ease;
-      currentRefractionX += (targetRefractionX - currentRefractionX) * ease;
-      currentRefractionY += (targetRefractionY - currentRefractionY) * ease;
-      currentEdgeX += (targetEdgeX - currentEdgeX) * ease;
-      currentEdgeY += (targetEdgeY - currentEdgeY) * ease;
+      currentRefX += (targetRefX - currentRefX) * ease;
+      currentRefY += (targetRefY - currentRefY) * ease;
       
-      // ---- 应用卡片变换 ----
-      const rotX = currentRotateX * 0.6;
-      const rotY = currentRotateY * 0.6;
-      const scaleX = currentScaleX;
-      const scaleY = currentScaleY;
-      const transX = currentTranslateX * 0.3;
-      const transY = currentTranslateY * 0.3;
-      
+      // 卡片变换
       card.style.transform = `
         perspective(900px) 
-        rotateX(${rotX}deg) 
-        rotateY(${rotY}deg) 
-        scale(${scaleX}, ${scaleY}) 
-        translateX(${transX}px) 
-        translateY(${transY}px)
+        rotateX(${currentRotateX * 0.5}deg) 
+        rotateY(${currentRotateY * 0.5}deg) 
+        scale(${currentScaleX}, ${currentScaleY}) 
+        translateX(${currentTranslateX * 0.3}px) 
+        translateY(${currentTranslateY * 0.3}px)
       `;
       
-      // ---- 边缘突起：使用 transform 让边缘向外凸 ----
-      if (edgeGlow) {
-        const edgeOffset = Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.06) * 120;
-        const edgeXOffset = (currentEdgeX) * 8;
-        const edgeYOffset = (currentEdgeY) * 8;
-        edgeGlow.style.transform = `
-          translate(${edgeXOffset}px, ${edgeYOffset}px) 
-          scale(${1 + edgeOffset / 200})
-        `;
-        // 边缘光晕强度
-        const glowIntensity = 0.02 + Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.04);
-        edgeGlow.style.boxShadow = `
-          inset 0 0 40px rgba(255, 255, 255, ${glowIntensity * 2.5}),
-          0 0 60px rgba(100, 150, 255, ${glowIntensity * 1.5})
-        `;
-      }
-      
-      // ---- 光学折射层：模拟光线扭曲 ----
-      if (refractionLayer) {
-        // 折射偏移量：根据鼠标位置偏移，产生光线经过玻璃的扭曲感
-        const refractionStrength = Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.04) * 80;
-        const refX = -currentRefractionX * 12;
-        const refY = -currentRefractionY * 12;
-        refractionLayer.style.transform = `
-          translate(${refX}px, ${refY}px) 
-          translateZ(-8px)
-        `;
-        // 折射模糊度
-        const blurAmount = Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.03) * 80;
-        refractionLayer.style.backdropFilter = `
-          blur(${blurAmount}px) 
-          brightness(${1 + blurAmount * 0.003})
-        `;
-        refractionLayer.style.webkitBackdropFilter = `
-          blur(${blurAmount}px) 
-          brightness(${1 + blurAmount * 0.003})
+      // 边缘折射层
+      if (refractionEdge) {
+        const refIntensity = Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.04);
+        const blurAmount = 2 + refIntensity * 30;
+        const brightness = 1.02 + refIntensity * 0.3;
+        const shiftX = currentRefX * 8;
+        const shiftY = currentRefY * 8;
+        
+        refractionEdge.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
+        refractionEdge.style.backdropFilter = `blur(${blurAmount}px) brightness(${brightness})`;
+        refractionEdge.style.webkitBackdropFilter = `blur(${blurAmount}px) brightness(${brightness})`;
+        
+        // 彩色偏移
+        const hue = 220 + currentRefX * 20;
+        refractionEdge.style.boxShadow = `
+          inset 0 0 40px rgba(255, 255, 255, ${0.02 + refIntensity * 0.5}),
+          0 0 30px hsla(${hue}, 80%, 60%, ${0.01 + refIntensity * 0.3})
         `;
         
-        // 折射光晕颜色偏移
-        const hueShift = (currentRefractionX + currentRefractionY) * 2;
-        refractionLayer.style.background = `
-          radial-gradient(
-            ellipse at ${50 + currentRefractionX * 15}% ${50 + currentRefractionY * 15}%,
-            rgba(180, 220, 255, ${0.02 + blurAmount * 0.003}) 0%,
-            rgba(120, 160, 255, ${0.01 + blurAmount * 0.001}) 40%,
-            transparent 70%
-          )
-        `;
+        // 折射光晕位置
+        const rx = 50 + currentRefX * 20;
+        const ry = 50 + currentRefY * 20;
+        refractionEdge.style.setProperty('--rx', rx + '%');
+        refractionEdge.style.setProperty('--ry', ry + '%');
       }
       
-      // ---- 液态光晕 ----
+      // 液态光晕
       if (glassGlow) {
-        const glowX = 50 + (currentTranslateX / 20) * 30;
-        const glowY = 50 + (currentTranslateY / 20) * 30;
-        const intensity = 0.05 + Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.04);
+        const gx = 50 + (currentTranslateX / 20) * 25;
+        const gy = 50 + (currentTranslateY / 20) * 25;
+        const intensity = 0.04 + Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.03);
         glassGlow.style.background = `
-          radial-gradient(circle at ${glowX}% ${glowY}%, 
-            rgba(255,255,255,${intensity + 0.03}) 0%, 
-            rgba(255,255,255,${intensity * 0.4}) 30%, 
+          radial-gradient(circle at ${gx}% ${gy}%, 
+            rgba(255,255,255,${intensity}) 0%, 
+            rgba(255,255,255,${intensity * 0.3}) 30%, 
             transparent 70%
           )
         `;
       }
       
-      // 继续动画
       rafId = requestAnimationFrame(animate);
     }
     
-    // ---- 启动动画 ----
     if (!card._animStarted) {
       card._animStarted = true;
       animate();
     }
     
-    // ---- 鼠标移动 ----
     function tiltHandler(e) {
       const rect = card.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
-      
       const dx = (x - 0.5) * 2;
       const dy = (y - 0.5) * 2;
-      const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // 限制最大变形
-      const maxRotation = 14;
-      const maxTranslate = 22;
+      targetRotateX = -dy * 12;
+      targetRotateY = dx * 12;
+      targetScaleX = Math.max(0.92, Math.min(1.08, 1 + dx * 0.04));
+      targetScaleY = Math.max(0.92, Math.min(1.08, 1 + dy * 0.04));
+      targetTranslateX = dx * 18;
+      targetTranslateY = dy * 18;
+      targetRefX = dx * 0.8;
+      targetRefY = dy * 0.8;
       
-      targetRotateX = -dy * maxRotation;
-      targetRotateY = dx * maxRotation;
-      targetScaleX = Math.max(0.90, Math.min(1.10, 1 + dx * 0.045));
-      targetScaleY = Math.max(0.90, Math.min(1.10, 1 + dy * 0.045));
-      targetTranslateX = dx * maxTranslate;
-      targetTranslateY = dy * maxTranslate;
-      
-      // 光学折射偏移：鼠标移动时产生光线扭曲
-      targetRefractionX = dx * 1.2;
-      targetRefractionY = dy * 1.2;
-      
-      // 边缘突起偏移
-      targetEdgeX = dx * 0.5;
-      targetEdgeY = dy * 0.5;
-      
-      // 添加折射状态类
       card.classList.add('refracting');
     }
     
-    // ---- 鼠标离开 ----
     function resetHandler() {
       targetRotateX = 0;
       targetRotateY = 0;
@@ -745,38 +632,24 @@ function bindCardEffects() {
       targetScaleY = 1;
       targetTranslateX = 0;
       targetTranslateY = 0;
-      targetRefractionX = 0;
-      targetRefractionY = 0;
-      targetEdgeX = 0;
-      targetEdgeY = 0;
-      
+      targetRefX = 0;
+      targetRefY = 0;
       card.classList.remove('refracting');
       
-      // 重置折射层
-      if (refractionLayer) {
-        refractionLayer.style.transform = 'translateZ(-8px)';
-        refractionLayer.style.backdropFilter = 'blur(0px) brightness(1)';
-        refractionLayer.style.webkitBackdropFilter = 'blur(0px) brightness(1)';
-        refractionLayer.style.background = 'transparent';
+      if (refractionEdge) {
+        refractionEdge.style.transform = 'translate(0, 0)';
+        refractionEdge.style.backdropFilter = 'blur(2px) brightness(1.02)';
+        refractionEdge.style.webkitBackdropFilter = 'blur(2px) brightness(1.02)';
+        refractionEdge.style.boxShadow = 'inset 0 0 30px rgba(255,255,255,0.02), 0 0 20px rgba(100,150,255,0.01)';
       }
-      
-      // 重置边缘光晕
-      if (edgeGlow) {
-        edgeGlow.style.transform = 'translate(0, 0) scale(1)';
-        edgeGlow.style.boxShadow = 'inset 0 0 30px rgba(255,255,255,0.02), 0 0 40px rgba(100,150,255,0.02)';
-      }
-      
-      // 重置液态光晕
       if (glassGlow) {
         glassGlow.style.background = 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 60%)';
       }
     }
     
-    // ---- 绑定事件 ----
     card.addEventListener('mousemove', tiltHandler);
     card.addEventListener('mouseleave', resetHandler);
     
-    // ---- 清理 ----
     card._cleanup = () => {
       if (rafId) cancelAnimationFrame(rafId);
       card.removeEventListener('mousemove', tiltHandler);
@@ -796,7 +669,7 @@ async function loadDownloads() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const downloads = await res.json();
     if (downloads.length === 0) {
-      container.innerHTML = `<div style="color:rgba(255,255,255,0.4); text-align:center; padding:10px;">暂无资源</div>`;
+      container.innerHTML = `<div style="color:rgba(255,255,255,0.3); text-align:center; padding:10px;">暂无</div>`;
       return;
     }
     container.innerHTML = downloads.map(item => `
@@ -814,7 +687,7 @@ async function loadDownloads() {
 }
 
 // ============================================================
-// 6. 毛玻璃切换 + 下载面板 + 涟漪
+// 6. 控件
 // ============================================================
 document.getElementById('glassToggle').onclick = () => {
   document.body.classList.toggle('glass-on');
@@ -847,11 +720,11 @@ document.addEventListener('mousedown', e => {
 });
 
 // ============================================================
-// 7. 页面启动
+// 7. 启动
 // ============================================================
 loadProjects();
 loadDownloads();
-console.log('🚀 作品集已启动（光学折射 + 边缘突起 + 液态玻璃）');
+console.log('🚀 作品集已启动（光学边缘折射）');
 </script>
 </body>
 </html>

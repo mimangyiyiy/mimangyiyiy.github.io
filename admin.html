@@ -485,7 +485,10 @@ select option { background: #2a2a4e; }
   <div id="adminArea">
     <div class="header-bar">
       <h2 style="margin:0;">管理</h2>
-      <button class="btn btn-danger" onclick="logout()">退出</button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="requestNotificationPermission()" id="notifBtn">🔔 允许通知</button>
+        <button class="btn btn-danger" onclick="logout()">退出</button>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab-btn active" data-tab="tab-projects" onclick="switchTab('tab-projects')">作品</button>
@@ -609,6 +612,7 @@ const KV_LIMIT_KB = 1024 * 1024;
 let editType = '';
 let editId = null;
 const fileCache = new Map();
+const loadingFiles = new Map();
 
 // ============================================================
 // 2. 工具函数
@@ -650,14 +654,14 @@ function fileToBase64(file) {
 }
 
 // ============================================================
-// 3. ✅ 系统级通知（Windows/Android/iOS）
+// 3. 系统通知（Windows/Android/iOS）
 // ============================================================
-let toastIdCounter = 0;
-
 function sendSystemNotification(title, body, tag) {
   if (!('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return;
-  
+  if (Notification.permission !== 'granted') {
+    console.log('通知权限未授权，当前状态:', Notification.permission);
+    return;
+  }
   try {
     const notification = new Notification('📄 ' + title, {
       body: body,
@@ -670,16 +674,50 @@ function sendSystemNotification(title, body, tag) {
       window.focus();
       notification.close();
     };
-    setTimeout(() => { notification.close(); }, 8000);
+    setTimeout(() => { try { notification.close(); } catch(e) {} }, 8000);
+    console.log('✅ 系统通知已发送:', title, body);
   } catch (e) {
-    console.log('系统通知发送失败:', e);
+    console.log('❌ 系统通知发送失败:', e);
   }
 }
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    showStatus('❌ 您的浏览器不支持通知', 'error');
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    showStatus('✅ 通知已授权', 'success');
+    document.getElementById('notifBtn').textContent = '🔔 已授权';
+    sendSystemNotification('✅ 通知已启用', '您将收到文件加载通知');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    showStatus('❌ 通知已被拒绝，请在浏览器设置中允许', 'error');
+    return;
+  }
+  try {
+    const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      showStatus('✅ 通知授权成功', 'success');
+      document.getElementById('notifBtn').textContent = '🔔 已授权';
+      sendSystemNotification('✅ 通知已启用', '您将收到文件加载通知');
+    } else {
+      showStatus('❌ 通知授权被拒绝', 'error');
+    }
+  } catch (e) {
+    showStatus('❌ 请求通知权限失败: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// 4. 右下角通知（多文件独立）
+// ============================================================
+let toastIdCounter = 0;
 
 function createFileToast(id, title, totalSizeKB) {
   const container = document.getElementById('fileToastContainer');
   if (!container) return null;
-  
   const toast = document.createElement('div');
   toast.className = 'toast-item';
   toast.dataset.id = id;
@@ -702,10 +740,8 @@ function updateToast(id, loadedKB, totalKB, status = 'loading') {
   if (!container) return;
   const toast = container.querySelector(`.toast-item[data-id="${id}"]`);
   if (!toast) return;
-  
   const body = toast.querySelector('.toast-body');
   const fill = toast.querySelector('.toast-progress-fill');
-  
   if (body) {
     if (status === 'complete') {
       body.textContent = `✅ 完成 · ${loadedKB.toFixed(1)} KB / ${totalKB.toFixed(1)} KB`;
@@ -750,289 +786,7 @@ function removeToast(id) {
 }
 
 // ============================================================
-// 4. ✅ viewKVWithProgress（多文件加载 + 系统级通知）
-// ============================================================
-const loadingFiles = new Map();
-
-async function viewKVWithProgress(key) {
-  // 请求通知权限
-  if ('Notification' in window && Notification.permission === 'default') {
-    await Notification.requestPermission();
-  }
-  
-  // 如果正在加载中，不重复加载
-  if (loadingFiles.has(key)) {
-    showStatus('文件正在加载中...', 'success');
-    return;
-  }
-  
-  // 检查缓存
-  if (fileCache.has(key)) {
-    const data = fileCache.get(key);
-    document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
-    document.getElementById('kvModalBody').textContent = data.value || '(空)';
-    document.getElementById('kvModal').style.display = 'flex';
-    showStatus('已从缓存加载', 'success');
-    // 系统通知：缓存加载
-    sendSystemNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 'cache-' + key);
-    return;
-  }
-  
-  try {
-    // 获取文件大小
-    const listRes = await fetch(`${API_BASE}/api/kv-list`);
-    const listData = await listRes.json();
-    const fileInfo = listData.keys.find(item => item.key === key);
-    const totalSize = fileInfo ? fileInfo.size : 0;
-    const totalSizeKB = totalSize / 1024;
-    
-    if (totalSize === 0) {
-      const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
-      const data = await res.json();
-      fileCache.set(key, data);
-      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
-      document.getElementById('kvModalBody').textContent = data.value || '(空)';
-      document.getElementById('kvModal').style.display = 'flex';
-      showStatus('加载完成', 'success');
-      sendSystemNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 'complete-' + key);
-      return;
-    }
-    
-    // 生成唯一ID
-    const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
-    loadingFiles.set(key, toastId);
-    
-    // 创建右下角通知
-    const toast = createFileToast(toastId, key, totalSizeKB);
-    
-    // 系统通知：开始加载
-    sendSystemNotification('⏳ 正在加载', `${key} (${totalSizeKB.toFixed(1)} KB)`, 'start-' + key);
-    
-    const progressEl = document.getElementById('fileLoadProgress');
-    const progressBar = document.getElementById('fileLoadBar');
-    const progressText = document.getElementById('fileLoadText');
-    
-    progressEl.style.display = 'block';
-    progressText.textContent = `0.0 KB / ${totalSizeKB.toFixed(1)} KB`;
-    progressBar.style.width = '10%';
-    
-    const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
-    if (!res.ok) {
-      const err = await res.json();
-      showStatus('加载失败：' + (err.error || '未知错误'), 'error');
-      progressEl.style.display = 'none';
-      progressBar.style.width = '0%';
-      updateToast(toastId, 0, totalSizeKB, 'error');
-      sendSystemNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 'error-' + key);
-      loadingFiles.delete(key);
-      setTimeout(() => removeToast(toastId), 3000);
-      return;
-    }
-    
-    const reader = res.body.getReader();
-    let receivedLength = 0;
-    const chunks = [];
-    let lastNotify = Date.now();
-    
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-      receivedLength += value.length;
-      
-      const percent = (receivedLength / totalSize) * 100;
-      progressBar.style.width = Math.min(percent, 99) + '%';
-      const displayKB = receivedLength / 1024;
-      progressText.textContent = `${displayKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
-      
-      // 更新右下角通知（每500ms）
-      const now = Date.now();
-      if (now - lastNotify > 500) {
-        lastNotify = now;
-        updateToast(toastId, displayKB, totalSizeKB);
-      }
-    }
-    
-    const allChunks = new Uint8Array(receivedLength);
-    let position = 0;
-    for (const chunk of chunks) {
-      allChunks.set(chunk, position);
-      position += chunk.length;
-    }
-    
-    const decoder = new TextDecoder('utf-8');
-    const text = decoder.decode(allChunks);
-    const data = JSON.parse(text);
-    fileCache.set(key, data);
-    loadingFiles.delete(key);
-    
-    progressBar.style.width = '100%';
-    const finalKB = receivedLength / 1024;
-    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
-    
-    // 更新右下角通知为完成
-    updateToast(toastId, finalKB, totalSizeKB, 'complete');
-    
-    // 系统通知：加载完成
-    sendSystemNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 'complete-' + key);
-    
-    setTimeout(() => {
-      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
-      document.getElementById('kvModalBody').textContent = data.value || '(空)';
-      document.getElementById('kvModal').style.display = 'flex';
-      setTimeout(() => {
-        progressEl.style.display = 'none';
-        progressBar.style.width = '0%';
-        removeToast(toastId);
-      }, 500);
-    }, 200);
-    
-  } catch (e) {
-    showStatus('加载失败：' + (e.message || '未知错误'), 'error');
-    loadingFiles.delete(key);
-    const toastId = loadingFiles.get(key);
-    if (toastId) {
-      updateToast(toastId, 0, 0, 'error');
-      setTimeout(() => removeToast(toastId), 3000);
-    }
-    sendSystemNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 'error-' + key);
-  }
-}
-
-// ============================================================
-// 5. loadFiles
-// ============================================================
-async function loadFiles() {
-  const container = document.getElementById('fileList');
-  const countEl = document.getElementById('fileCount');
-  const progressEl = document.getElementById('fileLoadProgress');
-  const progressBar = document.getElementById('fileLoadBar');
-  const progressText = document.getElementById('fileLoadText');
-  
-  container.innerHTML = '<div class="empty-msg">加载中...</div>';
-  progressEl.style.display = 'block';
-  progressText.textContent = '正在连接...';
-  progressBar.style.width = '5%';
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/kv-list`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
-    const contentLength = res.headers.get('Content-Length');
-    const totalSize = contentLength ? parseInt(contentLength) : 0;
-    const totalSizeKB = totalSize / 1024;
-    const totalSizeKnown = totalSize > 0;
-    
-    progressText.textContent = totalSizeKnown ?
-      `0.0 KB / ${totalSizeKB.toFixed(1)} KB` :
-      '正在加载...';
-    progressBar.style.width = '10%';
-    
-    const reader = res.body.getReader();
-    let receivedLength = 0;
-    const chunks = [];
-    
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-      receivedLength += value.length;
-      
-      if (totalSizeKnown) {
-        const percent = (receivedLength / totalSize) * 100;
-        progressBar.style.width = Math.min(percent, 99) + '%';
-        const displayKB = (receivedLength / 1024).toFixed(1);
-        progressText.textContent = `${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`;
-      }
-    }
-    
-    const allChunks = new Uint8Array(receivedLength);
-    let position = 0;
-    for (const chunk of chunks) {
-      allChunks.set(chunk, position);
-      position += chunk.length;
-    }
-    
-    const decoder = new TextDecoder('utf-8');
-    const text = decoder.decode(allChunks);
-    const data = JSON.parse(text);
-    
-    const finalKB = receivedLength / 1024;
-    const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : finalKB.toFixed(1);
-    progressBar.style.width = '100%';
-    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalKB} KB`;
-    setTimeout(() => {
-      progressEl.style.display = 'none';
-      progressBar.style.width = '0%';
-    }, 500);
-    
-    countEl.textContent = '共 ' + data.total + ' 个文件';
-    
-    let totalSizeKB_sum = 0;
-    data.keys.forEach(item => { totalSizeKB_sum += (item.size || 0) / 1024; });
-    const percent = Math.min((totalSizeKB_sum / KV_LIMIT_KB) * 100, 100);
-    
-    document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB_sum.toFixed(1) + ' KB';
-    document.getElementById('kvPercent').textContent = percent.toFixed(1) + '%';
-    document.getElementById('kvProgress').style.width = percent + '%';
-    
-    if (data.keys.length === 0) {
-      container.innerHTML = '<div class="empty-msg">KV 中暂无文件</div>';
-      return;
-    }
-    
-    container.innerHTML = data.keys.map((item, index) => {
-      const ext = item.key.split('.').pop().toLowerCase();
-      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-      const icon = isImage ? '🖼️' : '📄';
-      const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
-      const sizeKB = ((item.size || 0) / 1024).toFixed(1);
-      const delay = index * 40;
-      
-      return `
-      <div class="file-item" style="animation-delay:${delay}ms">
-        <div class="info">
-          <span class="name">${icon} ${escapeHtml(item.key)}</span>
-          <span class="sub">${sizeKB} KB · ${isImage ? '图片' : '文件'}</span>
-        </div>
-        <div class="actions">
-          ${isImage ? `<a href="${previewUrl}" target="_blank" class="btn btn-primary btn-sm">查看</a>` : `<button class="btn btn-primary btn-sm" onclick="viewKVWithProgress('${escapeHtml(item.key)}')">查看</button>`}
-          <button class="btn btn-danger btn-sm" onclick="deleteFileKV('${escapeHtml(item.key)}')">删除</button>
-        </div>
-      </div>
-    `}).join('');
-    
-  } catch (e) {
-    container.innerHTML = '<div class="empty-msg">加载失败：' + (e.message || '未知错误') + '</div>';
-    progressEl.style.display = 'none';
-    progressBar.style.width = '0%';
-  }
-}
-
-// ============================================================
-// 6. 删除 KV 文件
-// ============================================================
-async function deleteFileKV(key) {
-  if (!confirm('确定要删除 "' + key + '" 吗？此操作不可恢复！')) return;
-  fileCache.delete(key);
-  try {
-    const res = await fetch(`${API_BASE}/api/kv-delete/${encodeURIComponent(key)}`, {
-      method: 'DELETE'
-    });
-    if (res.ok) {
-      showStatus('已删除', 'success');
-      loadFiles();
-    } else {
-      const err = await res.json();
-      showStatus('删除失败：' + (err.error || '未知错误'), 'error');
-    }
-  } catch (e) {
-    showStatus('网络错误', 'error');
-  }
-}
-
-// ============================================================
-// 7. 登录 / 退出
+// 5. 登录 / 退出
 // ============================================================
 async function adminLogin() {
   const username = document.getElementById('loginUser').value.trim();
@@ -1058,6 +812,12 @@ async function adminLogin() {
         loadAdminDownloads()
       ]);
       showStatus('登录成功', 'success');
+      // 更新通知按钮状态
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          document.getElementById('notifBtn').textContent = '🔔 已授权';
+        }
+      }
     } else {
       showStatus('登录失败：' + (data.error || '用户名或密码错误'), 'error');
     }
@@ -1074,7 +834,7 @@ function logout() {
 }
 
 // ============================================================
-// 8. 分类管理
+// 6. 分类管理
 // ============================================================
 async function loadCategoriesWithDelete() {
   try {
@@ -1153,7 +913,7 @@ async function deleteCategoryWithCheck(categoryId) {
 }
 
 // ============================================================
-// 9. 作品管理
+// 7. 作品管理
 // ============================================================
 async function loadAdminProjects() {
   try {
@@ -1247,7 +1007,7 @@ async function deleteProject(id) {
 }
 
 // ============================================================
-// 10. 下载管理
+// 8. 下载管理
 // ============================================================
 async function loadAdminDownloads() {
   try {
@@ -1332,7 +1092,278 @@ async function deleteDownload(id) {
 }
 
 // ============================================================
-// 11. 上传功能
+// 9. ✅ viewKVWithProgress（多文件 + 系统通知）
+// ============================================================
+async function viewKVWithProgress(key) {
+  // 检查并请求通知权限
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission();
+    if (Notification.permission === 'granted') {
+      document.getElementById('notifBtn').textContent = '🔔 已授权';
+    }
+  }
+
+  if (loadingFiles.has(key)) {
+    showStatus('文件正在加载中...', 'success');
+    return;
+  }
+
+  if (fileCache.has(key)) {
+    const data = fileCache.get(key);
+    document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+    document.getElementById('kvModalBody').textContent = data.value || '(空)';
+    document.getElementById('kvModal').style.display = 'flex';
+    showStatus('已从缓存加载', 'success');
+    sendSystemNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 'cache-' + key);
+    return;
+  }
+
+  try {
+    const listRes = await fetch(`${API_BASE}/api/kv-list`);
+    const listData = await listRes.json();
+    const fileInfo = listData.keys.find(item => item.key === key);
+    const totalSize = fileInfo ? fileInfo.size : 0;
+    const totalSizeKB = totalSize / 1024;
+
+    if (totalSize === 0) {
+      const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+      const data = await res.json();
+      fileCache.set(key, data);
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      showStatus('加载完成', 'success');
+      sendSystemNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 'complete-' + key);
+      return;
+    }
+
+    const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+    loadingFiles.set(key, toastId);
+
+    createFileToast(toastId, key, totalSizeKB);
+    sendSystemNotification('⏳ 正在加载', `${key} (${totalSizeKB.toFixed(1)} KB)`, 'start-' + key);
+
+    const progressEl = document.getElementById('fileLoadProgress');
+    const progressBar = document.getElementById('fileLoadBar');
+    const progressText = document.getElementById('fileLoadText');
+
+    progressEl.style.display = 'block';
+    progressText.textContent = `0.0 KB / ${totalSizeKB.toFixed(1)} KB`;
+    progressBar.style.width = '10%';
+
+    const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+    if (!res.ok) {
+      const err = await res.json();
+      showStatus('加载失败：' + (err.error || '未知错误'), 'error');
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+      updateToast(toastId, 0, totalSizeKB, 'error');
+      sendSystemNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 'error-' + key);
+      loadingFiles.delete(key);
+      setTimeout(() => removeToast(toastId), 3000);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    let lastNotify = Date.now();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      receivedLength += value.length;
+
+      const percent = (receivedLength / totalSize) * 100;
+      progressBar.style.width = Math.min(percent, 99) + '%';
+      const displayKB = receivedLength / 1024;
+      progressText.textContent = `${displayKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
+
+      const now = Date.now();
+      if (now - lastNotify > 500) {
+        lastNotify = now;
+        updateToast(toastId, displayKB, totalSizeKB);
+      }
+    }
+
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
+    fileCache.set(key, data);
+    loadingFiles.delete(key);
+
+    progressBar.style.width = '100%';
+    const finalKB = receivedLength / 1024;
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
+
+    updateToast(toastId, finalKB, totalSizeKB, 'complete');
+    sendSystemNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 'complete-' + key);
+
+    setTimeout(() => {
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      setTimeout(() => {
+        progressEl.style.display = 'none';
+        progressBar.style.width = '0%';
+        removeToast(toastId);
+      }, 500);
+    }, 200);
+
+  } catch (e) {
+    showStatus('加载失败：' + (e.message || '未知错误'), 'error');
+    const toastId = loadingFiles.get(key);
+    if (toastId) {
+      updateToast(toastId, 0, 0, 'error');
+      setTimeout(() => removeToast(toastId), 3000);
+    }
+    loadingFiles.delete(key);
+    sendSystemNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 'error-' + key);
+  }
+}
+
+// ============================================================
+// 10. loadFiles
+// ============================================================
+async function loadFiles() {
+  const container = document.getElementById('fileList');
+  const countEl = document.getElementById('fileCount');
+  const progressEl = document.getElementById('fileLoadProgress');
+  const progressBar = document.getElementById('fileLoadBar');
+  const progressText = document.getElementById('fileLoadText');
+
+  container.innerHTML = '<div class="empty-msg">加载中...</div>';
+  progressEl.style.display = 'block';
+  progressText.textContent = '正在连接...';
+  progressBar.style.width = '5%';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/kv-list`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
+
+    progressText.textContent = totalSizeKnown ?
+      `0.0 KB / ${totalSizeKB.toFixed(1)} KB` :
+      '正在加载...';
+    progressBar.style.width = '10%';
+
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      receivedLength += value.length;
+
+      if (totalSizeKnown) {
+        const percent = (receivedLength / totalSize) * 100;
+        progressBar.style.width = Math.min(percent, 99) + '%';
+        const displayKB = (receivedLength / 1024).toFixed(1);
+        progressText.textContent = `${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`;
+      }
+    }
+
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
+
+    const finalKB = receivedLength / 1024;
+    const totalKB = totalSizeKnown ? totalSizeKB.toFixed(1) : finalKB.toFixed(1);
+    progressBar.style.width = '100%';
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalKB} KB`;
+    setTimeout(() => {
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+    }, 500);
+
+    countEl.textContent = '共 ' + data.total + ' 个文件';
+
+    let totalSizeKB_sum = 0;
+    data.keys.forEach(item => { totalSizeKB_sum += (item.size || 0) / 1024; });
+    const percent = Math.min((totalSizeKB_sum / KV_LIMIT_KB) * 100, 100);
+
+    document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB_sum.toFixed(1) + ' KB';
+    document.getElementById('kvPercent').textContent = percent.toFixed(1) + '%';
+    document.getElementById('kvProgress').style.width = percent + '%';
+
+    if (data.keys.length === 0) {
+      container.innerHTML = '<div class="empty-msg">KV 中暂无文件</div>';
+      return;
+    }
+
+    container.innerHTML = data.keys.map((item, index) => {
+      const ext = item.key.split('.').pop().toLowerCase();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+      const icon = isImage ? '🖼️' : '📄';
+      const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
+      const sizeKB = ((item.size || 0) / 1024).toFixed(1);
+      const delay = index * 40;
+
+      return `
+      <div class="file-item" style="animation-delay:${delay}ms">
+        <div class="info">
+          <span class="name">${icon} ${escapeHtml(item.key)}</span>
+          <span class="sub">${sizeKB} KB · ${isImage ? '图片' : '文件'}</span>
+        </div>
+        <div class="actions">
+          ${isImage ? `<a href="${previewUrl}" target="_blank" class="btn btn-primary btn-sm">查看</a>` : `<button class="btn btn-primary btn-sm" onclick="viewKVWithProgress('${escapeHtml(item.key)}')">查看</button>`}
+          <button class="btn btn-danger btn-sm" onclick="deleteFileKV('${escapeHtml(item.key)}')">删除</button>
+        </div>
+      </div>
+    `}).join('');
+
+  } catch (e) {
+    container.innerHTML = '<div class="empty-msg">加载失败：' + (e.message || '未知错误') + '</div>';
+    progressEl.style.display = 'none';
+    progressBar.style.width = '0%';
+  }
+}
+
+// ============================================================
+// 11. 删除 KV 文件
+// ============================================================
+async function deleteFileKV(key) {
+  if (!confirm('确定要删除 "' + key + '" 吗？此操作不可恢复！')) return;
+  fileCache.delete(key);
+  try {
+    const res = await fetch(`${API_BASE}/api/kv-delete/${encodeURIComponent(key)}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      showStatus('已删除', 'success');
+      loadFiles();
+    } else {
+      const err = await res.json();
+      showStatus('删除失败：' + (err.error || '未知错误'), 'error');
+    }
+  } catch (e) {
+    showStatus('网络错误', 'error');
+  }
+}
+
+// ============================================================
+// 12. 上传功能
 // ============================================================
 async function uploadHtmlFile() {
   const fileInput = document.getElementById('newHtmlFile');
@@ -1445,7 +1476,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// 12. 编辑弹窗
+// 13. 编辑弹窗
 // ============================================================
 function openEditDownload(id) {
   editType = 'download';
@@ -1564,7 +1595,7 @@ function closeEditModal() {
 }
 
 // ============================================================
-// 13. 检查登录状态
+// 14. 检查登录状态
 // ============================================================
 function checkAuth() {
   const token = getToken();
@@ -1574,17 +1605,21 @@ function checkAuth() {
     loadCategoriesWithDelete();
     loadAdminProjects();
     loadAdminDownloads();
+    // 更新通知按钮状态
+    if ('Notification' in window && Notification.permission === 'granted') {
+      document.getElementById('notifBtn').textContent = '🔔 已授权';
+    }
   }
 }
 
 // ============================================================
-// 14. 页面启动
+// 15. 页面启动
 // ============================================================
 checkAuth();
 
-// 请求通知权限
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
+// 页面加载时检查通知权限状态
+if ('Notification' in window && Notification.permission === 'granted') {
+  document.getElementById('notifBtn').textContent = '🔔 已授权';
 }
 
 console.log('管理后台已加载（多文件加载 + 系统级通知）');

@@ -5,7 +5,7 @@ export async function onRequest(context) {
   const path = url.pathname;
 
   // ============================================================
-  // 1. 公开路径列表（完全不需要登录）
+  // 1. 公开路径列表
   // ============================================================
   const publicPaths = [
     '/',
@@ -17,16 +17,15 @@ export async function onRequest(context) {
     '/api/files',
     '/api/health',
     '/api/admin/login',
+    '/api/test-kv',
     '/cody/',
     '/cody',
     '/image/',
     '/images/'
   ];
 
-  // 检查当前路径是否在公开列表中
   const isPublic = publicPaths.some(p => path === p || path.startsWith(p + '/'));
 
-  // 如果是公开路径，直接放行（不检查 token）
   if (isPublic) {
     const response = await next();
     response.headers.set('Access-Control-Allow-Origin', '*');
@@ -34,7 +33,7 @@ export async function onRequest(context) {
   }
 
   // ============================================================
-  // 2. 处理 OPTIONS 预检请求
+  // 2. OPTIONS 预检
   // ============================================================
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -47,14 +46,11 @@ export async function onRequest(context) {
   }
 
   // ============================================================
-  // 3. 需要登录的路径（/api/admin/*）
+  // 3. 需要登录的路径：/api/admin/*
   // ============================================================
-  // ✅ 注意：/api/admin/kv/* 也会进入这里，需要验证 Token
-  // ✅ /api/admin/login 已经在公开列表中，不会进入这里
   if (path.startsWith('/api/admin/')) {
     const auth = request.headers.get('Authorization');
     if (!auth || !isAdmin(auth)) {
-      console.log('❌ 未授权请求:', path);
       return new Response(JSON.stringify({ error: '未授权，请先登录' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -67,9 +63,6 @@ export async function onRequest(context) {
   return response;
 }
 
-// ============================================================
-// 验证 Token
-// ============================================================
 function isAdmin(auth) {
   try {
     const token = auth.replace('Bearer ', '');

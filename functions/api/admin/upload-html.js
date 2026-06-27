@@ -1,10 +1,7 @@
 // functions/api/admin/upload-html.js
-// 使用 KV 存储 .html 文件
-
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // 验证管理员身份
   const auth = request.headers.get('Authorization');
   if (!auth || !isAdmin(auth)) {
     return new Response(JSON.stringify({ error: '未授权' }), {
@@ -30,7 +27,6 @@ export async function onRequest(context) {
       });
     }
 
-    // 检查文件大小（10MB）
     const fileSize = new Blob([content]).size;
     if (fileSize > 10 * 1024 * 1024) {
       return new Response(JSON.stringify({ error: '文件大小不能超过 10MB' }), {
@@ -39,7 +35,6 @@ export async function onRequest(context) {
       });
     }
 
-    // 生成唯一文件名
     const timestamp = Date.now();
     const safeName = fileName.replace(/[^a-zA-Z0-9_.-]/g, '_');
     const uniqueName = `${timestamp}-${safeName}`;
@@ -47,7 +42,16 @@ export async function onRequest(context) {
     // 保存到 KV
     await env.HTML_FILES.put(uniqueName, content);
 
-    // 返回访问 URL
+    // 保存到数据库（记录文件信息）
+    await env.DB.prepare(
+      'INSERT INTO html_files (filename, content) VALUES (?, ?)'
+    ).bind(uniqueName, content).run();
+
+    // ✅ 新增：记录到 file_usage 表（初始状态：未使用，project_id 为空）
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO file_usage (filename) VALUES (?)'
+    ).bind(uniqueName).run();
+
     const url = `/cody/${uniqueName}`;
 
     return new Response(JSON.stringify({

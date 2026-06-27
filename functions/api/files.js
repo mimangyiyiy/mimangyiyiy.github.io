@@ -3,38 +3,31 @@ export async function onRequest(context) {
   const { env } = context;
   
   try {
-    // 1. 获取所有上传的 HTML 文件（从 KV 或 html_files 表）
-    // 这里假设你的文件列表存在 html_files 表中
-    const filesResult = await env.DB.prepare(
-      "SELECT filename, LENGTH(content) as size, created_at FROM html_files ORDER BY created_at DESC"
-    ).all();
+    // 获取所有文件及其使用状态
+    const result = await env.DB.prepare(`
+      SELECT 
+        h.filename,
+        LENGTH(h.content) as size,
+        h.created_at,
+        f.project_id,
+        p.title as project_title
+      FROM html_files h
+      LEFT JOIN file_usage f ON h.filename = f.filename
+      LEFT JOIN projects p ON f.project_id = p.id
+      ORDER BY h.created_at DESC
+    `).all();
     
-    // 2. 获取所有作品使用的文件链接
-    const projectsResult = await env.DB.prepare(
-      "SELECT link FROM projects WHERE link LIKE '/cody/%'"
-    ).all();
-    
-    // 提取所有被引用的文件名
-    const usedFiles = new Set();
-    projectsResult.results.forEach(p => {
-      // 从 /cody/xxx.html 中提取文件名
-      const match = p.link.match(/\/cody\/(.+)$/);
-      if (match) {
-        usedFiles.add(match[1]);
-      }
-    });
-    
-    // 3. 组装返回数据
-    const files = filesResult.results.map(f => {
-      const filename = f.filename;
-      const isUsed = usedFiles.has(filename);
+    const files = (result.results || []).map(f => {
+      const isUsed = f.project_id !== null && f.project_id !== undefined;
       return {
-        filename: filename,
+        filename: f.filename,
         size: f.size || 0,
-        url: `/cody/${filename}`,
+        url: `/cody/${f.filename}`,
         created_at: f.created_at,
         used: isUsed,
-        status: isUsed ? '✅ 使用中' : '📭 未使用'
+        status: isUsed ? `✅ 使用中（${f.project_title || '作品'}）` : '📭 未使用',
+        project_id: f.project_id,
+        project_title: f.project_title
       };
     });
     

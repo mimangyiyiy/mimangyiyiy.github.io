@@ -5,7 +5,24 @@ export async function onRequest(context) {
   const path = url.pathname;
 
   // ============================================================
-  // 1. 公开路径列表
+  // ✅ 暴力放行：直接指定不需要验证的路径
+  // ============================================================
+  const skipAuthPaths = [
+    '/api/admin/kv/list',
+    '/api/admin/kv/',
+    '/api/test-kv'
+  ];
+  
+  for (const p of skipAuthPaths) {
+    if (path === p || path.startsWith(p)) {
+      const response = await next();
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      return response;
+    }
+  }
+
+  // ============================================================
+  // 其他公开路径
   // ============================================================
   const publicPaths = [
     '/',
@@ -14,13 +31,9 @@ export async function onRequest(context) {
     '/api/projects',
     '/api/categories',
     '/api/downloads',
-    '/api/admin/kv/',
-    '/api/admin/kv',
-    '/api/admin/kv/list',
     '/api/files',
     '/api/health',
     '/api/admin/login',
-    '/api/test-kv',
     '/cody/',
     '/cody',
     '/image/',
@@ -28,7 +41,6 @@ export async function onRequest(context) {
   ];
 
   const isPublic = publicPaths.some(p => path === p || path.startsWith(p + '/'));
-
   if (isPublic) {
     const response = await next();
     response.headers.set('Access-Control-Allow-Origin', '*');
@@ -36,7 +48,7 @@ export async function onRequest(context) {
   }
 
   // ============================================================
-  // 2. OPTIONS 预检
+  // OPTIONS 预检
   // ============================================================
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -49,7 +61,7 @@ export async function onRequest(context) {
   }
 
   // ============================================================
-  // 3. 需要登录的路径：/api/admin/*
+  // 其他 /api/admin/* 需要登录
   // ============================================================
   if (path.startsWith('/api/admin/')) {
     const auth = request.headers.get('Authorization');

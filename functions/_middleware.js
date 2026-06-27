@@ -14,11 +14,11 @@ export async function onRequest(context) {
     '/api/projects',
     '/api/categories',
     '/api/downloads',
-    '/api/health',
     '/api/files',
+    '/api/health',
     '/api/admin/login',
-    '/cody/',        // 作品文件目录
-    '/cody',         // 精确匹配
+    '/cody/',
+    '/cody',
     '/image/',
     '/images/'
   ];
@@ -40,7 +40,7 @@ export async function onRequest(context) {
     return new Response(null, {
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
@@ -49,13 +49,17 @@ export async function onRequest(context) {
   // ============================================================
   // 3. 需要登录的路径（/api/admin/*）
   // ============================================================
-  const auth = request.headers.get('Authorization');
-  if (!auth || !isAdmin(auth)) {
-    console.log('❌ 未授权请求:', path);
-    return new Response(JSON.stringify({ error: '未授权，请先登录' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  // ✅ 注意：/api/admin/kv/* 也会进入这里，需要验证 Token
+  // ✅ /api/admin/login 已经在公开列表中，不会进入这里
+  if (path.startsWith('/api/admin/')) {
+    const auth = request.headers.get('Authorization');
+    if (!auth || !isAdmin(auth)) {
+      console.log('❌ 未授权请求:', path);
+      return new Response(JSON.stringify({ error: '未授权，请先登录' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   const response = await next();

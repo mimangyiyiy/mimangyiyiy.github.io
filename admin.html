@@ -349,7 +349,6 @@ select option { background: #2a2a4e; }
 }
 #kvModal .kv-modal-content h3 { margin-top: 0; }
 
-/* 多文件通知容器 */
 #fileToastContainer {
   position: fixed;
   bottom: 24px;
@@ -371,7 +370,7 @@ select option { background: #2a2a4e; }
   font-size: 13px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   backdrop-filter: blur(12px);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
   transform: translateY(20px);
   opacity: 0;
   pointer-events: auto;
@@ -435,7 +434,6 @@ select option { background: #2a2a4e; }
   from { transform: translateY(0); opacity: 1; }
   to { transform: translateY(20px); opacity: 0; }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -600,7 +598,6 @@ select option { background: #2a2a4e; }
     </div>
   </div>
 </div>
-<!-- 通知容器 -->
 <div id="fileToastContainer"></div>
 
 <script>
@@ -654,53 +651,26 @@ function fileToBase64(file) {
 }
 
 // ============================================================
-// 3. 系统通知（Windows/Android/iOS）
+// 3. 系统通知（简化版，只发开始和完成）
 // ============================================================
-// 系统通知（支持更新）
-function sendSystemNotification(title, body, tag, progress = null) {
-  if (!('Notification' in window)) return;
-  if (Notification.permission !== 'granted') {
-    console.log('通知权限未授权，跳过系统通知');
-    return;
-  }
-  try {
-    // 使用 tag 复用通知，避免重复弹出
-    const notification = new Notification('📄 ' + title, {
-      body: body,
-      icon: '📄',
-      silent: true,        // 静默更新，不发出提示音
-      requireInteraction: false,
-      tag: tag || 'file-load-' + Date.now()
-    });
-    notification.onclick = function() {
-      window.focus();
-      notification.close();
-    };
-    // 不自动关闭，让用户手动关闭或点击
-  } catch (e) {
-    console.log('❌ 系统通知发送失败:', e);
-  }
-}
-
-// 更新系统通知（用于进度更新）
-function updateSystemNotification(tag, title, body) {
+function sendSystemNotification(title, body, tag, silent = false) {
   if (!('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
   try {
-    // 使用相同的 tag 创建新通知，旧通知会被替换
-    const notification = new Notification('📄 ' + title, {
+    const notif = new Notification('📄 ' + title, {
       body: body,
       icon: '📄',
-      silent: true,        // 静默更新
-      requireInteraction: false,
-      tag: tag
+      silent: silent,
+      requireInteraction: !silent,
+      tag: tag || 'notif-' + Date.now()
     });
-    notification.onclick = function() {
+    notif.onclick = function() {
       window.focus();
-      notification.close();
+      notif.close();
     };
+    setTimeout(() => { try { notif.close(); } catch(e) {} }, silent ? 3000 : 6000);
   } catch (e) {
-    // 忽略错误
+    console.log('系统通知发送失败:', e);
   }
 }
 
@@ -712,7 +682,7 @@ async function requestNotificationPermission() {
   if (Notification.permission === 'granted') {
     showStatus('✅ 通知已授权', 'success');
     document.getElementById('notifBtn').textContent = '🔔 已授权';
-    sendSystemNotification('✅ 通知已启用', '您将收到文件加载通知');
+    sendSystemNotification('✅ 通知已启用', '您将收到所有操作通知', 'notif-test');
     return;
   }
   if (Notification.permission === 'denied') {
@@ -724,7 +694,7 @@ async function requestNotificationPermission() {
     if (result === 'granted') {
       showStatus('✅ 通知授权成功', 'success');
       document.getElementById('notifBtn').textContent = '🔔 已授权';
-      sendSystemNotification('✅ 通知已启用', '您将收到文件加载通知');
+      sendSystemNotification('✅ 通知已启用', '您将收到所有操作通知', 'notif-test');
     } else {
       showStatus('❌ 通知授权被拒绝', 'error');
     }
@@ -734,10 +704,8 @@ async function requestNotificationPermission() {
 }
 
 // ============================================================
-// 4. 右下角通知（多文件独立）
+// 4. 右下角通知
 // ============================================================
-let toastIdCounter = 0;
-
 function createFileToast(id, title, totalSizeKB) {
   const container = document.getElementById('fileToastContainer');
   if (!container) return null;
@@ -835,11 +803,9 @@ async function adminLogin() {
         loadAdminDownloads()
       ]);
       showStatus('登录成功', 'success');
-      // 更新通知按钮状态
-      if ('Notification' in window) {
-        if (Notification.permission === 'granted') {
-          document.getElementById('notifBtn').textContent = '🔔 已授权';
-        }
+      sendSystemNotification('🔐 登录成功', '管理员已登录', 'login-success');
+      if ('Notification' in window && Notification.permission === 'granted') {
+        document.getElementById('notifBtn').textContent = '🔔 已授权';
       }
     } else {
       showStatus('登录失败：' + (data.error || '用户名或密码错误'), 'error');
@@ -854,6 +820,7 @@ function logout() {
   document.getElementById('loginArea').style.display = 'block';
   document.getElementById('adminArea').style.display = 'none';
   showStatus('已退出', 'success');
+  sendSystemNotification('🔒 已退出', '管理员已退出', 'logout');
 }
 
 // ============================================================
@@ -902,6 +869,7 @@ async function addCategory() {
       showStatus('分类添加成功', 'success');
       document.getElementById('newCategoryName').value = '';
       await loadCategoriesWithDelete();
+      sendSystemNotification('🏷️ 分类添加', `已添加分类: ${name}`, 'category-add');
     } else {
       const err = await res.json();
       showStatus('添加失败：' + (err.error || '未知错误'), 'error');
@@ -927,6 +895,7 @@ async function deleteCategoryWithCheck(categoryId) {
     if (res.ok) {
       showStatus('分类已删除', 'success');
       await loadCategoriesWithDelete();
+      sendSystemNotification('🗑️ 分类删除', `已删除分类 ID: ${categoryId}`, 'category-delete');
     } else {
       showStatus('删除失败：' + (data.error || '未知错误'), 'error');
     }
@@ -1001,6 +970,7 @@ async function addProject() {
       document.getElementById('newImageFile').value = '';
       document.getElementById('newHtmlFile').value = '';
       loadAdminProjects();
+      sendSystemNotification('📂 作品添加', `已添加作品: ${title}`, 'project-add');
     } else {
       const err = await res.json();
       showStatus('添加失败：' + (err.error || '未知错误'), 'error');
@@ -1021,6 +991,7 @@ async function deleteProject(id) {
     if (res.ok) {
       showStatus('已删除', 'success');
       loadAdminProjects();
+      sendSystemNotification('🗑️ 作品删除', `已删除作品 ID: ${id}`, 'project-delete');
     } else {
       showStatus('删除失败', 'error');
     }
@@ -1086,6 +1057,7 @@ async function addDownload() {
       document.getElementById('newDownloadLink').value = '';
       document.getElementById('newDownloadLinkText').value = '下载';
       loadAdminDownloads();
+      sendSystemNotification('📦 下载项添加', `已添加下载项: ${title}`, 'download-add');
     } else {
       const err = await res.json();
       showStatus('添加失败：' + (err.error || '未知错误'), 'error');
@@ -1106,6 +1078,7 @@ async function deleteDownload(id) {
     if (res.ok) {
       showStatus('已删除', 'success');
       loadAdminDownloads();
+      sendSystemNotification('🗑️ 下载项删除', `已删除下载项 ID: ${id}`, 'download-delete');
     } else {
       showStatus('删除失败', 'error');
     }
@@ -1115,10 +1088,9 @@ async function deleteDownload(id) {
 }
 
 // ============================================================
-// 9. ✅ viewKVWithProgress（多文件 + 系统通知）
+// 9. viewKVWithProgress
 // ============================================================
 async function viewKVWithProgress(key) {
-  // 检查并请求通知权限
   if ('Notification' in window && Notification.permission === 'default') {
     await Notification.requestPermission();
     if (Notification.permission === 'granted') {
@@ -1137,16 +1109,7 @@ async function viewKVWithProgress(key) {
     document.getElementById('kvModalBody').textContent = data.value || '(空)';
     document.getElementById('kvModal').style.display = 'flex';
     showStatus('已从缓存加载', 'success');
-    // 缓存加载发送一次通知
-    if (Notification.permission === 'granted') {
-      const notif = new Notification('📄 已从缓存加载', {
-        body: `${key} (${data.sizeKB})`,
-        icon: '📄',
-        silent: false,
-        tag: 'cache-' + key
-      });
-      setTimeout(() => notif.close(), 5000);
-    }
+    sendSystemNotification('✅ 缓存加载', `${key} (${data.sizeKB})`, 'cache-' + key, true);
     return;
   }
 
@@ -1165,35 +1128,15 @@ async function viewKVWithProgress(key) {
       document.getElementById('kvModalBody').textContent = data.value || '(空)';
       document.getElementById('kvModal').style.display = 'flex';
       showStatus('加载完成', 'success');
-      if (Notification.permission === 'granted') {
-        const notif = new Notification('📄 加载完成', {
-          body: `${key} (${data.sizeKB})`,
-          icon: '📄',
-          silent: false,
-          tag: 'complete-' + key
-        });
-        setTimeout(() => notif.close(), 5000);
-      }
+      sendSystemNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 'complete-' + key);
       return;
     }
 
     const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
-    const notifTag = 'notif-' + key;
     loadingFiles.set(key, toastId);
 
     createFileToast(toastId, key, totalSizeKB);
-
-    // ✅ 只发送开始通知
-    if (Notification.permission === 'granted') {
-      const notif = new Notification('📄 正在加载', {
-        body: `${key} 0.0 / ${totalSizeKB.toFixed(1)} KB`,
-        icon: '📄',
-        silent: false,
-        tag: notifTag
-      });
-      // 5秒后自动关闭
-      setTimeout(() => notif.close(), 5000);
-    }
+    sendSystemNotification('⏳ 正在加载', `${key} (${totalSizeKB.toFixed(1)} KB)`, 'start-' + key);
 
     const progressEl = document.getElementById('fileLoadProgress');
     const progressBar = document.getElementById('fileLoadBar');
@@ -1210,15 +1153,7 @@ async function viewKVWithProgress(key) {
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
       updateToast(toastId, 0, totalSizeKB, 'error');
-      if (Notification.permission === 'granted') {
-        const notif = new Notification('❌ 加载失败', {
-          body: `${key} ${err.error || '未知错误'}`,
-          icon: '📄',
-          silent: false,
-          tag: 'error-' + key
-        });
-        setTimeout(() => notif.close(), 5000);
-      }
+      sendSystemNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 'error-' + key);
       loadingFiles.delete(key);
       setTimeout(() => removeToast(toastId), 3000);
       return;
@@ -1228,7 +1163,6 @@ async function viewKVWithProgress(key) {
     let receivedLength = 0;
     const chunks = [];
     let lastNotify = Date.now();
-    let lastSystemNotif = Date.now();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -1241,29 +1175,10 @@ async function viewKVWithProgress(key) {
       const displayKB = receivedLength / 1024;
       progressText.textContent = `${displayKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
 
-      // 右下角弹窗更新（每500ms）
       const now = Date.now();
       if (now - lastNotify > 500) {
         lastNotify = now;
         updateToast(toastId, displayKB, totalSizeKB);
-      }
-
-      // ✅ 系统通知更新（每3秒，通过关闭旧通知创建新通知）
-      if (now - lastSystemNotif > 3000 && Notification.permission === 'granted') {
-        lastSystemNotif = now;
-        try {
-          // 先关闭旧通知（通过相同 tag）
-          // 然后创建新通知
-          const notif = new Notification('📄 正在加载', {
-            body: `${key} ${displayKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB (${Math.round(percent)}%)`,
-            icon: '📄',
-            silent: true,        // 静默更新，不发出提示音
-            tag: notifTag
-          });
-          setTimeout(() => notif.close(), 4000);
-        } catch (e) {
-          // 忽略
-        }
       }
     }
 
@@ -1285,17 +1200,7 @@ async function viewKVWithProgress(key) {
     progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
 
     updateToast(toastId, finalKB, totalSizeKB, 'complete');
-
-    // ✅ 完成通知
-    if (Notification.permission === 'granted') {
-      const notif = new Notification('✅ 加载完成', {
-        body: `${key} (${finalKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB)`,
-        icon: '📄',
-        silent: false,
-        tag: 'complete-' + key
-      });
-      setTimeout(() => notif.close(), 6000);
-    }
+    sendSystemNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB)`, 'complete-' + key);
 
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
@@ -1316,17 +1221,10 @@ async function viewKVWithProgress(key) {
       setTimeout(() => removeToast(toastId), 3000);
     }
     loadingFiles.delete(key);
-    if (Notification.permission === 'granted') {
-      const notif = new Notification('❌ 加载失败', {
-        body: `${key} ${e.message || '未知错误'}`,
-        icon: '📄',
-        silent: false,
-        tag: 'error-' + key
-      });
-      setTimeout(() => notif.close(), 5000);
-    }
+    sendSystemNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 'error-' + key);
   }
 }
+
 // ============================================================
 // 10. loadFiles
 // ============================================================
@@ -1450,6 +1348,7 @@ async function deleteFileKV(key) {
     if (res.ok) {
       showStatus('已删除', 'success');
       loadFiles();
+      sendSystemNotification('🗑️ 文件删除', `已删除文件: ${key}`, 'file-delete');
     } else {
       const err = await res.json();
       showStatus('删除失败：' + (err.error || '未知错误'), 'error');
@@ -1488,6 +1387,7 @@ async function uploadHtmlFile() {
       document.getElementById('newLink').value = data.url;
       showStatus('作品文件上传成功', 'success');
       progressEl.textContent = '上传完成';
+      sendSystemNotification('📄 文件上传', `已上传: ${file.name}`, 'html-upload');
     } else {
       showStatus('上传失败：' + (data.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
@@ -1542,6 +1442,7 @@ async function uploadImageToKV() {
       preview.style.display = 'block';
       showStatus('图片上传成功', 'success');
       progressEl.textContent = '上传完成';
+      sendSystemNotification('🖼️ 图片上传', `已上传图片: ${fileName}`, 'image-upload');
     } else {
       showStatus('上传失败：' + (data.error || '未知错误'), 'error');
       progressEl.style.display = 'none';
@@ -1647,6 +1548,7 @@ async function saveEdit() {
         showStatus('下载项已更新', 'success');
         closeEditModal();
         loadAdminDownloads();
+        sendSystemNotification('✏️ 下载项编辑', `已更新下载项 ID: ${editId}`, 'download-edit');
       } else {
         const err = await res.json();
         showStatus('更新失败：' + (err.error || '未知错误'), 'error');
@@ -1675,6 +1577,7 @@ async function saveEdit() {
         showStatus('作品已更新', 'success');
         closeEditModal();
         loadAdminProjects();
+        sendSystemNotification('✏️ 作品编辑', `已更新作品 ID: ${editId}`, 'project-edit');
       } else {
         const err = await res.json();
         showStatus('更新失败：' + (err.error || '未知错误'), 'error');
@@ -1702,7 +1605,6 @@ function checkAuth() {
     loadCategoriesWithDelete();
     loadAdminProjects();
     loadAdminDownloads();
-    // 更新通知按钮状态
     if ('Notification' in window && Notification.permission === 'granted') {
       document.getElementById('notifBtn').textContent = '🔔 已授权';
     }
@@ -1714,12 +1616,11 @@ function checkAuth() {
 // ============================================================
 checkAuth();
 
-// 页面加载时检查通知权限状态
 if ('Notification' in window && Notification.permission === 'granted') {
   document.getElementById('notifBtn').textContent = '🔔 已授权';
 }
 
-console.log('管理后台已加载（多文件加载 + 系统级通知）');
+console.log('管理后台已加载（所有操作都有系统通知）');
 </script>
 </body>
 </html>

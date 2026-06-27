@@ -14,6 +14,7 @@ export async function onRequest(context) {
     '/api/projects',
     '/api/categories',
     '/api/downloads',
+    '/api/admin/kv/list', 
     '/api/files',
     '/api/health',
     '/api/admin/login',

@@ -1012,6 +1012,131 @@ function showFileNotification(title, body, progress = null) {
       progressBar.style.width = Math.min(progress, 100) + '%';
     }
   }
+
+  // 查看单个 KV（右下角通知 + 系统通知 + 进度条）
+async function viewKVWithProgress(key) {
+  // 请求通知权限
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  
+  // 检查缓存
+  if (fileCache.has(key)) {
+    const data = fileCache.get(key);
+    document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+    document.getElementById('kvModalBody').textContent = data.value || '(空)';
+    document.getElementById('kvModal').style.display = 'flex';
+    showStatus('已从缓存加载', 'success');
+    showFileNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 100);
+    return;
+  }
+  
+  const progressEl = document.getElementById('fileLoadProgress');
+  const progressBar = document.getElementById('fileLoadBar');
+  const progressText = document.getElementById('fileLoadText');
+  
+  progressEl.style.display = 'block';
+  progressText.textContent = '正在连接...';
+  progressBar.style.width = '5%';
+  
+  try {
+    // 获取文件大小
+    const listRes = await fetch(`${API_BASE}/api/kv-list`);
+    const listData = await listRes.json();
+    const fileInfo = listData.keys.find(item => item.key === key);
+    const totalSize = fileInfo ? fileInfo.size : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
+    
+    if (!totalSizeKnown) {
+      const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+      const data = await res.json();
+      fileCache.set(key, data);
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+      showFileNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 100);
+      return;
+    }
+    
+    showFileNotification('⏳ 正在加载', `${key} ${totalSizeKB.toFixed(1)} KB`, 0);
+    
+    progressText.textContent = `0.0 KB / ${totalSizeKB.toFixed(1)} KB`;
+    progressBar.style.width = '10%';
+    
+    const res = await fetch(`${API_BASE}/api/kv-get/${encodeURIComponent(key)}`);
+    if (!res.ok) {
+      const err = await res.json();
+      showStatus('加载失败：' + (err.error || '未知错误'), 'error');
+      progressEl.style.display = 'none';
+      progressBar.style.width = '0%';
+      showFileNotification('❌ 加载失败', `${key} ${err.error || '未知错误'}`, 100);
+      return;
+    }
+    
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    let lastNotify = Date.now();
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      chunks.push(value);
+      receivedLength += value.length;
+      
+      const percent = (receivedLength / totalSize) * 100;
+      progressBar.style.width = Math.min(percent, 99) + '%';
+      
+      const displayKB = (receivedLength / 1024).toFixed(1);
+      progressText.textContent = `${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`;
+      
+      const now = Date.now();
+      if (now - lastNotify > 500) {
+        lastNotify = now;
+        showFileNotification('⏳ 正在加载', `${key} ${displayKB} KB / ${totalSizeKB.toFixed(1)} KB`, percent);
+      }
+    }
+    
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
+    
+    fileCache.set(key, data);
+    
+    progressBar.style.width = '100%';
+    const finalKB = receivedLength / 1024;
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
+    
+    showFileNotification('✅ 加载完成', `${key} (${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB)`, 100);
+    
+    setTimeout(() => {
+      document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
+      document.getElementById('kvModalBody').textContent = data.value || '(空)';
+      document.getElementById('kvModal').style.display = 'flex';
+      setTimeout(() => {
+        progressEl.style.display = 'none';
+        progressBar.style.width = '0%';
+      }, 300);
+    }, 200);
+    
+  } catch (e) {
+    showStatus('加载失败：' + (e.message || '未知错误'), 'error');
+    progressEl.style.display = 'none';
+    progressBar.style.width = '0%';
+    showFileNotification('❌ 加载失败', `${key} ${e.message || '未知错误'}`, 100);
+  }
+}
   
   toast.innerHTML = `
     <div style="display:flex; align-items:center; gap:10px;">

@@ -1137,7 +1137,16 @@ async function viewKVWithProgress(key) {
     document.getElementById('kvModalBody').textContent = data.value || '(空)';
     document.getElementById('kvModal').style.display = 'flex';
     showStatus('已从缓存加载', 'success');
-    sendSystemNotification('✅ 已从缓存加载', `${key} (${data.sizeKB})`, 'cache-' + key);
+    // 缓存加载发送一次通知
+    if (Notification.permission === 'granted') {
+      const notif = new Notification('📄 已从缓存加载', {
+        body: `${key} (${data.sizeKB})`,
+        icon: '📄',
+        silent: false,
+        tag: 'cache-' + key
+      });
+      setTimeout(() => notif.close(), 5000);
+    }
     return;
   }
 
@@ -1156,19 +1165,35 @@ async function viewKVWithProgress(key) {
       document.getElementById('kvModalBody').textContent = data.value || '(空)';
       document.getElementById('kvModal').style.display = 'flex';
       showStatus('加载完成', 'success');
-      sendSystemNotification('✅ 加载完成', `${key} (${data.sizeKB})`, 'complete-' + key);
+      if (Notification.permission === 'granted') {
+        const notif = new Notification('📄 加载完成', {
+          body: `${key} (${data.sizeKB})`,
+          icon: '📄',
+          silent: false,
+          tag: 'complete-' + key
+        });
+        setTimeout(() => notif.close(), 5000);
+      }
       return;
     }
 
     const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
-    // 系统通知的 tag 用文件名
     const notifTag = 'notif-' + key;
     loadingFiles.set(key, toastId);
 
     createFileToast(toastId, key, totalSizeKB);
-    
-    // ✅ 发送初始系统通知
-    sendSystemNotification('⏳ 正在加载', `${key} 0.0 / ${totalSizeKB.toFixed(1)} KB`, notifTag);
+
+    // ✅ 只发送开始通知
+    if (Notification.permission === 'granted') {
+      const notif = new Notification('📄 正在加载', {
+        body: `${key} 0.0 / ${totalSizeKB.toFixed(1)} KB`,
+        icon: '📄',
+        silent: false,
+        tag: notifTag
+      });
+      // 5秒后自动关闭
+      setTimeout(() => notif.close(), 5000);
+    }
 
     const progressEl = document.getElementById('fileLoadProgress');
     const progressBar = document.getElementById('fileLoadBar');
@@ -1185,7 +1210,15 @@ async function viewKVWithProgress(key) {
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
       updateToast(toastId, 0, totalSizeKB, 'error');
-      updateSystemNotification(notifTag, '❌ 加载失败', `${key} ${err.error || '未知错误'}`);
+      if (Notification.permission === 'granted') {
+        const notif = new Notification('❌ 加载失败', {
+          body: `${key} ${err.error || '未知错误'}`,
+          icon: '📄',
+          silent: false,
+          tag: 'error-' + key
+        });
+        setTimeout(() => notif.close(), 5000);
+      }
       loadingFiles.delete(key);
       setTimeout(() => removeToast(toastId), 3000);
       return;
@@ -1195,15 +1228,7 @@ async function viewKVWithProgress(key) {
     let receivedLength = 0;
     const chunks = [];
     let lastNotify = Date.now();
-
-    // ✅ 每秒更新一次系统通知的定时器
-    const notifInterval = setInterval(() => {
-      const displayKB = receivedLength / 1024;
-      const percent = Math.min((receivedLength / totalSize) * 100, 100);
-      const body = `${displayKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB (${percent.toFixed(0)}%)`;
-      // ✅ 静默更新系统通知，不发出新提示
-      updateSystemNotification(notifTag, '⏳ 正在加载', body);
-    }, 1000);
+    let lastSystemNotif = Date.now();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -1216,15 +1241,31 @@ async function viewKVWithProgress(key) {
       const displayKB = receivedLength / 1024;
       progressText.textContent = `${displayKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
 
+      // 右下角弹窗更新（每500ms）
       const now = Date.now();
       if (now - lastNotify > 500) {
         lastNotify = now;
         updateToast(toastId, displayKB, totalSizeKB);
       }
-    }
 
-    // ✅ 清除定时器
-    clearInterval(notifInterval);
+      // ✅ 系统通知更新（每3秒，通过关闭旧通知创建新通知）
+      if (now - lastSystemNotif > 3000 && Notification.permission === 'granted') {
+        lastSystemNotif = now;
+        try {
+          // 先关闭旧通知（通过相同 tag）
+          // 然后创建新通知
+          const notif = new Notification('📄 正在加载', {
+            body: `${key} ${displayKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB (${Math.round(percent)}%)`,
+            icon: '📄',
+            silent: true,        // 静默更新，不发出提示音
+            tag: notifTag
+          });
+          setTimeout(() => notif.close(), 4000);
+        } catch (e) {
+          // 忽略
+        }
+      }
+    }
 
     const allChunks = new Uint8Array(receivedLength);
     let position = 0;
@@ -1244,9 +1285,17 @@ async function viewKVWithProgress(key) {
     progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB / ${totalSizeKB.toFixed(1)} KB`;
 
     updateToast(toastId, finalKB, totalSizeKB, 'complete');
-    
-    // ✅ 最终系统通知（完成）
-    updateSystemNotification(notifTag, '✅ 加载完成', `${key} (${finalKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB)`);
+
+    // ✅ 完成通知
+    if (Notification.permission === 'granted') {
+      const notif = new Notification('✅ 加载完成', {
+        body: `${key} (${finalKB.toFixed(1)} / ${totalSizeKB.toFixed(1)} KB)`,
+        icon: '📄',
+        silent: false,
+        tag: 'complete-' + key
+      });
+      setTimeout(() => notif.close(), 6000);
+    }
 
     setTimeout(() => {
       document.getElementById('kvModalTitle').textContent = key + ' (' + data.sizeKB + ')';
@@ -1267,11 +1316,17 @@ async function viewKVWithProgress(key) {
       setTimeout(() => removeToast(toastId), 3000);
     }
     loadingFiles.delete(key);
-    const notifTag = 'notif-' + key;
-    updateSystemNotification(notifTag, '❌ 加载失败', `${key} ${e.message || '未知错误'}`);
+    if (Notification.permission === 'granted') {
+      const notif = new Notification('❌ 加载失败', {
+        body: `${key} ${e.message || '未知错误'}`,
+        icon: '📄',
+        silent: false,
+        tag: 'error-' + key
+      });
+      setTimeout(() => notif.close(), 5000);
+    }
   }
 }
-
 // ============================================================
 // 10. loadFiles
 // ============================================================

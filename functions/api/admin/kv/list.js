@@ -1,10 +1,20 @@
 // functions/api/admin/kv/list.js
-// 查看 KV 中所有键值对（仅管理员）
-
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // 验证管理员身份
+  // 测试 KV 是否绑定
+  console.log('🔍 env.HTML_FILES 是否存在:', !!env.HTML_FILES);
+  
+  if (!env.HTML_FILES) {
+    return new Response(JSON.stringify({ 
+      error: 'KV 未绑定，请检查 Pages 绑定设置',
+      hint: '变量名应为 HTML_FILES'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const auth = request.headers.get('Authorization');
   if (!auth || !isAdmin(auth)) {
     return new Response(JSON.stringify({ error: '未授权' }), {
@@ -14,34 +24,31 @@ export async function onRequest(context) {
   }
 
   try {
-    // 获取所有键
     const keys = await env.HTML_FILES.list();
-    
     const items = [];
     for (const key of keys.keys) {
-      // 获取每个键的值（只获取前 200 字符用于预览）
       const value = await env.HTML_FILES.get(key.name);
-      const preview = value ? value.slice(0, 200) + (value.length > 200 ? '...' : '') : '(空)';
-      const size = value ? value.length : 0;
-      
       items.push({
         key: key.name,
-        preview: preview,
-        size: size,
-        sizeKB: (size / 1024).toFixed(1) + ' KB',
-        modified: key.uploaded || key.metadata?.uploaded || null
+        size: value ? value.length : 0,
+        preview: value ? value.slice(0, 100) + (value.length > 100 ? '...' : '') : '(空)'
       });
     }
 
     return new Response(JSON.stringify({
       total: items.length,
-      keys: items
+      keys: items,
+      binding: 'HTML_FILES',  // 显示绑定名
+      connected: true
     }), {
       headers: { 'Content-Type': 'application/json' },
     });
 
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ 
+      error: e.message,
+      stack: e.stack 
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

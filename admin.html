@@ -899,7 +899,7 @@ async function deleteDownload(id) {
 // ============================================================
 // 7. 文件管理（KV）- 真正的进度条
 // ============================================================
-function loadFiles() {
+async function loadFiles() {
   const container = document.getElementById('fileList');
   const countEl = document.getElementById('fileCount');
   const progressEl = document.getElementById('fileLoadProgress');
@@ -908,93 +908,129 @@ function loadFiles() {
   
   container.innerHTML = '<div class="empty-msg">加载中...</div>';
   progressEl.style.display = 'block';
-  progressText.textContent = '正在下载...';
+  progressText.textContent = '正在连接...';
   progressBar.style.width = '5%';
   
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', `${API_BASE}/api/kv-list`, true);
-  
-  const startTime = Date.now();
-  
-  xhr.onprogress = function(event) {
-    if (event.total > 0) {
-      const percent = (event.loaded / event.total) * 100;
-      progressBar.style.width = Math.min(percent, 99) + '%';
+  try {
+    const startTime = Date.now();
+    const res = await fetch(`${API_BASE}/api/kv-list`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
+    const contentLength = res.headers.get('Content-Length');
+    const totalSize = contentLength ? parseInt(contentLength) : 0;
+    const totalSizeKB = totalSize / 1024;
+    const totalSizeKnown = totalSize > 0;
+    
+    progressText.textContent = totalSizeKnown ? 
+      `0.0 / ${totalSizeKB.toFixed(1)} KB · 0.0 KB/s` : 
+      '正在加载...';
+    progressBar.style.width = '10%';
+    
+    const reader = res.body.getReader();
+    let receivedLength = 0;
+    const chunks = [];
+    let lastUpdateTime = Date.now();
+    let lastReceivedLength = 0;
+    let currentSpeed = 0;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
       
-      const elapsed = (Date.now() - startTime) / 1000;
-      const speed = elapsed > 0 ? (event.loaded / 1024) / elapsed : 0;
-      const remaining = speed > 0 ? (event.total - event.loaded) / 1024 / speed : 0;
+      chunks.push(value);
+      receivedLength += value.length;
       
-      progressText.textContent = 
-        `${(event.loaded / 1024).toFixed(1)} / ${(event.total / 1024).toFixed(1)} KB · ` +
-        `${speed.toFixed(1)} KB/s · 剩余 ${remaining.toFixed(1)}s`;
-    } else {
-      progressBar.style.width = Math.min(10 + (event.loaded / 1024) * 2, 95) + '%';
-      progressText.textContent = `${(event.loaded / 1024).toFixed(1)} KB 已加载`;
-    }
-  };
-  
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      const data = JSON.parse(xhr.responseText);
-      progressBar.style.width = '100%';
-      progressText.textContent = '加载完成';
-      setTimeout(() => {
-        progressEl.style.display = 'none';
-        progressBar.style.width = '0%';
-      }, 500);
+      const now = Date.now();
+      const timeDelta = (now - lastUpdateTime) / 1000;
+      const bytesDelta = receivedLength - lastReceivedLength;
       
-      // 渲染文件列表...
-      countEl.textContent = '共 ' + data.total + ' 个文件';
-      
-      let totalSizeKB_sum = 0;
-      data.keys.forEach(item => { totalSizeKB_sum += (item.size || 0) / 1024; });
-      const percent = Math.min((totalSizeKB_sum / KV_LIMIT_KB) * 100, 100);
-      document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB_sum.toFixed(1) + ' KB';
-      document.getElementById('kvPercent').textContent = percent.toFixed(1) + '%';
-      document.getElementById('kvProgress').style.width = percent + '%';
-      
-      if (data.keys.length === 0) {
-        container.innerHTML = '<div class="empty-msg">KV 中暂无文件</div>';
-        return;
+      if (timeDelta >= 0.1) {
+        currentSpeed = (bytesDelta / 1024) / timeDelta;
+        lastUpdateTime = now;
+        lastReceivedLength = receivedLength;
       }
       
-      container.innerHTML = data.keys.map((item, index) => {
-        const ext = item.key.split('.').pop().toLowerCase();
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-        const icon = isImage ? '🖼️' : '📄';
-        const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
-        const sizeKB = ((item.size || 0) / 1024).toFixed(1);
-        const delay = index * 40;
-        return `
-        <div class="file-item" style="animation-delay:${delay}ms">
-          <div class="info">
-            <span class="name">${icon} ${escapeHtml(item.key)}</span>
-            <span class="sub">${sizeKB} KB · ${isImage ? '图片' : '文件'}</span>
-          </div>
-          <div class="actions">
-            ${isImage ? `<a href="${previewUrl}" target="_blank" class="btn btn-primary btn-sm">查看</a>` : `<button class="btn btn-primary btn-sm" onclick="viewKVWithProgress('${escapeHtml(item.key)}')">查看</button>`}
-            <button class="btn btn-danger btn-sm" onclick="deleteFileKV('${escapeHtml(item.key)}')">删除</button>
-          </div>
-        </div>
-      `}).join('');
+      const receivedKB = receivedLength / 1024;
+      const displayKB = receivedKB.toFixed(1);
       
-    } else {
-      container.innerHTML = '<div class="empty-msg">加载失败：HTTP ' + xhr.status + '</div>';
+      if (totalSizeKnown) {
+        const percent = (receivedLength / totalSize) * 100;
+        progressBar.style.width = Math.min(percent, 99) + '%';
+        const remainingBytes = totalSize - receivedLength;
+        const remainingSeconds = currentSpeed > 0 ? remainingBytes / 1024 / currentSpeed : 0;
+        const speedText = currentSpeed > 0 ? currentSpeed.toFixed(1) + ' KB/s' : '计算中...';
+        const remainingText = remainingSeconds > 0 ? `剩余 ${remainingSeconds.toFixed(1)}s` : '计算中...';
+        progressText.textContent = `${displayKB} / ${totalSizeKB.toFixed(1)} KB · ${speedText} · ${remainingText}`;
+      } else {
+        progressBar.style.width = Math.min(10 + (receivedLength / 1024) * 2, 95) + '%';
+        progressText.textContent = `${displayKB} KB 已加载`;
+      }
+    }
+    
+    const allChunks = new Uint8Array(receivedLength);
+    let position = 0;
+    for (const chunk of chunks) {
+      allChunks.set(chunk, position);
+      position += chunk.length;
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(allChunks);
+    const data = JSON.parse(text);
+    
+    const finalKB = receivedLength / 1024;
+    const totalTime = (Date.now() - startTime) / 1000;
+    const avgSpeed = totalTime > 0 ? finalKB / totalTime : 0;
+    
+    progressBar.style.width = '100%';
+    progressText.textContent = `完成 · ${finalKB.toFixed(1)} KB · 平均 ${avgSpeed.toFixed(1)} KB/s`;
+    setTimeout(() => {
       progressEl.style.display = 'none';
       progressBar.style.width = '0%';
+    }, 500);
+    
+    countEl.textContent = '共 ' + data.total + ' 个文件';
+    
+    let totalSizeKB_sum = 0;
+    data.keys.forEach(item => { totalSizeKB_sum += (item.size || 0) / 1024; });
+    const percent = Math.min((totalSizeKB_sum / KV_LIMIT_KB) * 100, 100);
+    
+    document.getElementById('kvUsed').textContent = '已用: ' + totalSizeKB_sum.toFixed(1) + ' KB';
+    document.getElementById('kvPercent').textContent = percent.toFixed(1) + '%';
+    document.getElementById('kvProgress').style.width = percent + '%';
+    
+    if (data.keys.length === 0) {
+      container.innerHTML = '<div class="empty-msg">KV 中暂无文件</div>';
+      return;
     }
-  };
-  
-  xhr.onerror = function() {
-    container.innerHTML = '<div class="empty-msg">加载失败：网络错误</div>';
+    
+    container.innerHTML = data.keys.map((item, index) => {
+      const ext = item.key.split('.').pop().toLowerCase();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+      const icon = isImage ? '🖼️' : '📄';
+      const previewUrl = `/api/kv-get/${encodeURIComponent(item.key)}`;
+      const sizeKB = ((item.size || 0) / 1024).toFixed(1);
+      const delay = index * 40;
+      
+      return `
+      <div class="file-item" style="animation-delay:${delay}ms">
+        <div class="info">
+          <span class="name">${icon} ${escapeHtml(item.key)}</span>
+          <span class="sub">${sizeKB} KB · ${isImage ? '图片' : '文件'}</span>
+        </div>
+        <div class="actions">
+          ${isImage ? `<a href="${previewUrl}" target="_blank" class="btn btn-primary btn-sm">查看</a>` : `<button class="btn btn-primary btn-sm" onclick="viewKVWithProgress('${escapeHtml(item.key)}')">查看</button>`}
+          <button class="btn btn-danger btn-sm" onclick="deleteFileKV('${escapeHtml(item.key)}')">删除</button>
+        </div>
+      </div>
+    `}).join('');
+    
+  } catch (e) {
+    container.innerHTML = '<div class="empty-msg">加载失败：' + e.message + '</div>';
     progressEl.style.display = 'none';
     progressBar.style.width = '0%';
-  };
-  
-  xhr.send();
+  }
 }
-
 // 查看单个 KV
 async function viewKVWithProgress(key) {
   const progressEl = document.getElementById('fileLoadProgress');

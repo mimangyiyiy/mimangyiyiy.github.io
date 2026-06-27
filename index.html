@@ -6,37 +6,28 @@
 <title>我的作品集</title>
 
 <style>
-/* ================= 基础变量 ================= */
-:root {
-  --blue: #4C97FF;
-  --orange: #FFAB19;
-}
+/* ================= 基础 ================= */
+:root { --blue: #4C97FF; --orange: #FFAB19; }
 
-/* ================= Body ================= */
+* { box-sizing: border-box; }
 body {
   margin: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
   min-height: 100vh;
-  color: #ffffff;
-  position: relative;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  color: #fff;
   background-image: url('https://ts1.tc.mm.bing.net/th/id/R-C.b0ea268fa1be279d112489ce83ad4696?rik=qItsh%2fBiy33hlg&riu=http%3a%2f%2fwww.quazero.com%2fuploads%2fallimg%2f140303%2f1-140303215009.jpg&ehk=S6PLWamt%2bMzQV8uO9ugcU5d5M19BpXtCpNz2cRJ7q9M%3d&risl=&pid=ImgRaw&r=0');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
-  background-repeat: no-repeat;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
-
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  inset: 0;
+  background: rgba(0,0,0,0.35);
   pointer-events: none;
   z-index: 0;
 }
@@ -46,7 +37,7 @@ header, .container, .download-float, .glass-toggle {
   z-index: 2;
 }
 
-/* ===== 关闭毛玻璃模式 ===== */
+/* ===== 关闭毛玻璃 ===== */
 body.glass-off {
   color: #000 !important;
   background-image: none !important;
@@ -59,7 +50,7 @@ body.glass-off .download-panel,
 body.glass-off .download-trigger,
 body.glass-off .glass-toggle,
 body.glass-off header {
-  background: #ffffff !important;
+  background: #fff !important;
   backdrop-filter: none !important;
   border: 1px solid #e0e0e0 !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
@@ -70,37 +61,35 @@ body.glass-off .project-card p,
 body.glass-off .project-card .btn { color: #000 !important; }
 body.glass-off .project-card .btn { background: #4C97FF !important; color: #fff !important; }
 body.glass-off .section-title,
-body.glass-off header h1,
-body.glass-off header p { color: #000 !important; text-shadow: none !important; }
+body.glass-off header h1 { color: #000 !important; text-shadow: none !important; }
 body.glass-off .download-panel h4,
 body.glass-off .download-item { color: #000 !important; }
 body.glass-off .download-trigger svg,
 body.glass-off .glass-toggle svg { fill: #000 !important; }
-body.glass-off .refraction-edge { display: none !important; }
-body.glass-off .ripple { display: none !important; }
+body.glass-off .liquid-glass-svg { display: none !important; }
 
-/* ================= 毛玻璃 ================= */
+/* ===== 毛玻璃 ===== */
 .glass {
-  background: rgba(30, 35, 65, 0.35);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(30,35,65,0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
-/* ===== 卡片：光学边缘折射 ===== */
+/* ===== 卡片 ===== */
 .project-card {
   position: relative;
   padding: 1.5rem;
   text-align: center;
   border-radius: 24px;
-  background: rgba(25, 30, 55, 0.2);
-  backdrop-filter: blur(12px) saturate(1.1);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  color: white;
+  background: rgba(25,30,55,0.2);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  color: #fff;
   transition: box-shadow 0.3s ease;
   transform-style: preserve-3d;
   will-change: transform;
@@ -108,79 +97,33 @@ body.glass-off .ripple { display: none !important; }
   overflow: visible !important;
   isolation: isolate;
 }
+.project-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
 
-.project-card:hover {
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-}
-
-/* ===== 边缘折射层 ===== */
-.project-card .refraction-edge {
+/* 液态玻璃容器 */
+.project-card .liquid-container {
   position: absolute;
-  inset: -6px;
+  inset: -8px;
   border-radius: 28px;
   pointer-events: none;
   z-index: 0;
-  background: transparent;
-  backdrop-filter: blur(2px) brightness(1.02);
-  -webkit-backdrop-filter: blur(2px) brightness(1.02);
+  overflow: hidden;
+  backdrop-filter: blur(0.5px) contrast(1.1) brightness(1.02) saturate(1.05);
+  -webkit-backdrop-filter: blur(0.5px) contrast(1.1) brightness(1.02) saturate(1.05);
   transition: backdrop-filter 0.15s ease;
-  will-change: transform, backdrop-filter;
-  /* 边缘折射光晕 */
-  box-shadow: 
-    inset 0 0 30px rgba(255, 255, 255, 0.02),
-    0 0 20px rgba(100, 150, 255, 0.01);
 }
-
-/* 鼠标悬浮时折射增强 */
-.project-card.refracting .refraction-edge {
-  backdrop-filter: blur(3px) brightness(1.04) hue-rotate(2deg);
-  -webkit-backdrop-filter: blur(3px) brightness(1.04) hue-rotate(2deg);
-  box-shadow: 
-    inset 0 0 40px rgba(255, 255, 255, 0.04),
-    0 0 30px rgba(100, 150, 255, 0.03);
-}
-
-/* 边缘折射光晕 - 彩色偏移 */
-.project-card .refraction-edge::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 30px;
-  background: radial-gradient(
-    ellipse at 50% 50%,
-    rgba(120, 180, 255, 0.02) 0%,
-    rgba(180, 120, 255, 0.01) 40%,
-    transparent 70%
-  );
-  pointer-events: none;
-  transition: all 0.2s ease;
-}
-
-.project-card.refracting .refraction-edge::before {
-  background: radial-gradient(
-    ellipse at var(--rx, 50%) var(--ry, 50%),
-    rgba(120, 200, 255, 0.06) 0%,
-    rgba(180, 120, 255, 0.04) 30%,
-    rgba(255, 200, 100, 0.02) 60%,
-    transparent 80%
-  );
-}
-
-/* ===== 液态光晕 ===== */
-.project-card .glass-glow {
+.project-card .liquid-container svg {
   position: absolute;
   inset: 0;
-  border-radius: 24px;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  z-index: 1;
-  background: radial-gradient(circle at 50% 50%, 
-    rgba(255, 255, 255, 0.04) 0%, 
-    transparent 60%
-  );
-  transition: background 0.1s ease;
+}
+.project-card .liquid-container .displacement-image {
+  display: none;
 }
 
-.project-card > *:not(.refraction-edge):not(.glass-glow) {
+/* 卡片内容 */
+.project-card > *:not(.liquid-container) {
   position: relative;
   z-index: 2;
 }
@@ -190,21 +133,15 @@ body.glass-off .ripple { display: none !important; }
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 1rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   transform: translateZ(8px);
 }
-
 .project-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100%; height: 100%; object-fit: cover;
   transition: transform 0.4s ease;
   pointer-events: none;
 }
-
-.project-card:hover .project-image img {
-  transform: scale(1.03);
-}
+.project-card:hover .project-image img { transform: scale(1.03); }
 
 .project-card h3 {
   margin: 0.5rem 0 0.2rem;
@@ -212,7 +149,6 @@ body.glass-off .ripple { display: none !important; }
   transform: translateZ(12px);
   font-weight: 500;
 }
-
 .project-card p {
   margin: 0.2rem 0 0.8rem;
   font-size: 0.85rem;
@@ -220,180 +156,97 @@ body.glass-off .ripple { display: none !important; }
   transform: translateZ(8px);
   line-height: 1.4;
 }
-
 .project-card .btn {
   display: inline-block;
   padding: 0.5rem 1.4rem;
   border-radius: 50px;
   font-weight: 500;
   text-decoration: none;
-  background: rgba(76, 151, 255, 0.8);
+  background: rgba(76,151,255,0.8);
   backdrop-filter: blur(4px);
-  color: white;
+  color: #fff;
   transition: all 0.25s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255,255,255,0.08);
   cursor: pointer;
   font-size: 0.85rem;
   transform: translateZ(16px);
 }
-
 .project-card .btn:hover {
   background: #4C97FF;
   transform: translateZ(20px) scale(1.03);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255,255,255,0.15);
 }
 
 /* ===== 控件 ===== */
 .glass-toggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 9999;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(30, 35, 65, 0.4);
-  backdrop-filter: blur(12px);
-  cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed; top: 16px; right: 16px; z-index: 9999;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(30,35,65,0.35); backdrop-filter: blur(12px);
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
 }
-.glass-toggle svg { width: 22px; height: 22px; fill: white; }
+.glass-toggle svg { width: 22px; height: 22px; fill: #fff; }
 
 .download-float {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 9999;
+  position: fixed; right: 24px; bottom: 24px; z-index: 9999;
 }
 .download-trigger {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(30, 35, 65, 0.4);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.1);
-  cursor: pointer;
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(30,35,65,0.35); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
 }
-.download-trigger svg { width: 24px; height: 24px; fill: white; }
-
+.download-trigger svg { width: 24px; height: 24px; fill: #fff; }
 .download-panel {
-  position: absolute;
-  right: 0;
-  bottom: 70px;
-  width: 280px;
-  padding: 16px;
-  display: none;
+  position: absolute; right: 0; bottom: 70px;
+  width: 280px; padding: 16px; display: none;
   backdrop-filter: blur(20px);
-  background: rgba(25, 30, 55, 0.7);
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.06);
-  max-height: 400px;
-  overflow-y: auto;
+  background: rgba(25,30,55,0.6);
+  border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+  max-height: 400px; overflow-y: auto;
 }
-.download-panel h4 {
-  margin-top: 0;
-  margin-bottom: 12px;
-  color: white;
-  font-weight: 400;
-}
+.download-panel h4 { margin-top: 0; margin-bottom: 12px; color: #fff; font-weight: 400; }
 .download-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 14px;
-  margin-bottom: 6px;
-  color: white;
-  background: rgba(255,255,255,0.03);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-radius: 10px; font-size: 14px;
+  margin-bottom: 6px; color: #fff; background: rgba(255,255,255,0.03);
 }
 .download-item .info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .download-item .info .title { font-weight: 500; font-size: 13px; }
 .download-item .info .desc { font-size: 11px; opacity: 0.5; }
 .download-item a {
-  padding: 4px 14px;
-  background: var(--blue);
-  color: white;
-  border-radius: 20px;
-  text-decoration: none;
-  font-size: 12px;
-  flex-shrink: 0;
-  margin-left: 8px;
+  padding: 4px 14px; background: var(--blue); color: #fff;
+  border-radius: 20px; text-decoration: none; font-size: 12px;
+  flex-shrink: 0; margin-left: 8px;
 }
 .download-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.3);
-  z-index: 9998;
-  display: none;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  z-index: 9998; display: none;
 }
 
 header {
-  text-align: center;
-  padding: 2rem 1rem;
-  background: linear-gradient(135deg, rgba(50, 80, 180, 0.3), rgba(80, 60, 140, 0.3));
+  text-align: center; padding: 2rem 1rem;
+  background: linear-gradient(135deg, rgba(50,80,180,0.25), rgba(80,60,140,0.25));
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 header h1 {
-  color: white;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.2);
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 500;
-}
-header p {
-  color: rgba(255,255,255,0.4);
-  margin: 0.2rem 0 0;
-  font-size: 0.8rem;
+  color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.15);
+  margin: 0; font-size: 1.8rem; font-weight: 500;
 }
 
-#projectContainer {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
+#projectContainer { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
 .section-title {
-  font-size: 1.3rem;
-  border-left: 3px solid var(--orange);
-  padding-left: 12px;
-  margin-bottom: 0.4rem;
-  color: white;
-  font-weight: 400;
-  text-shadow: 0 1px 20px rgba(0,0,0,0.1);
+  font-size: 1.3rem; border-left: 3px solid var(--orange);
+  padding-left: 12px; margin-bottom: 0.4rem;
+  color: #fff; font-weight: 400;
 }
 .project-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.8rem;
-  perspective: 1200px;
-  margin-bottom: 2rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.8rem; perspective: 1200px; margin-bottom: 2rem;
 }
 .loading-placeholder {
-  text-align: center;
-  padding: 40px;
-  color: rgba(255,255,255,0.3);
-  font-size: 16px;
-}
-
-.ripple {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10000;
-  transform: translate(-50%, -50%);
-  animation: rippleAnim 1s ease-out forwards;
-}
-body.glass-on .ripple { border: 2px solid rgba(100, 150, 255, 0.3); }
-@keyframes rippleAnim {
-  from { width: 32px; height: 32px; opacity: 1; }
-  to { width: 140px; height: 140px; opacity: 0; }
+  text-align: center; padding: 40px; color: rgba(255,255,255,0.3); font-size: 16px;
 }
 
 @media (max-width: 768px) {
@@ -415,9 +268,7 @@ body.glass-on .ripple { border: 2px solid rgba(100, 150, 255, 0.3); }
   <h1>作品集</h1>
 </header>
 
-<div id="projectContainer">
-  <div class="loading-placeholder">⏳ 加载中...</div>
-</div>
+<div id="projectContainer"><div class="loading-placeholder">⏳ 加载中...</div></div>
 
 <div class="download-mask" id="mask"></div>
 <div class="download-float">
@@ -432,7 +283,7 @@ body.glass-on .ripple { border: 2px solid rgba(100, 150, 255, 0.3); }
 
 <script>
 // ============================================================
-// 1. API 配置
+// 1. 配置
 // ============================================================
 const API_BASE = '';
 
@@ -447,7 +298,148 @@ function escapeHtml(text) {
 }
 
 // ============================================================
-// 3. 加载并渲染作品
+// 3. 液态玻璃核心（基于 Shu Ding 的实现）
+// ============================================================
+function createLiquidGlassForCard(cardElement) {
+  const container = cardElement.querySelector('.liquid-container');
+  if (!container) return null;
+
+  // SVG 滤镜
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  filter.setAttribute('id', 'liquid-filter-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6));
+  filter.setAttribute('filterUnits', 'userSpaceOnUse');
+  filter.setAttribute('colorInterpolationFilters', 'sRGB');
+  filter.setAttribute('x', '-20%');
+  filter.setAttribute('y', '-20%');
+  filter.setAttribute('width', '140%');
+  filter.setAttribute('height', '140%');
+
+  const feImage = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+  feImage.setAttribute('id', 'displacement-map-' + Date.now());
+  feImage.setAttribute('width', '100%');
+  feImage.setAttribute('height', '100%');
+
+  const feDisplacement = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
+  feDisplacement.setAttribute('in', 'SourceGraphic');
+  feDisplacement.setAttribute('in2', feImage.getAttribute('id'));
+  feDisplacement.setAttribute('xChannelSelector', 'R');
+  feDisplacement.setAttribute('yChannelSelector', 'G');
+  feDisplacement.setAttribute('scale', '12');
+
+  filter.appendChild(feImage);
+  filter.appendChild(feDisplacement);
+  defs.appendChild(filter);
+  svg.appendChild(defs);
+
+  // 将 SVG 添加到容器
+  container.appendChild(svg);
+
+  // 用于生成位移图的 canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+
+  // 工具函数
+  function smoothStep(a, b, t) {
+    t = Math.max(0, Math.min(1, (t - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  }
+
+  function length(x, y) { return Math.sqrt(x * x + y * y); }
+
+  function roundedRectSDF(x, y, w, h, r) {
+    const qx = Math.abs(x) - w + r;
+    const qy = Math.abs(y) - h + r;
+    return Math.min(Math.max(qx, qy), 0) + length(Math.max(qx, 0), Math.max(qy, 0)) - r;
+  }
+
+  function texture(x, y) {
+    return { x, y };
+  }
+
+  // 更新位移图
+  function updateDisplacementMap(mouseX, mouseY) {
+    const w = canvas.width;
+    const h = canvas.height;
+    const data = new Uint8ClampedArray(w * h * 4);
+
+    // 鼠标位置（归一化）
+    const mx = mouseX !== undefined ? mouseX : 0.5;
+    const my = mouseY !== undefined ? mouseY : 0.5;
+
+    let maxScale = 0;
+    const rawValues = [];
+
+    for (let i = 0; i < data.length; i += 4) {
+      const x = (i / 4) % w;
+      const y = Math.floor(i / 4 / w);
+      const ux = x / w;
+      const uy = y / h;
+
+      // 计算位移
+      const ix = ux - 0.5;
+      const iy = uy - 0.5;
+      const distToEdge = roundedRectSDF(ix, iy, 0.3, 0.2, 0.6);
+      const displacement = smoothStep(0.8, 0, distToEdge - 0.15);
+      const scaled = smoothStep(0, 1, displacement);
+      
+      // 添加鼠标影响
+      const dx = (ux - mx) * 0.15 * scaled;
+      const dy = (uy - my) * 0.15 * scaled;
+      
+      const outX = ux + dx;
+      const outY = uy + dy;
+      
+      const rawDx = outX * w - x;
+      const rawDy = outY * h - y;
+      maxScale = Math.max(maxScale, Math.abs(rawDx), Math.abs(rawDy));
+      rawValues.push(rawDx, rawDy);
+    }
+
+    maxScale = Math.max(maxScale, 1);
+
+    let idx = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = rawValues[idx++] / maxScale + 0.5;
+      const g = rawValues[idx++] / maxScale + 0.5;
+      data[i] = Math.min(255, Math.max(0, r * 255));
+      data[i + 1] = Math.min(255, Math.max(0, g * 255));
+      data[i + 2] = 128;
+      data[i + 3] = 255;
+    }
+
+    ctx.putImageData(new ImageData(data, w, h), 0, 0);
+
+    // 更新 SVG feImage
+    const img = svg.querySelector('feImage');
+    if (img) {
+      img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', canvas.toDataURL());
+    }
+  }
+
+  // 初始生成
+  updateDisplacementMap(0.5, 0.5);
+
+  // 返回更新函数，供鼠标事件调用
+  return {
+    update: updateDisplacementMap,
+    destroy: () => {
+      svg.remove();
+      canvas.remove();
+    }
+  };
+}
+
+// ============================================================
+// 4. 加载并渲染作品
 // ============================================================
 async function loadProjects() {
   const container = document.getElementById('projectContainer');
@@ -460,7 +452,7 @@ async function loadProjects() {
     const projects = await res.json();
     renderProjects(projects, container);
   } catch (e) {
-    console.error('加载作品失败:', e);
+    console.error('加载失败:', e);
     container.innerHTML = `<div style="color:#FF6B6B; text-align:center; padding:40px;">⚠️ 加载失败</div>`;
   }
 }
@@ -498,8 +490,7 @@ function renderProjects(projects, container) {
     list.className = 'project-list';
     list.innerHTML = projectsInCat.map(p => `
       <div class="project-card" data-tilt>
-        <div class="refraction-edge"></div>
-        <div class="glass-glow"></div>
+        <div class="liquid-container"></div>
         <div class="project-image">
           <img src="${p.image || 'https://placehold.co/400x200?text=No+Image'}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x200?text=加载失败'">
         </div>
@@ -513,91 +504,67 @@ function renderProjects(projects, container) {
     container.appendChild(section);
   });
 
-  bindCardEffects();
+  // 绑定液态玻璃效果
+  bindLiquidGlass();
+  // 绑定 3D 倾斜
+  bindTiltEffects();
 }
 
 // ============================================================
-// 4. ✨ 光学边缘折射 + 液态玻璃
+// 5. 绑定液态玻璃
 // ============================================================
-function bindCardEffects() {
+const liquidInstances = [];
+
+function bindLiquidGlass() {
+  const cards = document.querySelectorAll('.project-card[data-tilt]');
+  
+  cards.forEach((card, index) => {
+    // 为每张卡片创建液态玻璃
+    const instance = createLiquidGlassForCard(card);
+    if (instance) {
+      liquidInstances.push({ card, instance });
+      
+      // 鼠标移动更新位移图
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        instance.update(x, y);
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        instance.update(0.5, 0.5);
+      });
+    }
+  });
+}
+
+// ============================================================
+// 6. 3D 倾斜效果
+// ============================================================
+function bindTiltEffects() {
   const cards = document.querySelectorAll('.project-card[data-tilt]');
   
   cards.forEach(card => {
-    const refractionEdge = card.querySelector('.refraction-edge');
-    const glassGlow = card.querySelector('.glass-glow');
-    
     let rafId = null;
     let currentRotateX = 0, targetRotateX = 0;
     let currentRotateY = 0, targetRotateY = 0;
     let currentScaleX = 1, targetScaleX = 1;
     let currentScaleY = 1, targetScaleY = 1;
-    let currentTranslateX = 0, targetTranslateX = 0;
-    let currentTranslateY = 0, targetTranslateY = 0;
-    let currentRefX = 0, targetRefX = 0;
-    let currentRefY = 0, targetRefY = 0;
     
     function animate() {
       const ease = 0.10;
-      
       currentRotateX += (targetRotateX - currentRotateX) * ease;
       currentRotateY += (targetRotateY - currentRotateY) * ease;
       currentScaleX += (targetScaleX - currentScaleX) * ease;
       currentScaleY += (targetScaleY - currentScaleY) * ease;
-      currentTranslateX += (targetTranslateX - currentTranslateX) * ease;
-      currentTranslateY += (targetTranslateY - currentTranslateY) * ease;
-      currentRefX += (targetRefX - currentRefX) * ease;
-      currentRefY += (targetRefY - currentRefY) * ease;
       
-      // 卡片变换
       card.style.transform = `
         perspective(900px) 
         rotateX(${currentRotateX * 0.5}deg) 
         rotateY(${currentRotateY * 0.5}deg) 
-        scale(${currentScaleX}, ${currentScaleY}) 
-        translateX(${currentTranslateX * 0.3}px) 
-        translateY(${currentTranslateY * 0.3}px)
+        scale(${currentScaleX}, ${currentScaleY})
       `;
-      
-      // 边缘折射层
-      if (refractionEdge) {
-        const refIntensity = Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.04);
-        const blurAmount = 2 + refIntensity * 30;
-        const brightness = 1.02 + refIntensity * 0.3;
-        const shiftX = currentRefX * 8;
-        const shiftY = currentRefY * 8;
-        
-        refractionEdge.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
-        refractionEdge.style.backdropFilter = `blur(${blurAmount}px) brightness(${brightness})`;
-        refractionEdge.style.webkitBackdropFilter = `blur(${blurAmount}px) brightness(${brightness})`;
-        
-        // 彩色偏移
-        const hue = 220 + currentRefX * 20;
-        refractionEdge.style.boxShadow = `
-          inset 0 0 40px rgba(255, 255, 255, ${0.02 + refIntensity * 0.5}),
-          0 0 30px hsla(${hue}, 80%, 60%, ${0.01 + refIntensity * 0.3})
-        `;
-        
-        // 折射光晕位置
-        const rx = 50 + currentRefX * 20;
-        const ry = 50 + currentRefY * 20;
-        refractionEdge.style.setProperty('--rx', rx + '%');
-        refractionEdge.style.setProperty('--ry', ry + '%');
-      }
-      
-      // 液态光晕
-      if (glassGlow) {
-        const gx = 50 + (currentTranslateX / 20) * 25;
-        const gy = 50 + (currentTranslateY / 20) * 25;
-        const intensity = 0.04 + Math.min(Math.abs(currentScaleX - 1) + Math.abs(currentScaleY - 1), 0.03);
-        glassGlow.style.background = `
-          radial-gradient(circle at ${gx}% ${gy}%, 
-            rgba(255,255,255,${intensity}) 0%, 
-            rgba(255,255,255,${intensity * 0.3}) 30%, 
-            transparent 70%
-          )
-        `;
-      }
-      
       rafId = requestAnimationFrame(animate);
     }
     
@@ -615,51 +582,22 @@ function bindCardEffects() {
       
       targetRotateX = -dy * 12;
       targetRotateY = dx * 12;
-      targetScaleX = Math.max(0.92, Math.min(1.08, 1 + dx * 0.04));
-      targetScaleY = Math.max(0.92, Math.min(1.08, 1 + dy * 0.04));
-      targetTranslateX = dx * 18;
-      targetTranslateY = dy * 18;
-      targetRefX = dx * 0.8;
-      targetRefY = dy * 0.8;
-      
-      card.classList.add('refracting');
+      targetScaleX = Math.max(0.94, Math.min(1.06, 1 + dx * 0.035));
+      targetScaleY = Math.max(0.94, Math.min(1.06, 1 + dy * 0.035));
     }
     
     function resetHandler() {
-      targetRotateX = 0;
-      targetRotateY = 0;
-      targetScaleX = 1;
-      targetScaleY = 1;
-      targetTranslateX = 0;
-      targetTranslateY = 0;
-      targetRefX = 0;
-      targetRefY = 0;
-      card.classList.remove('refracting');
-      
-      if (refractionEdge) {
-        refractionEdge.style.transform = 'translate(0, 0)';
-        refractionEdge.style.backdropFilter = 'blur(2px) brightness(1.02)';
-        refractionEdge.style.webkitBackdropFilter = 'blur(2px) brightness(1.02)';
-        refractionEdge.style.boxShadow = 'inset 0 0 30px rgba(255,255,255,0.02), 0 0 20px rgba(100,150,255,0.01)';
-      }
-      if (glassGlow) {
-        glassGlow.style.background = 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 60%)';
-      }
+      targetRotateX = 0; targetRotateY = 0;
+      targetScaleX = 1; targetScaleY = 1;
     }
     
     card.addEventListener('mousemove', tiltHandler);
     card.addEventListener('mouseleave', resetHandler);
-    
-    card._cleanup = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      card.removeEventListener('mousemove', tiltHandler);
-      card.removeEventListener('mouseleave', resetHandler);
-    };
   });
 }
 
 // ============================================================
-// 5. 下载加载
+// 7. 下载加载
 // ============================================================
 async function loadDownloads() {
   const container = document.getElementById('downloadList');
@@ -687,7 +625,7 @@ async function loadDownloads() {
 }
 
 // ============================================================
-// 6. 控件
+// 8. 控件
 // ============================================================
 document.getElementById('glassToggle').onclick = () => {
   document.body.classList.toggle('glass-on');
@@ -704,27 +642,17 @@ btn.onclick = () => {
   mask.style.display = show ? 'none' : 'block';
   if (!show) loadDownloads();
 };
-
 mask.onclick = () => {
   panel.style.display = 'none';
   mask.style.display = 'none';
 };
 
-document.addEventListener('mousedown', e => {
-  const ripple = document.createElement('div');
-  ripple.className = 'ripple';
-  ripple.style.left = e.clientX + 'px';
-  ripple.style.top = e.clientY + 'px';
-  document.body.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 1000);
-});
-
 // ============================================================
-// 7. 启动
+// 9. 启动
 // ============================================================
 loadProjects();
 loadDownloads();
-console.log('🚀 作品集已启动（光学边缘折射）');
+console.log('🚀 作品集已启动（液态玻璃折射 + 3D倾斜）');
 </script>
 </body>
 </html>

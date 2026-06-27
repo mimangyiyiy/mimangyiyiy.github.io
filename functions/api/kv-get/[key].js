@@ -12,29 +12,31 @@ export async function onRequest(context) {
       });
     }
 
-    // 判断是否是图片（根据扩展名）
     const ext = key.split('.').pop().toLowerCase();
     const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
     const isImage = imageExts.includes(ext);
     
     if (isImage) {
-      // 图片直接返回二进制数据
       return new Response(value, {
         headers: {
           'Content-Type': `image/${ext === 'jpg' ? 'jpeg' : ext}`,
-          'Cache-Control': 'public, max-age=31536000'
+          'Cache-Control': 'public, max-age=31536000',
+          'Content-Length': value.length.toString()  // ✅ 添加这一行
         }
       });
     } else {
-      // 文本文件返回 JSON
       const text = await env.HTML_FILES.get(key);
-      return new Response(JSON.stringify({
+      const jsonData = JSON.stringify({
         key: key,
         value: text,
         size: text ? text.length : 0,
         sizeKB: (text ? text.length / 1024 : 0).toFixed(1) + ' KB'
-      }), {
-        headers: { 'Content-Type': 'application/json' }
+      });
+      return new Response(jsonData, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Content-Length': jsonData.length.toString()  // ✅ 添加这一行
+        }
       });
     }
   } catch (e) {
